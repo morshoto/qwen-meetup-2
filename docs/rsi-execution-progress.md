@@ -222,8 +222,16 @@ development tasks; the budget
 is constrained by the proposed comparison ceilings. A two-generation fixture
 exercised the proposal and rejected overlap and an excessive budget. This is
 an unwitnessed proposal, not an immutable execution registration, proof of
-complete exposure history or nonidentical related tasks, a once-only reservation or authorization. No public
-diagnostic or independent submission was run.
+complete exposure history or nonidentical related tasks, an experiment-wide
+once-only guarantee, or authorization. No public diagnostic or independent
+submission was run.
+
+An exclusive local journal can consume a diagnostic attempt within one
+owner-only directory, bind completion evidence to its proposal, and retain an
+uncertain state after interruption. Fixtures check concurrent claims and a
+changed proposal. The journal depends on cooperating callers and local files;
+another directory or a writer able to alter the journal can bypass it. It is
+not an authenticated reservation, independent evidence or permission to run.
 
 ### Quarantined training preparation
 
