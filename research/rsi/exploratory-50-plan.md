@@ -34,9 +34,9 @@ either arm runs. Record incomplete requests and infrastructure errors instead
 of assigning fabricated scores. Task-type labels are reviewer annotations, with
 their method recorded, rather than an assumed official ARC taxonomy.
 
-The notebook reads caller-supplied task records, displays correct counts, task
+The notebook reads caller-supplied task records or an explicitly selected interrupted-run record, displays correct counts, task
 type, failure reasons, elapsed time and server-reported prompt/completion token
-usage, and preserves missing measurements as unknown. Its consistency checks do
+usage, and preserves missing measurements as unknown. An interrupted run is always marked incomplete, even when all rows were recorded before finalization failed; its partial view is unaudited and does not write or resume the run. Its consistency checks do
 not attest model identity, task provenance, the timing measurement or token
 usage. This 50-task check cannot establish RSI improvement or benchmark
 competitiveness; retain the 200-task and independent scoring gates for those
