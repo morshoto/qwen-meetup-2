@@ -136,3 +136,15 @@ bound into the frozen record. A 200-task fixture replay passed; altered task
 content, missing records and changed scores were rejected. The replay inputs,
 model emissions and local digest remain unauthenticated, so this is not an
 independent provenance audit or evidence of a model improvement.
+
+### Quarantined training preparation
+
+Training preparation now checks the structural five-record threshold, canonical
+label-free task prompts, grid validity, parent adapter, batch and task hashes,
+and fixed proposed QLoRA settings. It records a separate one-step synthetic
+preflight plan without placing the generation records in that preflight. The
+existing MLX trainer expects a different provenance and record contract, and
+the monitor does not prove containment of escaped descendants. Independent
+batch audit, a registered canary, trainer data-format audit, process containment,
+execution registration and explicit training authorization remain open gates.
+No training or preflight was started.
