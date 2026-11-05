@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Matched base comparison cycle
+
+Test a descriptive paired comparison of the provisionally selected adapter
+against the untrained base using captured frozen development outcomes. For a
+second-generation selection, require the same task hashes, settings and sample
+seeds as the base comparison before pairing outcomes; never subtract aggregate
+scores from mismatched tasks. Report the fixed paired bootstrap and keep all
+results unverified, without a final evaluation or improvement claim.
+
 ### Captured recursive screening cycle
 
 Test a separate transition screen that requires the full captured comparison
