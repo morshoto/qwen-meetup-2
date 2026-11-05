@@ -338,8 +338,10 @@ The generation draft artifact can also be replayed from slot captures and the
 supplied sandbox before and after synthetic preparation. Replay recomputes the
 generated outputs and mapped prompts; a fixture with an altered generated
 label, updated prompt and recomputed digest was rejected. A failed second replay
-can leave an owner-only preparation file behind; it remains quarantined and
-must not be reused as a successful preparation. Replay depends on locally
+can leave an owner-only preparation file behind without the exclusive replay
+completion marker. A successful replay writes a marker binding the stage and
+preparation hashes; the marker remains local and does not authorize training.
+Replay depends on locally
 supplied captures, task data and sandbox behavior, and is not independent
 attestation of model, execution or label provenance.
 
