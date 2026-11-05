@@ -35,6 +35,10 @@ class PreflightReviewTests(unittest.TestCase):
         result = review_preflight_observation(baseline=self.baseline, observation=self.observation, resource_limits=limits)
         self.assertEqual(result['status'], 'preflight_observation_rejected')
         self.assertFalse(result['training_allowed'])
+        self.assertEqual(result['reason'], 'invalid_elapsed_time')
+        limits['timeout_seconds'] = 3
+        result = review_preflight_observation(baseline=self.baseline, observation=self.observation, resource_limits=limits)
+        self.assertEqual(result['reason'], 'memory_pressure_limit')
         invalid = dict(limits, maximum_process_rss_gib=33)
         self.assertEqual(review_preflight_observation(baseline=self.baseline, observation=self.observation,
                          resource_limits=invalid)['status'], 'preflight_observation_rejected')
