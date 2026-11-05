@@ -680,3 +680,11 @@ Test that a completed exploratory fixture retains a separate completion marker
 binding the result digest and final local budget counters, with exactly 200
 reserved calls. Interrupted or inconsistent runs remain incomplete. Local
 markers and reported usage do not authenticate provenance or authorize a run.
+
+### Exploratory capture replay
+
+Test replaying the 50-task fixture with separately supplied tasks, sandbox and
+verifier, joining each saved request ID to captured request, response and ledger
+bytes. Reject altered task records, scores, usage, missing captures, incomplete
+runs and budget mismatches. A successful replay remains local consistency
+evidence, not independent process attestation or an improvement claim.
