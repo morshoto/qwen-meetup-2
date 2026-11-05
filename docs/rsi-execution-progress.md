@@ -306,6 +306,15 @@ fixture proposal then passed the local identity checks. The proposal used
 synthetic data and caller-supplied manifests; this is not independent process
 attestation, complete dependency closure or execution authorization.
 
+The preflight launch bundle freezes an MLX YAML file, the existing
+`src.cli.p3b_train` command with thinking disabled, interpreter and wrapper
+hashes, working directory and offline environment overrides. It checks the
+local proposal identities first and writes owner-only review material without
+launching it. A fixture proposal using local identity observations produced a
+bundle; the fixture used synthetic data and did not execute the command. This
+does not clear strict-oracle provenance, containment, registration, independent
+reload or the separate authorization required for preflight.
+
 ### RSI chat format and mask precheck
 
 A format precheck converts quarantined rows to MLX-style chat JSONL and checks
