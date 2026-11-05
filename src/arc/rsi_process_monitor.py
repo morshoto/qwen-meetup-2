@@ -162,5 +162,6 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
         raise
     exit_code, group_signals_confirmed = _stop_group(process, terminate_grace_seconds)
     return {'stop_reason': stop_reason, 'exit_code': exit_code, 'samples': samples,
+            'elapsed_seconds': time.monotonic() - start,
             'training_verified': False, 'group_signals_confirmed': group_signals_confirmed,
             'escaped_processes_excluded': False}
