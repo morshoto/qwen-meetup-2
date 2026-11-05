@@ -281,6 +281,11 @@ runtime, environment, source and tokenizer hashes. Fixtures reject changed
 inputs, overlapping paths and loader failures. The hashes and loader are
 caller-supplied; the resulting owner-only proposal is not a witnessed
 registration, an independent dependency audit or authorization to train.
+The proposal now also requires the local synthetic preparation and dataset
+replay markers, checks the generation dataset and binds its stage and dataset
+hashes. A fixture exercises the path from generation replay through the
+proposal. These markers are locally writable and do not establish the five
+independently audited strict same-model Oracles required by the protocol.
 
 ### RSI chat format and mask precheck
 
