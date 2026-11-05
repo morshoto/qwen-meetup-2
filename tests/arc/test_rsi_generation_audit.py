@@ -117,6 +117,10 @@ class GenerationAuditTests(unittest.TestCase):
         self.assertEqual(drafts['draft_count'], 1)
         self.assertFalse(drafts['provisional_minimum_count_met'])
         self.assertFalse(drafts['training_allowed'])
+        bad_ledger = [dict(row) for row in ledger]
+        bad_ledger[0]['token_reservation'] += 1
+        with self.assertRaises(ValueError):
+            audit_generation(**{**audit_args, 'ledger_records': bad_ledger})
         with self.assertRaises(ValueError):
             audit_generation(**{**audit_args, 'request_records': capture[:-1]})
         with self.assertRaises(ValueError):

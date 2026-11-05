@@ -62,6 +62,8 @@ class GenerationStageTests(unittest.TestCase):
         result = self.run_stage()
         self.assertEqual(result['status'], 'generation_incomplete')
         self.assertEqual(result['completed_slots'], 2)
+        self.assertEqual(result['budget_usage']['model_calls'], 3)
+        self.assertGreater(result['budget_usage']['reserved_tokens'], 0)
         self.assertFalse(result['training_allowed'])
         self.assertTrue((self.root / 'g0.stage.incomplete.json').exists())
         self.assertFalse((self.root / 'g0.stage.completed.json').exists())
