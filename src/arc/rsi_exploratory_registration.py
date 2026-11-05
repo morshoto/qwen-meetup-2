@@ -18,10 +18,16 @@ def prepare_exploratory_registration(root, *, registration, bounded_bytes, bound
     try:
         inputs, hashes = _read_inputs(root, registration['input_paths'])
         bounded = _json_object(bounded_bytes)
+        design = inputs['design_registration']
+        v3 = (design.get('supersedes') == 'research/rsi/design-registration-v2.json' and
+              design.get('exposure_policy') == 'bounded_review_unknown_project_exposure')
+        v4 = (design.get('supersedes') == 'research/rsi/design-registration-v3.json' and
+              design.get('canary_policy') == 'independent_synthetic_only_no_promotion' and
+              design.get('evaluation_policy') == 'separate_exploratory_50_then_development_200' and
+              design.get('oracle_policy') == 'new_only_pending_historical_decision')
         if (registration.get('status') != 'draft_not_execution_ready' or registration.get('execution_ready') is not False or
                 hashes != registration['input_sha256'] or bounded['task_source_sha256'] != hashes['challenges'] or
-                inputs['design_registration'].get('supersedes') != 'research/rsi/design-registration-v2.json' or
-                inputs['design_registration'].get('exposure_policy') != 'bounded_review_unknown_project_exposure' or
+                not (v3 or v4) or
                 bounded['partitions'] != inputs['split']['partitions']):
             raise ValueError('draft registration or bounded inventory differs')
         selection_file = root / 'src/arc/rsi_exploratory_split.py'
