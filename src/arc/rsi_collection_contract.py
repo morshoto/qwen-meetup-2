@@ -9,13 +9,19 @@ from pathlib import Path
 from src.arc.http_backend import verify_guarded_contract
 from src.arc.prompting import system_prompt_for_kind
 from src.arc.rsi_collection_budget import CollectionBudget
-from src.arc.rsi_slot_transport import CapturedSlotTransport, _MODEL, _REVISION
+from src.arc.rsi_slot_transport import CapturedSlotTransport
+from src.arc.rsi_model_identity import _MODELS
 
 
 class ContractCheckedSlotTransport:
     def __init__(self, transport, *, budget, registration_sha256, generation, parent_adapter,
-                 expected_max_prompt_tokens, expected_ledger_id, expected_initial_reserved_tokens):
-        if (not isinstance(transport, CapturedSlotTransport) or type(budget) is not CollectionBudget or
+                 expected_max_prompt_tokens, expected_ledger_id, expected_initial_reserved_tokens, model_key='14b'):
+        if not isinstance(model_key, str) or model_key not in _MODELS:
+            raise ValueError('unsupported model identity')
+        self.model_key = model_key
+        self.model, self.revision = _MODELS[model_key]
+        if (not isinstance(transport, CapturedSlotTransport) or transport.model_key != model_key or
+                transport.options.get('model') != self.model or transport.options.get('revision') != self.revision or type(budget) is not CollectionBudget or
                 budget.identity != {'registration_sha256': registration_sha256, 'generation': generation} or
                 (generation == 0 and parent_adapter != 'none') or
                 (generation == 1 and (not isinstance(parent_adapter, str) or not re.fullmatch(r'[0-9a-f]{64}', parent_adapter))) or
@@ -40,10 +46,13 @@ class ContractCheckedSlotTransport:
         self.token_limit, self.previous_server = initial['token_limit'], initial['reserved_tokens']
 
     def _check(self, deadline, local):
+        if (self.transport.model_key != self.model_key or self.transport.options.get('model') != self.model or
+                self.transport.options.get('revision') != self.revision):
+            raise ValueError('collection transport identity changed')
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise TimeoutError('collection contract deadline exceeded')
-        value = verify_guarded_contract(self.transport.options['base_url'], _MODEL, _REVISION,
+        value = verify_guarded_contract(self.transport.options['base_url'], self.model, self.revision,
             200000, 512, min(remaining, self.transport.max_request_seconds), 'off',
             expected_adapter_sha256=self.parent_adapter, expected_max_prompt_tokens=self.max_prompt_tokens,
             required_thinking_modes=('off',))
