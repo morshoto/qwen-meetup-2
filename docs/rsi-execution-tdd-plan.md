@@ -244,3 +244,10 @@ thinking canary, ledger identity and 200,000-token ceiling. Require a local
 pre-dispatch reservation for each request and reject ledger drift or excess
 server reservations. Server claims remain distinct from authenticated process
 and model identity and do not authorize execution.
+
+### Comparison reservation binding cycle
+
+Test that the guarded comparison transport is bound to its stage budget and
+requires an exact local reservation before consulting either server. Reject
+unreserved, duplicate, mismatched and over-budget dispatches while preserving
+server-contract and adapter checks. These checks remain local protocol evidence.
