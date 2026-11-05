@@ -104,3 +104,30 @@ class LegacyReferencePoolTests(unittest.TestCase):
             sandbox=Mock();args=self.args();args.update(change,sandbox=sandbox)
             with self.subTest(change=change),self.assertRaises(ValueError): build_legacy_duplicate_reference(**args)
             sandbox.run.assert_not_called()
+    def test_32b_fixture_uses_only_32b_identity(self):
+        from src.arc.rsi_reference_pool import build_legacy_duplicate_reference
+        metadata=dict(self.metadata,model_key='32b',model_id='mlx-community/Qwen3-32B-4bit',
+                      model_revision='bcaaf7f538adf166c1080a2befdb4f6019f66639',record_task_id='e6f-'+'b'*24)
+        raw=json.dumps(metadata,sort_keys=True).encode();args=self.args()
+        args.update(model_key='32b',metadata_bytes=raw,expected_metadata_sha256=hashlib.sha256(raw).hexdigest())
+        result=build_legacy_duplicate_reference(**args)
+        self.assertEqual(result['model_key'],'32b')
+        self.assertEqual(result['historical_task_id'],metadata['record_task_id'])
+        self.assertFalse(result['eligible_for_training'])
+        self.assertFalse(result['arc_ancestry_assumed'])
+        sandbox=Mock();args.update(model_key='14b',sandbox=sandbox)
+        with self.assertRaises(ValueError): build_legacy_duplicate_reference(**args)
+        sandbox.run.assert_not_called()
+
+    def test_unverified_metadata_and_sandbox_fail_closed(self):
+        from src.arc.rsi_reference_pool import build_legacy_duplicate_reference
+        for change in ({'eligible_for_training':True}, {'independently_verified_for_new_protocol':0},
+                       {'candidate_code_executed':True}, {'record_task_id':'t0'},
+                       {'private_behavior_for_proposed_probes':'evaluated'}, {'candidate_index_sha256':'bad'}):
+            raw=json.dumps(dict(self.metadata,**change),sort_keys=True).encode();sandbox=Mock();args=self.args()
+            args.update(metadata_bytes=raw,expected_metadata_sha256=hashlib.sha256(raw).hexdigest(),sandbox=sandbox)
+            with self.subTest(change=change),self.assertRaises(ValueError): build_legacy_duplicate_reference(**args)
+            sandbox.run.assert_not_called()
+        sandbox=Mock();sandbox.run.side_effect=TimeoutError('fixture');args=self.args();args['sandbox']=sandbox
+        with self.assertRaises(TimeoutError): build_legacy_duplicate_reference(**args)
+        self.assertEqual(sandbox.run.call_count,1)
