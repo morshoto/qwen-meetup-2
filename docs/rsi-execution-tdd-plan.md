@@ -624,3 +624,11 @@ excluding known prior exposures, the first 20 scheduled generation tasks, and
 all 200 later evaluation tasks. Remove them from the eligible generation manifest
 and bind the input proposal hash. Reject incomplete, overlapping or insufficient
 inputs; this is not an independently reviewed or execution-ready split.
+
+### Exploratory manifest registration binding
+
+Test binding the existing v3 draft registration and bounded-history proposal to
+the separately proposed 750/50/200 manifests. Recompute the 50-task selection,
+reject changed inputs, overlaps and changes to either generation's scheduled
+slots, and retain non-authorizing and independent-review gates. Do not change
+the previously registered 800/200 design record or dispatch any model call.
