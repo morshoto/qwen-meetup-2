@@ -2,7 +2,10 @@
 import hashlib
 import json
 import os
+import re
+import stat
 
+from src.arc.rsi_comparison_audit import _read
 from src.arc.data import Task, validate_grid
 from src.arc.e5_selfplay import solve_prompt
 from src.arc.prompting import FINAL_ANSWER_SYSTEM_PROMPT
@@ -28,7 +31,7 @@ def _grid_key(grid):
     return json.dumps(validate_grid(grid), separators=(',', ':'))
 
 
-def prepare_canary_dataset(*, root, forbidden_tasks, tokenizer, render):
+def _build_canary(*, forbidden_tasks, tokenizer, render):
     if (not isinstance(forbidden_tasks, dict) or not forbidden_tasks or
             any(not isinstance(key, str) or not isinstance(task, Task) or task.id != key or
                 not task.train or not task.test_inputs for key, task in forbidden_tasks.items())):
@@ -61,6 +64,11 @@ def prepare_canary_dataset(*, root, forbidden_tasks, tokenizer, render):
                   'source': 'fixed_synthetic_canary', 'task_hashes': plan['task_hashes'],
                   'forbidden_grid_set_sha256': hashlib.sha256(json.dumps(sorted(forbidden),
                       separators=(',', ':')).encode()).hexdigest()})
+    return raw, audit
+
+
+def prepare_canary_dataset(*, root, forbidden_tasks, tokenizer, render):
+    raw, audit = _build_canary(forbidden_tasks=forbidden_tasks, tokenizer=tokenizer, render=render)
     with _directory(root) as parent:
         os.mkdir('preflight-canary.quarantine', 0o700, dir_fd=parent)
         os.fsync(parent)
@@ -71,5 +79,39 @@ def prepare_canary_dataset(*, root, forbidden_tasks, tokenizer, render):
             _create(directory, 'audit.json', audit)
         finally:
             os.close(directory)
-    return {'status': audit['status'], 'training_allowed': False, 'row_count': checked['row_count'],
-            'dataset_jsonl_sha256': checked['dataset_jsonl_sha256']}
+    return {'status': audit['status'], 'training_allowed': False, 'row_count': audit['row_count'],
+            'dataset_jsonl_sha256': audit['dataset_jsonl_sha256']}
+
+
+def verify_canary_dataset(*, root, forbidden_tasks, tokenizer, render, expected_dataset_sha256):
+    if not isinstance(expected_dataset_sha256, str) or not re.fullmatch(r'[0-9a-f]{64}', expected_dataset_sha256):
+        raise ValueError('invalid canary dataset digest')
+    expected, expected_audit = _build_canary(forbidden_tasks=forbidden_tasks, tokenizer=tokenizer, render=render)
+    if hashlib.sha256(expected).hexdigest() != expected_dataset_sha256:
+        raise ValueError('expected canary dataset digest differs')
+    try:
+        with _directory(root) as parent:
+            directory = os.open('preflight-canary.quarantine', os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
+            try:
+                info = os.fstat(directory)
+                if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o700:
+                    raise ValueError('canary directory must be owner-only')
+                if set(os.listdir(directory)) != {'train.jsonl', 'audit.json'}:
+                    raise ValueError('canary directory contents differ')
+                fd = os.open('train.jsonl', os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
+                with os.fdopen(fd, 'rb') as stream:
+                    info = os.fstat(stream.fileno())
+                    if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or
+                            stat.S_IMODE(info.st_mode) != 0o600):
+                        raise ValueError('canary dataset must be owner-only')
+                    actual = stream.read(8 * 1024 * 1024 + 1)
+                _, audit = _read(directory, 'audit.json')
+                if actual != expected or audit != expected_audit:
+                    raise ValueError('canary dataset or audit differs')
+            finally:
+                os.close(directory)
+    except OSError as exc:
+        raise ValueError('canary dataset unavailable') from exc
+    return {'status': 'canary_consistent_unverified', 'training_allowed': False,
+            'row_count': expected_audit['row_count'], 'dataset_jsonl_sha256': expected_dataset_sha256,
+            'evidence_type': 'caller_supplied_inventory_tokenizer_and_renderer'}
