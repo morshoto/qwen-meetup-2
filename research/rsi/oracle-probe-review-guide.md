@@ -76,3 +76,55 @@ remaining uncertainty before freezing a new execution registration.
 The retained 14B and 32B candidates have separate [14B static metadata](audits/historical-candidates/14b-static-reference.json) and [32B static metadata](audits/historical-candidates/32b-static-reference.json). Their source and AST hashes match the retained records; verifier-only fields were excluded from the comparison. Their behavior on the newly proposed private probes has not been evaluated.
 
 The historical task IDs are synthetic `e6f-...` IDs, not IDs in the proposed ARC generation partition. The existing `build_reference_pool` requires each supplied ancestor ID to belong to that generation partition, so these records cannot yet be passed to it under that contract. Do not substitute a generation task ID to satisfy the check. A separate `build_legacy_duplicate_reference` path retains the synthetic ID and has fixture coverage; it does not claim ARC ancestry or training eligibility. It has not been run on the retained candidates or new probes. Independently review its provenance, sandbox and duplicate-only policy before constructing a behavioral pool. This remains separate from the pending decision about whether a historical candidate may count toward the training gate.
+
+### Recheck retained source identity
+
+This read-only check compares each static reference with its retained E8 and E9
+records. It prints no source code, private probe data, or verifier-only fields.
+It is a consistency check for a reviewer; it does not replace review of the
+E8/E9 seals and request provenance.
+
+```sh
+python3 -B - <<'PY'
+import hashlib
+import json
+from pathlib import Path
+from src.arc.ast_fingerprint import stable_ast_sha256
+
+for key in ('14b', '32b'):
+    index_path = Path(f'research/rsi/audits/historical-candidates/{key}.json')
+    ref_path = Path(f'research/rsi/audits/historical-candidates/{key}-static-reference.json')
+    index = json.loads(index_path.read_bytes())
+    reference = json.loads(ref_path.read_bytes())
+    if hashlib.sha256(index_path.read_bytes()).hexdigest() != reference['candidate_index_sha256']:
+        raise SystemExit(f'{key}: candidate index differs')
+    e9_path = Path(index['e9_run']) / 'existing_oracles.jsonl'
+    e8_path = Path(index['source_campaign']) / key / 'slots/20/result.json'
+    e9_raw, e8_raw = e9_path.read_bytes(), e8_path.read_bytes()
+    if (hashlib.sha256(e9_raw).hexdigest() != reference['e9_existing_oracles_sha256'] or
+            hashlib.sha256(e8_raw).hexdigest() != reference['e8_slot_result_sha256']):
+        raise SystemExit(f'{key}: retained evidence differs')
+    rows = e9_raw.splitlines()
+    if len(rows) != 1:
+        raise SystemExit(f'{key}: unexpected candidate count')
+    row, slot = json.loads(rows[0]), json.loads(e8_raw)
+    record = row['record']
+    sanitized = {k: v for k, v in slot['accepted_item']['record'].items() if k != '_verifier_only'}
+    source = record['messages'][-1]['content']
+    if (sanitized != record or slot['verified_novel'] is not True or
+            row['source_model_id'] != index['model_id'] or row['model_revision'] != index['model_revision'] or
+            hashlib.sha256(source.strip().encode()).hexdigest() != reference['source_sha256'] or
+            stable_ast_sha256(source) != reference['ast_sha256'] or
+            reference['eligible_for_training'] is not False):
+        raise SystemExit(f'{key}: reference identity differs')
+    print(f'{key}: retained source identity is consistent; independent provenance review remains open')
+PY
+```
+
+The earlier offline audit summaries are available in
+[`e9-14b-review`](audits/e9-14b-review/summary.json),
+[`e9-32b-review`](audits/e9-32b-review/summary.json), and
+[`e8-rerun-review`](audits/e8-rerun-review/summary.json). Re-run or inspect the
+corresponding auditors against the archived inputs in a new output location;
+leave the sealed source artifacts unchanged. The local summaries do not
+replace the requested independent review.
