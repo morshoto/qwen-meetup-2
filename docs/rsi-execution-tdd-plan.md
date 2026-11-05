@@ -48,3 +48,10 @@ input hashes, pre-dispatch call and token reservations, bounded public repairs,
 terminal private failures, novelty screening, and durable completion evidence.
 Test interrupted attempts remain consumed. Treat supplied components and local
 records as unauthenticated, and keep drafts ineligible for training.
+
+### Captured transport binding cycle
+
+Test the conditioned collector against a local fixture HTTP server, checking
+wire seeds, thinking mode, token reservation, deadlines, captures, and failures
+before dispatch for invalid settings. Bind the collector to the capturing backend
+without enabling or claiming an authenticated live run.
