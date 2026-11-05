@@ -136,8 +136,11 @@ only and leave the competitive claim unverified.
    adapter configuration and training budget before training. First perform a
    separately authorized one-step synthetic-canary preflight; stop on OOM,
    sustained swap growth, non-finite loss, invalid reload or resource cap.
-6. Train one adapter, reload it independently and compare it with the base on
-   the development split under the matched protocol. Select only a candidate
+6. Train one adapter, reload it independently and compare it with its immediate
+   parent on the development split under the matched protocol: the parent is the
+   untrained base for generation 1 and the selected generation-1 adapter for
+   generation 2. Generation 2 continues the selected parent adapter, using only
+   its new generation's eligible records and no replay. Select only a candidate
    with a positive paired point estimate and no invalid runs; this is a screening
    rule, not proof of improvement. Repeat once at most with the chosen adapter as
    generator, using fresh seeds and no evaluation feedback. Freeze final model,
