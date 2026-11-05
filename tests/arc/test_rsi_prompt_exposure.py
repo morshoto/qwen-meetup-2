@@ -37,7 +37,7 @@ class PromptExposureTests(unittest.TestCase):
         read = Path.read_bytes
         def changing(p):
             value = read(p)
-            if p == path:
+            if p.resolve() == path.resolve():
                 path.write_text('{"content":"changed"}')
             return value
         with patch.object(Path, 'read_bytes', changing):
