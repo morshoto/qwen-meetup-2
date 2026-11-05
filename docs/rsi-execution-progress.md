@@ -182,3 +182,13 @@ responses passed the existing request/response byte precheck for both arms;
 invalid routes and duplicate IDs stop execution. This does not verify the
 server's loaded weights or adapter, bind all comparison captures into the
 replay audit, or establish independent provenance. No live requests were made.
+
+### Comparison capture replay
+
+The comparison replay now joins all 800 sample request IDs to per-arm captured
+request, response and ledger records, checks byte hashes, requested settings,
+seeds and sample source, and replays the task outcomes. A complete fixture HTTP
+comparison passed with reordered capture records; missing, duplicate and altered
+records failed. The captured records and sandbox are still locally writable and
+caller supplied, and server weight, adapter and runtime identity are not
+independently established. No live comparison was performed.
