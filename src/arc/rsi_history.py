@@ -9,7 +9,8 @@ from pathlib import Path
 
 import yaml
 
-from src.arc.exploration_registry import build_registry
+from src.arc.exploration_registry import build_registry, validate_registry
+from src.arc.rsi_split import make_split
 
 _JSON_NAMES = {'results.json', 'holdout_manifest.json', 'collection.json',
                'source_manifest.json', 'selection_manifest.json',
@@ -68,3 +69,27 @@ def audit_history(root: str | Path, *, required_paths: list[str]) -> dict:
     if before != after:
         raise ValueError('history inventory changed during audit')
     return {'task_ids': registry['task_ids'], 'files': before}
+
+
+def provisional_snapshot(root: str | Path, *, task_path: str, registry_path: str,
+                         required_paths: list[str], development_size: int) -> dict:
+    root = Path(root).resolve()
+    audit = audit_history(root, required_paths=[*required_paths, task_path, registry_path])
+    hashes = {row['path']: row['sha256'] for row in audit['files']}
+
+    def read_checked(relative: str):
+        raw = (root / relative).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != hashes[relative]:
+            raise ValueError('history inventory changed after audit')
+        return json.loads(raw)
+
+    tasks = read_checked(task_path)
+    if not isinstance(tasks, dict):
+        raise ValueError('task source must be a JSON object')
+    old = validate_registry(read_checked(registry_path))
+    exposed = set(audit['task_ids']) | set(old['task_ids'])
+    return {'status': 'provisional_not_preregistered', 'independence_established': False,
+            'known_exposed_in_dataset': len(set(tasks) & exposed),
+            'partitions': make_split(tasks, exposed, development_size=development_size),
+            'task_source': task_path, 'prior_registry': registry_path,
+            'required_paths': sorted(set(required_paths)), 'inspected_files': audit['files']}
