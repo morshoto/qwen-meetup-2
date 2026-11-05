@@ -73,7 +73,7 @@ class PreflightBundleTests(unittest.TestCase):
         path = self.root / 'preflight.proposal.json'
         spec = json.loads(path.read_text())
         spec['config']['learning_rate'] = 0.01
-        path.write_text(json.dumps(spec))
+        path.write_text(json.dumps(spec, sort_keys=True, separators=(',', ':')) + '\n')
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         verify.return_value['proposal_sha256'] = digest
         with self.assertRaises(ValueError):
