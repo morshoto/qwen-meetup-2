@@ -14,6 +14,9 @@ from src.arc.rsi_comparison_budget import ComparisonBudget
 from src.arc.rsi_comparison_runner import run_comparison
 from src.arc.rsi_comparison_transport import CapturedComparisonTransport
 from src.arc.rsi_exploratory_transport import CapturedExploratoryTransport
+from src.arc.rsi_exploratory_budget import ExploratoryBudget
+from src.arc.rsi_exploratory_runner import run_exploratory
+from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
 from src.arc.rsi_transport_audit import audit_transport
 from src.arc.rsi_transition_screen import screen_captured_rsi_chain
 from src.arc.rsi_base_comparison import _paired_frozen_summary, summarize_captured_base_comparison
@@ -73,6 +76,26 @@ class ComparisonTransportTests(unittest.TestCase):
         self.assertIsNone(result['usage'])
         self.assertTrue((self.root / 'parent.capture.jsonl').is_file())
         self.assertTrue((self.root / 'candidate.capture.jsonl').is_file())
+
+    def test_exploratory_runner_with_captured_fixture_server(self):
+        self.server.usage = {'prompt_tokens':10, 'completion_tokens':5, 'total_tokens':15}
+        ids = [f'task-{i:03}' for i in range(50)]
+        final = [f'confirm-{i:03}' for i in range(200)]
+        tasks = {key: Task(key, (([[1], [2]], [[2], [1]]),), ([[3], [4]],)) for key in ids}
+        verifier = Verifier({key: [[[4], [3]]] for key in ids})
+        seeds = {key: [10000+2*i,10001+2*i] for i,key in enumerate(ids)}
+        budget = ExploratoryBudget.create(self.root, registration_sha256='a'*64, generation=0)
+        registration = {'status':'exploratory_registration_draft_unverified', 'execution_ready':False,
+                        'exploratory_manifest_sha256':manifest_sha256(ids), 'development_manifest_sha256':manifest_sha256(final)}
+        result = run_exploratory(root=self.root,registration_sha256='a'*64,generation=0,registration=registration,
+            task_ids=ids,confirmatory_task_ids=final,tasks=tasks,task_hashes={k:task_sha256(v) for k,v in tasks.items()},
+            seeds=seeds,task_types={k:None for k in ids},candidate_adapter='b'*64,
+            generate=CapturedExploratoryTransport(self.transport),sandbox=FakeE6Sandbox(),verifier=verifier,budget=budget)
+        self.assertEqual(result['status'],'exploratory_complete_unverified')
+        self.assertEqual(result['summary']['arms']['base']['correct'],50)
+        self.assertEqual(result['summary']['arms']['base']['total_tokens'],1500)
+        self.assertEqual(len(self.server.requests),200)
+        self.assertFalse(result['claim_eligible'])
 
     def test_exploratory_truncated_response_preserves_failure(self):
         wrapped = CapturedExploratoryTransport(self.transport)
