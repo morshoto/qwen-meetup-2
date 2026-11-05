@@ -31,10 +31,10 @@ class SlotTransportTests(unittest.TestCase):
             def do_POST(self):
                 request = self.rfile.read(int(self.headers['Content-Length']))
                 self.server.requests.append(request)
-                code = [FAKE_PROGRAMS[2], FAKE_PROGRAMS[1]][len(self.server.requests) - 1]
+                code = self.server.override_code or [FAKE_PROGRAMS[2], FAKE_PROGRAMS[1]][len(self.server.requests) - 1]
                 raw = json.dumps({'model': MODEL, 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
-                    'choices': [{'message': {'role': 'assistant', 'content': code}, 'finish_reason': 'stop'}]}).encode()
+                    'choices': [{'message': {'role': 'assistant', 'content': code}, 'finish_reason': self.server.finish_reason}]}).encode()
                 self.send_response(200)
                 self.send_header('Content-Length', str(len(raw)))
                 self.end_headers()
@@ -43,6 +43,8 @@ class SlotTransportTests(unittest.TestCase):
                 pass
         self.server = HTTPServer(('127.0.0.1', 0), Handler)
         self.server.requests = []
+        self.server.finish_reason = 'stop'
+        self.server.override_code = None
         self.worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.worker.start()
         self.addCleanup(self.server.server_close)
@@ -129,6 +131,38 @@ class SlotTransportTests(unittest.TestCase):
         corrupted[0]['body_base64'] = base64.b64encode(b'bad').decode()
         with self.assertRaises(ValueError):
             audit_collected_slot(**{**kwargs, 'request_records': corrupted})
+
+    def test_truncated_response_stops_and_replays_without_draft(self):
+        self.server.finish_reason = 'length'
+        ids = [f'task-{i:02}' for i in range(20)]
+        task = Task(ids[0], (([[1, 2]], [[2, 1]]),), ([[3, 4]],))
+        public, private = _quality_grids(42, 5), _quality_grids(43, 5)
+        budget = CollectionBudget.create(self.root, registration_sha256='a' * 64, generation=0)
+        result = collect_slot(root=self.root, registration_sha256='a' * 64, generation=0, slot=0,
+            task_ids=ids, task=task, expected_manifest_sha256=manifest_sha256(ids),
+            expected_task_sha256=task_sha256(task), public_probes=public, private_probes=private,
+            expected_public_probes_sha256=probes_sha256(public), expected_private_probes_sha256=probes_sha256(private),
+            reference_pool=[], transport=self.transport, sandbox=FakeE6Sandbox(), budget=budget)
+        self.assertEqual(result['status'], 'invalid_model_output')
+        self.assertEqual(len(self.server.requests), 1)
+        captures = [json.loads(line) for line in (self.root / 'raw.jsonl').read_text().splitlines()]
+        ledger = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
+        responses = [json.loads(line) for line in (self.root / 'llm_responses.jsonl').read_text().splitlines()]
+        kwargs = dict(evidence_bytes=(self.root / 'g0-slot-00.collection.json').read_bytes(),
+            evidence_sha256=result['evidence_sha256'], request_records=captures, response_records=responses,
+            ledger_records=ledger, task_ids=ids, task=task, generation=0, slot=0,
+            expected_manifest_sha256=manifest_sha256(ids), expected_task_sha256=task_sha256(task),
+            public_probes=public, private_probes=private, expected_public_probes_sha256=probes_sha256(public),
+            expected_private_probes_sha256=probes_sha256(private), reference_pool=[], sandbox=FakeE6Sandbox())
+        self.assertEqual(audit_collected_slot(**kwargs)['status'], 'captured_slot_consistent')
+        with self.assertRaises(ValueError):
+            make_capture_draft(**kwargs, parent_adapter='none')
+
+    def test_malformed_completion_is_captured_as_invalid(self):
+        self.server.override_code = '<think>unfinished'
+        result = self.transport('prompt', seed=12000, timeout=1)
+        self.assertEqual(result['failure'], 'invalid_model_output')
+        self.assertIsNone(result['code'])
 
     def test_bad_seed_or_deadline_fails_before_dispatch(self):
         for seed, timeout in [(12030, 1), (11999, 1), (12000, 0), (True, 1)]:
