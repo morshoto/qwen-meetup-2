@@ -137,6 +137,22 @@ class OwnedMonitorTests(unittest.TestCase):
                 os.killpg(process.pid, 9)
                 process.wait()
 
+    def test_exit_records_group_listing_without_claiming_cleanup(self):
+        process = child(0.2)
+        try:
+            result = watch_owned_process(process, baseline=state(), sampler=lambda _: state(),
+                timeout_seconds=3, interval_seconds=0.05, sample_timeout_seconds=0.2,
+                terminate_grace_seconds=0.1)
+            evidence = result['cleanup_observation']
+            self.assertIn(evidence['status'], ('process_group_listing_unverified', 'group_observation_unavailable'))
+            self.assertFalse(evidence['group_cleanup_verified'])
+            self.assertFalse(evidence['escaped_processes_excluded'])
+            self.assertFalse(result['escaped_processes_excluded'])
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+
     def test_failed_baseline_stops_without_sampling(self):
         process = child()
         try:
