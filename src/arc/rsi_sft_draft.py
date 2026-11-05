@@ -20,7 +20,7 @@ def make_sft_draft(task: Task, code: str, candidate: dict, novelty: dict,
         raise ValueError('invalid generation parent adapter')
     if (not isinstance(provenance, dict) or provenance.get('source_type') != 'generator_distillation' or
             provenance.get('model_id') != _MODEL or provenance.get('model_revision') != _REVISION or
-            provenance.get('execution_mode') not in {'fake_fixture', 'live_model'} or
+            provenance.get('execution_mode') not in {'fake_fixture', 'unverified_capture', 'live_model'} or
             not isinstance(provenance.get('request_id'), str) or not provenance['request_id'] or
             not isinstance(provenance.get('raw_response_sha256'), str) or
             not _HASH.fullmatch(provenance['raw_response_sha256'])):
