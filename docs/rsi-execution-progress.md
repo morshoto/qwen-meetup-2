@@ -301,3 +301,13 @@ the draft used a provisional split and synthetic verifier and sandbox inputs,
 and remained `execution_ready: false`. The inventory excludes the base Python
 standard library, operating-system libraries and server process identity. It
 is a local observation, not a complete execution dependency freeze.
+
+### Generation budget accounting
+
+Generation reports now include before-and-after local budget counters and their
+call, reserved-token and sandbox-start deltas, including interrupted stages.
+For a completed captured stage, replay recomputes each token reservation from
+the captured prompt and checks the call and token totals against the recorded
+deltas. Sandbox counts remain local journal values and are not independently
+verified process or container evidence. Concurrent unrelated reservations
+cause reconciliation to fail rather than being attributed to the generation.
