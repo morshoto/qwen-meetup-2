@@ -93,3 +93,10 @@ tokens, 8,000 sandbox starts, and 36,000 seconds; exclude setup canaries from
 this budget. Then test a matched two-arm runner with a frozen task and seed
 schedule, shared budget, incomplete-run reporting, and output freeze. Fixtures
 must not be interpreted as authenticated model results.
+
+### Comparison replay cycle
+
+Test that task records retain bounded sample source and can be replayed against
+separately supplied tasks, sandbox and verifier. Replay all 400 task-arm records
+and check their scores against the frozen outcomes. Reject missing or changed
+records; the local replay does not prove model, runtime, adapter or run origin.
