@@ -67,6 +67,17 @@ class DiagnosticJournalTests(unittest.TestCase):
             results = list(pool.map(lambda _: attempt(), range(2)))
         self.assertCountEqual(results, ['claimed', 'already_claimed'])
 
+    def test_new_proposal_cannot_reset_a_consumed_directory(self):
+        claim_diagnostic(self.root, expected_proposal_sha256=self.digest)
+        path = self.root / 'final.diagnostic.proposal.json'
+        changed = dict(self.proposal, selected_adapter='2' * 64)
+        path.write_text(json.dumps(changed))
+        changed_digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        with self.assertRaises(FileExistsError):
+            claim_diagnostic(self.root, expected_proposal_sha256=changed_digest)
+        with self.assertRaises(ValueError):
+            observe_diagnostic(self.root, expected_proposal_sha256=changed_digest)
+
 
 if __name__ == '__main__':
     unittest.main()
