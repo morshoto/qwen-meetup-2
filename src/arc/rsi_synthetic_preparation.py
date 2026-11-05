@@ -21,7 +21,21 @@ def prepare_replayed_synthetic_training(*, expected_stage_sha256, seed, **inputs
         raw, _ = _read(directory, f"g{inputs['generation']}.stage.drafts.json")
     result = prepare_synthetic_training(root=inputs['root'], stage_bytes=raw,
         expected_stage_sha256=expected_stage_sha256, tasks=inputs['tasks'], seed=seed)
+    if result['status'] == 'insufficient_mapped_records':
+        audit_generation_drafts(expected_sha256=expected_stage_sha256, **inputs)
+        result['evidence_type'] = 'caller_supplied_capture_and_sandbox'
+        return result
+    with _directory(inputs['root']) as directory:
+        preparation, _ = _read(directory, 'synthetic.training.preparation.json')
     audit_generation_drafts(expected_sha256=expected_stage_sha256, **inputs)
+    with _directory(inputs['root']) as directory:
+        after, _ = _read(directory, 'synthetic.training.preparation.json')
+        if after != preparation:
+            raise ValueError('synthetic preparation changed during replay')
+        _create(directory, 'synthetic.training.replay.json', {
+            'status': 'synthetic_preparation_replay_consistent', 'training_allowed': False,
+            'stage_sha256': expected_stage_sha256, 'preparation_sha256': hashlib.sha256(preparation).hexdigest(),
+            'evidence_type': 'caller_supplied_capture_and_sandbox'})
     result['evidence_type'] = 'caller_supplied_capture_and_sandbox'
     return result
 
