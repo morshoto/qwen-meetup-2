@@ -588,3 +588,12 @@ the earlier versioned files intact. Test that draft registration verifies the
 complete v3-to-v2-to-v1 hash chain and rejects changed documents or mismatched
 targets. It must keep the split provisional, require independent review of the
 bounded inventory, and remain non-authorizing until all execution gates pass.
+
+### Bounded exposure inventory proposal
+
+Test a local proposal that recomputes the retained history, legacy registry,
+extra metadata and candidate journals, unions their source-task identifiers,
+and derives the development split. Bind dataset, reviewed code and inventories;
+reject missing inputs, invalid records, changing files and insufficient eligible
+tasks. This local proposal is not independent review, a frozen execution
+registration, or proof of absent historical or pretraining exposure.
