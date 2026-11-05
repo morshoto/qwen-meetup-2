@@ -177,3 +177,10 @@ Test that a captured truncated or malformed model completion consumes one
 sample and counts as an invalid attempt, while malformed transport, budget and
 identity failures make the comparison incomplete. Bind invalid outcomes to
 captured response bytes during replay rather than treating them as valid code.
+
+### Invalid collection response cycle
+
+Test that truncated or malformed collection completions consume a single slot,
+remain ineligible, and cannot become repair input or a draft. Replay the captured
+bytes to verify the invalid outcome; infrastructure failures remain uncertain
+and stop collection.
