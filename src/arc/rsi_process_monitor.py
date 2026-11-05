@@ -14,7 +14,7 @@ import subprocess
 import threading
 import time
 
-from src.arc.rsi_training_resources import training_resource_decision
+from src.arc.rsi_training_resources import training_resource_decision, valid_resource_limits
 
 _FIELDS = ('monotonic_seconds', 'disk_free_bytes', 'memory_free_percent',
            'swap_used_mib', 'process_tree_rss_bytes')
@@ -89,7 +89,7 @@ def _timed_sample(sampler, pid: int, timeout: float):
 def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
                         timeout_seconds: float, interval_seconds: float = 1.0,
                         sample_timeout_seconds: float = 1.0,
-                        terminate_grace_seconds: float = 1.0, health_sampler=None) -> dict:
+                        terminate_grace_seconds: float = 1.0, health_sampler=None, resource_limits=None) -> dict:
     """Monitor a child that is its own session leader, stopping its process group.
 
     The function requires POSIX waitid/WNOWAIT to retain the child's identity
@@ -101,6 +101,10 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
             (health_sampler is not None and not callable(health_sampler)) or
             any(type(x) not in (int, float) or not math.isfinite(x) or x <= 0 for x in numeric) or
             interval_seconds > 5 or sample_timeout_seconds > 5 or terminate_grace_seconds > 5 or
+            (resource_limits is not None and (not valid_resource_limits(resource_limits) or
+                timeout_seconds > resource_limits['timeout_seconds'] or
+                interval_seconds > resource_limits['sample_interval_seconds'] or
+                sample_timeout_seconds > resource_limits['sample_interval_seconds'])) or
             not all(hasattr(os, name) for name in ('WEXITED', 'WNOHANG', 'WNOWAIT', 'P_PID', 'getsid'))):
         raise ValueError('invalid owned process monitor configuration')
     try:
@@ -113,7 +117,7 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
     samples = []
     stop_reason = None
     try:
-        baseline_reason = training_resource_decision(baseline, [baseline])
+        baseline_reason = training_resource_decision(baseline, [baseline], limits=resource_limits)
         if baseline_reason is not None:
             stop_reason = baseline_reason
         elif abs(start - baseline.get('monotonic_seconds', float('inf'))) > 5:
@@ -134,7 +138,7 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
                 stop_reason = 'monitor_evidence_invalid'
                 break
             samples.append(state)
-            stop_reason = training_resource_decision(baseline, samples)
+            stop_reason = training_resource_decision(baseline, samples, limits=resource_limits)
             if stop_reason is not None:
                 break
             if health_sampler is not None:

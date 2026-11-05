@@ -8,6 +8,7 @@ from src.arc.rsi_model_identity import _hash_file, verify_model_manifest
 from src.arc.rsi_runtime_identity import verify_runtime_identity
 from src.arc.rsi_source_inventory import verify_source_inventory
 from src.arc.rsi_transport_audit import _json_object
+from src.arc.rsi_training_resources import valid_resource_limits
 
 _MODELS = {'14b':('mlx-community/Qwen3-14B-4bit','a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'),
            '32b':('mlx-community/Qwen3-32B-4bit','bcaaf7f538adf166c1080a2befdb4f6019f66639')}
@@ -20,12 +21,7 @@ def propose_technical_canary(*, root, model_key, model_dir, adapter_dir, forbidd
             any(not isinstance(x,str) or not re.fullmatch(r'[0-9a-f]{64}',x) for x in identity_hashes.values()) or
             type(seed) is not int or not 0<=seed<2**31):
         raise ValueError('invalid canary identity')
-    constraints={'timeout_seconds':(1,300),'minimum_disk_gib':(20,1000000),
-                 'minimum_free_memory_percent':(20,100),'maximum_swap_growth_mib':(1,512),
-                 'maximum_process_rss_gib':(1,32),'sample_interval_seconds':(1,5)}
-    if (not isinstance(resource_limits,dict) or set(resource_limits)!=set(constraints) or
-            any(type(resource_limits[k]) is not int or not lo<=resource_limits[k]<=hi
-                for k,(lo,hi) in constraints.items())):
+    if not valid_resource_limits(resource_limits):
         raise ValueError('invalid canary resource limits')
     try:
         root=Path(root).expanduser().resolve(); model=Path(model_dir).expanduser().resolve()
