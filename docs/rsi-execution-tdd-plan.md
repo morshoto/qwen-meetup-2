@@ -666,3 +666,10 @@ exploratory token ceiling, fresh distinct ledgers and exact local reservation
 before each request. Stop on changed ledger identity, regressing counters,
 server reservations exceeding local totals or missing reservation. Declarations
 remain self-reported and do not authenticate the server or authorize inference.
+
+### Exploratory registration digest binding
+
+Test that the exploratory runner rejects any registration whose canonical JSON
+hash does not equal the budget's registration identity, before dispatch. The
+hash is local consistency evidence and does not establish independent review,
+authentication, or authorization.
