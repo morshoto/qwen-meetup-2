@@ -9,8 +9,21 @@
     "benchmark": "ARC-AGI-2 semi-private",
     "independent_score_required": true,
     "matched_untrained_base_required": true,
+    "each_generation_compared_to_parent": true,
+    "recursive_transitions_required": 2,
     "attempts_per_test_input": 2,
     "public_eval_used_for_development": false
+  },
+  "proposed_training": {
+    "preflight_max_steps": 1,
+    "max_steps_per_generation": 20,
+    "max_wall_seconds_per_generation": 1800,
+    "batch_size": 1,
+    "lora_rank": 8,
+    "lora_alpha": 16,
+    "learning_rate": 0.0001,
+    "max_sequence_length": 2048,
+    "num_layers": 2
   },
   "budgets": {
     "authorized_live_calls": 0,

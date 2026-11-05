@@ -50,8 +50,12 @@ in percentage points, and a paired bootstrap 95% interval over tasks. Improvemen
 is established only if the candidate's point estimate is positive and the lower
 interval bound exceeds zero. A non-positive or inconclusive result is not success.
 One generation can show improvement; a recursive-improvement claim requires at
-least two successive independently audited generation transitions meeting the
-same criterion. Never select a candidate using the final evaluation results.
+least two successive independently audited generation transitions, each compared
+with its immediate parent under the same criterion. Freeze both comparisons
+before final evaluation; development screening may decide whether generation 2
+exists, but final results cannot influence either model or the harness. Never
+select a candidate using the final evaluation results. If independent scoring is
+available for only one model, report the other comparisons as local evidence.
 
 Use exact output matching with at most two predictions per test input; report the
 organizer's actual score and the task-level metric separately if the applicable
@@ -121,9 +125,14 @@ existing sealed artifacts.
 Design caps for each proposed collection stage are at most 32 calls, 200,000
 reserved tokens, 300 sandbox starts and 3,600 seconds, matching the E8 per-model
 ceiling; exact slots, seeds, prompt and dependency closure must be registered
-before the run. A training preflight and training run each need separate numeric
-step, wall-time, memory and disk caps based on a measured resource assessment;
-no such caps or spending are authorized here. Budget exhaustion, provenance
+before the run. The proposed training configuration follows the existing 8B
+pilot, without assuming 14B will fit: batch size 1, rank 8, alpha 16, learning
+rate 0.0001, maximum sequence length 2048, two adapted layers, and at most 20
+steps and 1,800 seconds per generation. A separately authorized preflight uses
+one step. The preflight and full run each need numeric memory, disk, and
+preflight wall-time caps based on a measured resource assessment before
+registration; these design limits are ceilings, not permission to execute.
+Budget exhaustion, provenance
 mismatch, incomplete audit, inadequate strict data, failed preflight or a failed
 comparison stops the dependent stage. Do not transfer unused budgets or silently
 retry. All future live inference, training, external compute and submission need
