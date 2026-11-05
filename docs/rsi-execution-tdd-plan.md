@@ -40,3 +40,11 @@ all model calls including canaries, reserved tokens, sandbox starts and elapsed
 wall time. Test exhaustion, restart, clock rollback, and fail-closed persistence.
 Implement it as a cooperating local guard; independent authentication and a
 final registered budget remain separate prerequisites for live execution.
+
+### Conditioned slot orchestration cycle
+
+Test a scheduled slot with a supplied transport and sandbox: matching frozen
+input hashes, pre-dispatch call and token reservations, bounded public repairs,
+terminal private failures, novelty screening, and durable completion evidence.
+Test interrupted attempts remain consumed. Treat supplied components and local
+records as unauthenticated, and keep drafts ineligible for training.
