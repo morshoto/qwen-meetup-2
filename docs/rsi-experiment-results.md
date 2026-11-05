@@ -20,3 +20,7 @@ The [protocol](rsi-research-protocol.md) and [v2 benchmark amendment](../researc
 5. If gates permit, compare against the same untrained model under matched conditions and independently score ARC-AGI-2. The 42.4% v2 target is a contextual reference for a different model and setting, not a measured result or matched-compute baseline.
 
 If any gate cannot be satisfied, preserve this stopping point and report the specific missing evidence. The detailed [implementation status](rsi-execution-progress.md) lists additional limitations.
+
+The [local history search](../research/rsi/history-search-20261105.md) compared
+all three worktrees and reviewed earlier session records. It did not identify a
+separate prompt archive or establish a complete exposure history.
