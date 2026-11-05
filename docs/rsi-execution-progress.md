@@ -61,3 +61,14 @@ these adapters for every dispatch. These controls depend on cooperating local
 processes and mutable local files; they do not authenticate a ledger, provide
 hard termination of an already running sandbox, or authorize a live experiment.
 No full collector or independent run audit is claimed by these components.
+
+### Conditioned slot orchestration
+
+`collect_slot` connects the task schedule, local claim and attempt reservations,
+shared budget, public repair rules, metered sandbox, private verification, and
+novelty precheck. It stores owner-only completion evidence and consumes an
+uncertain slot after interruption. Its transport and sandbox are supplied by
+the caller, the input digests are caller-supplied, and its local output is not
+an independently authenticated run record or an eligible SFT record. A concrete
+transport binding, execution registration, independent audit, training and
+matched evaluation remain unfinished. Tests use scripted fake components only.
