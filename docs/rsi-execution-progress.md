@@ -681,3 +681,18 @@ none overlap the provisional development split, and all 287 were already in
 the extended metadata review. A reservation does not establish model dispatch.
 Missing journals, other record formats and pretraining remain outside this audit,
 so the split is still provisional.
+
+### Interrupted requests in retained journals
+
+Five retained `budget.json` files contain non-null pending request digests. The
+current P3-A runner records the candidate scope before dispatch and hashes the
+scope, request kind, candidate number and prompt into the pending digest. A
+read-only reconstruction using each journal's candidate keys and the current
+direct and analysis prompt formats matched one pending digest to an analysis
+request for a non-development task. Four did not match these formats; code
+requests include a generated hypothesis and may have additional repair history,
+and historical code may differ. The current runner's ordering is not proof of
+the implementation used by every old run. The candidate review found no
+development IDs in any of these journals, but it cannot identify the four
+pending requests or establish whether the server received any of them. Do not
+resume or replay them automatically.
