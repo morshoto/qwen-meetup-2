@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Preflight launch bundle cycle
+
+Test a non-executing launch bundle that freezes the exact MLX YAML and the
+existing thinking-off wrapper command, interpreter and source hashes, offline
+environment and working directory. Require a digest-checked preflight proposal
+and local identity verification, reject altered config or existing output, and
+write the bundle exclusively. It is review material only; no subprocess or
+training authorization is implied.
+
 ### Local canary tokenizer binding cycle
 
 Test loading the canary through the pinned local MLX-LM tokenizer and dataset
