@@ -6,6 +6,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from src.arc.rsi_slot_lifecycle import claim_slot, complete_slot, observe_slot
 
@@ -79,6 +80,15 @@ class SlotLifecycleTests(unittest.TestCase):
             observe_slot(self.root, registration_sha256=REG, generation=0, slot=0)
         with self.assertRaises(ValueError):
             claim_slot(self.root, registration_sha256=REG, generation=0, slot=0)
+
+    def test_failed_marker_sync_still_consumes_slot(self):
+        with patch('src.arc.rsi_slot_lifecycle.os.fsync', side_effect=OSError('sync failed')):
+            with self.assertRaisesRegex(OSError, 'sync failed'):
+                claim_slot(self.root, registration_sha256=REG, generation=0, slot=0)
+        with self.assertRaises(FileExistsError):
+            claim_slot(self.root, registration_sha256=REG, generation=0, slot=0)
+        self.assertEqual(observe_slot(self.root, registration_sha256=REG, generation=0, slot=0)['status'],
+                         'started_outcome_uncertain')
 
 
 if __name__ == '__main__':
