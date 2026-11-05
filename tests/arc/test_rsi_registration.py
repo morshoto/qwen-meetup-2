@@ -31,6 +31,7 @@ class DraftRegistrationTests(unittest.TestCase):
             'reference_pool': [],
             'model_manifest': {'model_id': 'mlx-community/Qwen3-14B-4bit',
                 'revision': 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4',
+                'quantization': {'bits': 4, 'group_size': 64},
                 'chat_template_sha256': 'a' * 64, 'files_sha256': {'weights': 'b' * 64}},
             'runtime_manifest': {'fixture': True}, 'sandbox_identity': {'digest': 'sha256:' + 'c' * 64},
             'design_registration': {'kind': 'design_only', 'execution_ready': False,
@@ -118,6 +119,14 @@ class DraftRegistrationTests(unittest.TestCase):
         v1 = self.root / 'research/rsi/design-registration-v1.json'
         v1.write_text('{}')
         with self.assertRaisesRegex(ValueError, 'design'):
+            prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
+
+    def test_rejects_unregistered_quantization(self):
+        model = self.root / self.paths['model_manifest']
+        value = json.loads(model.read_text())
+        value['quantization']['group_size'] = 128
+        model.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'model'):
             prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
 
 
