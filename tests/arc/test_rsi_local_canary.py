@@ -43,6 +43,23 @@ class LocalCanaryTests(unittest.TestCase):
         self.assertFalse(result['training_allowed'])
 
     @patch('src.arc.rsi_local_canary._load_canary_components')
+    def test_32b_canary_checks_its_own_revision(self, load):
+        revision = 'bcaaf7f538adf166c1080a2befdb4f6019f66639'
+        model = self.root / revision
+        model.mkdir()
+        (model / 'tokenizer.json').write_bytes(b'tokenizer')
+        (model / 'tokenizer_config.json').write_bytes(b'config')
+        load.return_value = self.components()
+        args = dict(self.args, model_dir=model, model_key='32b')
+        result = audit_local_canary(**args)
+        self.assertEqual(result['model_revision'], revision)
+        self.assertFalse(result['training_allowed'])
+        with self.assertRaises(ValueError):
+            audit_local_canary(**dict(args, model_key='14b'))
+        with self.assertRaises(ValueError):
+            audit_local_canary(**dict(args, model_key='unknown'))
+
+    @patch('src.arc.rsi_local_canary._load_canary_components')
     def test_wrong_file_runtime_and_mid_audit_drift_are_rejected(self, load):
         (self.model / 'tokenizer.json').write_bytes(b'changed')
         with self.assertRaises(ValueError):
