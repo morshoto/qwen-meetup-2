@@ -9,6 +9,10 @@ from src.arc.prompting import FINAL_ANSWER_SYSTEM_PROMPT
 from src.arc.rsi_slot_audit import task_sha256
 
 
+class RepeatedSyntheticInput(ValueError):
+    """A held-out query or demonstration input is repeated."""
+
+
 def map_synthetic_row(*, task, draft, generated):
     if not isinstance(task, Task) or not task.train or not task.test_inputs:
         raise ValueError('invalid source task')
@@ -47,7 +51,7 @@ def map_synthetic_row(*, task, draft, generated):
         inputs = [item[0] for item in task.train] + [item[0] for item in pairs]
         fingerprints = [json.dumps(grid, separators=(',', ':')) for grid in inputs]
         if len(set(fingerprints)) != len(fingerprints):
-            raise ValueError('repeated inputs could expose held-out query')
+            raise RepeatedSyntheticInput('repeated inputs could expose held-out query')
         synthetic_task = Task(task.id, tuple(task.train[1:]) + tuple(pairs), (task.train[0][0],))
     except (KeyError, TypeError, IndexError, AttributeError, SyntaxError, RecursionError) as exc:
         raise ValueError('invalid synthetic row inputs') from exc
