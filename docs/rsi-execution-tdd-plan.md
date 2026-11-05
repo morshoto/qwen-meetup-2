@@ -282,6 +282,13 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Canary MLX loader cycle
+
+Test loading the verified canary JSONL with an injected MLX dataset loader,
+checking every row and token mask and requiring empty validation and test
+splits. Recheck the artifact after loading and exercise the installed loader
+with the local tokenizer without loading weights or invoking training.
+
 ### Canary dataset readback cycle
 
 Test re-deriving the fixed canary rows and mask from the supplied task
