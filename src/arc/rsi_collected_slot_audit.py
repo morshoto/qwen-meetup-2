@@ -82,13 +82,13 @@ def audit_collected_slot(*, evidence_bytes, evidence_sha256, request_records, re
         expected_manifest_sha256=expected_manifest_sha256, expected_task_sha256=expected_task_sha256,
         public_probes=public_probes, private_probes=private_probes,
         expected_public_probes_sha256=expected_public_probes_sha256,
-        expected_private_probes_sha256=expected_private_probes_sha256, sandbox=sandbox)
+        expected_private_probes_sha256=expected_private_probes_sha256, sandbox=sandbox, reference_pool=reference_pool)
     statuses = checked['attempt_statuses']
     for attempt, status in zip(attempts[:-1], statuses[:-1]):
         if attempt.get('status') != status:
             raise ValueError('attempt status differs from replay')
     final_status = statuses[-1]
-    if final_status == 'verified_candidate':
+    if final_status in {'novel_unverified', 'duplicate_source', 'duplicate_ast', 'sampled_behavior_match'}:
         code = attempts[-1]['source']
         candidate = inspect_candidate(task, code, public_probes=public_probes,
                                       private_probes=private_probes, sandbox=sandbox)
@@ -98,7 +98,8 @@ def audit_collected_slot(*, evidence_bytes, evidence_sha256, request_records, re
                                  candidate['private_probe_set_sha256'], reference_pool)
         if evidence.get('novelty') != novelty:
             raise ValueError('novelty evidence differs from replay')
-        final_status = novelty['status']
+        if final_status != novelty['status']:
+            raise ValueError('novelty status changed during replay')
     elif evidence.get('novelty') is not None:
         raise ValueError('terminal failure contains novelty evidence')
     if attempts[-1].get('status') != final_status or evidence.get('status') != final_status:

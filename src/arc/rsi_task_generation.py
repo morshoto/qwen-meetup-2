@@ -7,7 +7,7 @@ from src.arc.data import Task
 from src.arc.e5_selfplay import solve_prompt
 
 _REPAIRABLE = {'syntax_error', 'parse_or_contract_error', 'runtime_exception',
-               'shape_or_color_violation', 'visible_demonstration_mismatch'}
+               'shape_or_color_violation', 'visible_demonstration_mismatch', 'duplicate_source', 'duplicate_ast'}
 
 
 def generation_slots(task_ids: list[str], generation: int) -> list[dict]:

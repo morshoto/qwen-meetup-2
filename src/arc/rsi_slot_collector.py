@@ -41,6 +41,7 @@ def collect_slot(*, root, registration_sha256, generation, slot, task_ids, task,
     attempts, seen, request_ids = [], set(), set()
     novelty = None
     for attempt, seed in enumerate(selected['attempt_seeds']):
+        novelty = None
         reserve_call(root, registration_sha256=registration_sha256, generation=generation, slot=slot,
                      attempt=attempt, claim_token=claim['claim_token'])
         messages = [{'role': 'system', 'content': system_prompt_for_kind('e5_generator')},

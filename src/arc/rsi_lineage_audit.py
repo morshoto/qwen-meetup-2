@@ -9,6 +9,7 @@ from src.arc.rsi_candidate import inspect_candidate
 from src.arc.data import validate_grid
 from src.arc.e6_curriculum import canonical
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
+from src.arc.rsi_novelty import screen_novelty
 from src.arc.rsi_task_generation import _REPAIRABLE, generation_slots, task_prompt, task_repair_prompt
 from src.arc.rsi_transport_audit import audit_transport
 
@@ -24,7 +25,7 @@ def inspect_lineage(task_ids: list[str], task, *, generation: int, slot: int, at
                     expected_manifest_sha256: str, expected_task_sha256: str,
                     public_probes: list, private_probes: list,
                     expected_public_probes_sha256: str, expected_private_probes_sha256: str,
-                    sandbox: object) -> dict:
+                    sandbox: object, reference_pool: list[dict] | None = None) -> dict:
     if not isinstance(attempts, list) or not 1 <= len(attempts) <= 3:
         raise ValueError('lineage must contain one to three attempts')
     slots = generation_slots(task_ids, generation)
@@ -65,6 +66,9 @@ def inspect_lineage(task_ids: list[str], task, *, generation: int, slot: int, at
                 inspected = inspect_candidate(task, code, public_probes=public_probes,
                                               private_probes=private_probes, sandbox=sandbox)
                 status = inspected['status']
+                if status == 'verified_candidate' and reference_pool is not None:
+                    status = screen_novelty(code, inspected['private_behavior_sha256'],
+                                            inspected['private_probe_set_sha256'], reference_pool)['status']
         statuses.append(status)
         if index < len(attempts) - 1:
             if status not in _REPAIRABLE:
