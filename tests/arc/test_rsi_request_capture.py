@@ -89,6 +89,12 @@ class CaptureTests(unittest.TestCase):
                 CapturingBackend(**common, request_capture_path=Path(tmp) / 'raw.jsonl')
             with self.assertRaises(ValueError):
                 CapturingBackend(**common, guarded=True, request_capture_path=log)
+            with self.assertRaises(ValueError):
+                CapturingBackend(**common, guarded=True, allow_remote=True,
+                                 request_capture_path=Path(tmp) / 'raw.jsonl')
+            with self.assertRaises(ValueError):
+                CapturingBackend(**common, guarded=True, thinking='on',
+                                 request_capture_path=Path(tmp) / 'raw.jsonl')
 
 
 if __name__ == '__main__':
