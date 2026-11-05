@@ -16,6 +16,7 @@ from src.arc.rsi_comparison_transport import CapturedComparisonTransport
 from src.arc.rsi_exploratory_transport import CapturedExploratoryTransport
 from src.arc.rsi_exploratory_budget import ExploratoryBudget
 from src.arc.rsi_exploratory_runner import run_exploratory
+from src.arc.rsi_exploratory_audit import audit_exploratory_captures
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
 from src.arc.rsi_transport_audit import audit_transport
 from src.arc.rsi_transition_screen import screen_captured_rsi_chain
@@ -97,6 +98,16 @@ class ComparisonTransportTests(unittest.TestCase):
         self.assertEqual(result['summary']['arms']['base']['total_tokens'],1500)
         self.assertEqual(len(self.server.requests),200)
         self.assertFalse(result['claim_eligible'])
+        audit = audit_exploratory_captures(self.root,expected_sha256=result['sha256'],tasks=tasks,
+                                           sandbox=FakeE6Sandbox(),verifier=verifier)
+        self.assertEqual(audit['checked_requests'],200)
+        self.assertFalse(audit['independently_verified'])
+        row_path=self.root/'exploratory-00-base.json'
+        original=row_path.read_text(); changed=json.loads(original); changed['row']['prompt_tokens']+=1
+        row_path.write_text(json.dumps(changed))
+        with self.assertRaises(ValueError):
+            audit_exploratory_captures(self.root,expected_sha256=result['sha256'],tasks=tasks,
+                                       sandbox=FakeE6Sandbox(),verifier=verifier)
 
     def test_exploratory_truncated_response_preserves_failure(self):
         wrapped = CapturedExploratoryTransport(self.transport)
