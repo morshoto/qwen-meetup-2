@@ -5,6 +5,7 @@ and must not be treated as an authorization to run a live experiment.
 """
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from src.arc.prompting import system_prompt_for_kind
@@ -37,7 +38,7 @@ def collect_slot(*, root, registration_sha256, generation, slot, task_ids, task,
     claim = claim_slot(root, registration_sha256=registration_sha256, generation=generation, slot=slot)
     metered_sandbox = BudgetedSandbox(sandbox, budget)
     prompt = task_prompt(task)
-    attempts, seen = [], set()
+    attempts, seen, request_ids = [], set(), set()
     novelty = None
     for attempt, seed in enumerate(selected['attempt_seeds']):
         reserve_call(root, registration_sha256=registration_sha256, generation=generation, slot=slot,
@@ -46,7 +47,18 @@ def collect_slot(*, root, registration_sha256, generation, slot, task_ids, task,
                     {'role': 'user', 'content': prompt}]
         tokens = 512 + len(json.dumps(messages, ensure_ascii=False).encode('utf-8')) + 1024
         budget.reserve_model(tokens, kind='generation')
-        code = transport(prompt, seed=seed, timeout=budget.remaining())
+        response = transport(prompt, seed=seed, timeout=budget.remaining())
+        request_id = None
+        if isinstance(response, dict):
+            if set(response) != {'code', 'request_id'}:
+                raise ValueError('invalid transport response metadata')
+            code, request_id = response['code'], response['request_id']
+            if (not isinstance(request_id, str) or not re.fullmatch(r'[0-9a-f]{32}', request_id)
+                    or request_id in request_ids):
+                raise ValueError('invalid or duplicate transport request identifier')
+            request_ids.add(request_id)
+        else:
+            code = response
         if not isinstance(code, str) or len(code.encode('utf-8')) > 65536:
             raise ValueError('transport response is not bounded source text')
         source_hash = hashlib.sha256(code.strip().encode()).hexdigest()
@@ -62,7 +74,7 @@ def collect_slot(*, root, registration_sha256, generation, slot, task_ids, task,
                                          candidate['private_probe_set_sha256'], reference_pool)
                 status = novelty['status']
         attempts.append({'seed': seed, 'prompt_sha256': hashlib.sha256(prompt.encode()).hexdigest(),
-                         'source': code, 'status': status})
+                         'source': code, 'status': status, 'request_id': request_id})
         if status not in _REPAIRABLE or attempt == 2:
             break
         prompt = task_repair_prompt(task, code, status)

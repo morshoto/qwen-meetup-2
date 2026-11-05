@@ -24,12 +24,16 @@ class CapturedSlotTransport:
         self.max_request_seconds = max_request_seconds
         self._backend(max_request_seconds)
 
-    def _backend(self, timeout):
-        return CapturingBackend(**self.options, timeout=timeout)
+    def _backend(self, timeout, event_callback=None):
+        return CapturingBackend(**self.options, timeout=timeout, event_callback=event_callback)
 
     def __call__(self, prompt, *, seed, timeout):
         if (type(seed) is not int or seed - 12000 not in (*range(30), *range(100, 130)) or
                 type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0):
             raise ValueError('invalid scheduled seed or remaining time')
-        backend = self._backend(min(timeout, self.max_request_seconds))
-        return backend.generate(prompt, kind='e5_generator', candidate=seed - 12000)
+        events = []
+        backend = self._backend(min(timeout, self.max_request_seconds), events.append)
+        code = backend.generate(prompt, kind='e5_generator', candidate=seed - 12000)
+        if len(events) != 1 or not isinstance(events[0].get('request_id'), str):
+            raise ValueError('request event is unavailable')
+        return {'code': code, 'request_id': events[0]['request_id']}
