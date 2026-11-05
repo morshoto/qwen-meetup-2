@@ -117,3 +117,12 @@ leaving nonempty completion tokens within the sequence limit. Reject altered
 batch hashes, task prompts, source bindings and token offsets. The supplied
 tokenizer and renderer remain unauthenticated until separately checked against
 the registered runtime and model.
+
+### Local tokenizer runtime audit cycle
+
+Test a read-only tokenizer audit that binds the proposed snapshot path,
+tokenizer files and prepared batch to explicit hashes, checks the MLX-LM
+version, and runs the format precheck with the actual ChatDataset processor.
+Keep the audit result separate from model inference, training authorization and
+independent batch provenance. Exercise the local tokenizer with synthetic
+fixture records if the pinned runtime is available.
