@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Separate synthetic preflight dataset cycle
+
+Test a fixed, synthetic five-task canary dataset with a code completion and
+the same thinking-off chat mask as the proposed trainer. Reject overlaps with
+caller-supplied visible task grids and invalid masks, then write an owner-only,
+non-overwritable canary JSONL artifact with content and format hashes. The
+artifact is not model-generated research data, a registered canary, or
+authorization to run preflight training.
+
 ### Once-only diagnostic journal cycle
 
 Test an exclusive local diagnostic attempt marker bound to a digest-checked
