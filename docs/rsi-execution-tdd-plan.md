@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Synthetic generation replay cycle
+
+Test an independent readback of the saved generation draft artifact against
+the captured slot journals and supplied sandbox. Recompute generated output
+pairs and mapped rows in slot order, rejecting changed labels even when their
+artifact hash and mapped prompt are recomputed. Keep replay explicitly local
+and unverified; it does not authenticate the model or sandbox.
+
 ### Synthetic training preparation cycle
 
 Test deriving an owner-only, non-authorizing training preparation directly
