@@ -161,15 +161,23 @@ class ComparisonTransportTests(unittest.TestCase):
         self.assertFalse(summary['improvement_claim_supported'])
         proposal_root = self.root / 'final-proposal'
         proposal_root.mkdir(mode=0o700)
+        generation_tasks = {f'generation-{i:03}': Task(f'generation-{i:03}',
+            (([[i % 10, (i // 10) % 10, i // 100]], [[0]]),), ([[9, 9, 9]],)) for i in range(800)}
+        diagnostic = {'evaluation-fixture': Task('evaluation-fixture', (([[8, 8]], [[7, 7]]),), ([[6, 6]],))}
         proposal_args = dict(root=proposal_root, first=refs[0], second=refs[1], tasks=tasks,
-            sandbox=FakeE6Sandbox(), verifier=verifier, diagnostic_task_hashes={'evaluation-fixture': 'd' * 64},
-            generation_task_ids=[f'generation-{i:03}' for i in range(800)],
+            sandbox=FakeE6Sandbox(), verifier=verifier, diagnostic_tasks=diagnostic,
+            generation_tasks=generation_tasks,
             harness_sha256='e' * 64, settings_sha256='f' * 64,
             budget={'model_calls': 100, 'reserved_tokens': 1000000, 'sandbox_runs': 1000, 'wall_seconds': 3600})
         with self.assertRaises(ValueError):
-            prepare_final_diagnostic_proposal(**{**proposal_args, 'diagnostic_task_hashes': {ids[0]: 'd' * 64}})
+            prepare_final_diagnostic_proposal(**{**proposal_args, 'diagnostic_tasks': {ids[0]: tasks[ids[0]]}})
         with self.assertRaises(ValueError):
-            prepare_final_diagnostic_proposal(**{**proposal_args, 'diagnostic_task_hashes': {'generation-000': 'd' * 64}})
+            prepare_final_diagnostic_proposal(**{**proposal_args, 'diagnostic_tasks': {
+                'renamed-generation': Task('renamed-generation', generation_tasks['generation-000'].train,
+                                           generation_tasks['generation-000'].test_inputs)}})
+        with self.assertRaises(ValueError):
+            prepare_final_diagnostic_proposal(**{**proposal_args, 'diagnostic_tasks': {
+                'renamed-development': Task('renamed-development', tasks[ids[0]].train, tasks[ids[0]].test_inputs)}})
         with self.assertRaises(ValueError):
             prepare_final_diagnostic_proposal(**{**proposal_args, 'budget': {**proposal_args['budget'], 'model_calls': 801}})
         self.assertEqual(list(proposal_root.iterdir()), [])
