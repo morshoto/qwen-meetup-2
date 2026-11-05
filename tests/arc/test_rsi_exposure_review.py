@@ -37,7 +37,7 @@ class ExtraExposureTests(unittest.TestCase):
         calls = [0]
         def changing(p):
             result = original(p)
-            if p == path:
+            if p.resolve() == path.resolve():
                 calls[0] += 1
                 if calls[0] == 1:
                     path.write_text('{"task_id":"b"}\n')
