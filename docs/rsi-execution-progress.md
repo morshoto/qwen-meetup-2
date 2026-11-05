@@ -39,6 +39,12 @@ supervisor cannot prove that escaped descendants have stopped. The caller must
 drain or redirect stderr, and the actual MLX trainer is not connected. Loss
 observations and clean fixture exit do not establish a successful preflight.
 
+A local preflight observation review now checks the monitor's elapsed time,
+resource samples, exit, stream completion and one finite step. Fixtures cover
+missing loss, bad exit, resource limits and incomplete streams. A consistent
+observation remains unverified and does not clear the independent adapter
+reload, containment, provenance, registration or training authorization gates.
+
 ## Current gates
 
 - The slot lifecycle consumes a claimed slot before fixture execution. A
