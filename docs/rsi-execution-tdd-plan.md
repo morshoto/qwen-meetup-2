@@ -702,3 +702,11 @@ Test a read-only aggregation of saved slot and attempt categories, completion,
 valid/strict-new counts and overlapping duplicate flags. Reject malformed input;
 never copy private probe outputs or infer semantic equivalence. Keep historical
 runs and seals unchanged, and do not admit old records to the new training gate.
+
+### Historical allocation review
+
+Test a read-only check that binds the proposed 750/50/200 allocation to the
+bounded-history and selection digests, verifies all 317 known exposures remain
+in generation, and checks exact prompt-content uniqueness across all tasks.
+Record hashes and uncertainty without freezing the split or claiming an
+independent review. Reject modified, overlapping or hidden-label input.
