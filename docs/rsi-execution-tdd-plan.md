@@ -282,6 +282,16 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Proposed synthetic task mapping cycle
+
+Test a deterministic, non-authorizing mapping from each retained generated
+example set to one code-completion chat row. Hold out the first original
+demonstration input as the query, use remaining original demonstrations and
+generated query pairs as demonstrations, and reject repeated input grids to
+avoid exposing the held-out query as a demonstration. Bind the candidate,
+task, request and slot evidence; reject changed inputs or malformed examples.
+This is a proposed mapping, not a frozen registration or a training gate.
+
 ### Generated example retention cycle
 
 Test a quarantined synthetic example record derived from a verified candidate:
