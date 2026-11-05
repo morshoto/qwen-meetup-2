@@ -215,3 +215,15 @@ adapter files with the existing driver's adapter digest; only fixture adapter
 files were tested. This observation is not an execution registration, an
 independent witness, proof of artifact authenticity, or proof of what any
 server loaded. It did not run inference or training.
+
+### Draft registration and local model check
+
+A read-only fixture check on 2026-11-05 compared the local 14B snapshot with the
+model file observation through `verify_registered_model`. It used the local
+training challenges and solutions, the provisional split, synthetic verifier
+probes, an empty reference pool, and synthetic runtime and sandbox manifests.
+The model-manifest input hash was
+`f77bd29a69a7d047ce17a3940178f40350af50c24efed4763bcc6ce8b4d319cf`;
+the check returned `draft_model_files_consistent` and `execution_ready: false`.
+This exercise does not validate the synthetic inputs, establish split
+independence, authenticate the runtime or server, or authorize a model call.
