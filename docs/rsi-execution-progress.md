@@ -311,3 +311,13 @@ the captured prompt and checks the call and token totals against the recorded
 deltas. Sandbox counts remain local journal values and are not independently
 verified process or container evidence. Concurrent unrelated reservations
 cause reconciliation to fail rather than being attributed to the generation.
+
+### Comparison budget accounting
+
+Completed comparison records now bind before-and-after shared budget counters;
+the descriptive summary includes their deltas. Capture replay recomputes all
+800 token reservations from the request messages and reconciles them with the
+frozen call and token totals. Incomplete runs retain their local budget deltas.
+Fixture replay rejected altered reservation data. Sandbox counts remain local
+journal values, and neither the budget nor captured records independently
+prove process identity or actual compute cost.
