@@ -203,3 +203,15 @@ rejects changed or regressing ledger declarations. Local fixture servers tested
 the actual parser and rejection of a changed adapter claim. These declarations
 are self-reported and are not evidence of the server process, loaded weights or
 adapter; the wrapper does not grant live execution authorization.
+
+### Local 14B model file observation
+
+On 2026-11-05, a read-only hash of the local 14B snapshot produced the
+[model file observation](../research/rsi/local-model-observation.json). It
+contains 12 file hashes, including both indexed weight shards, the tokenizer,
+configuration and chat template. The index and proposed 4-bit, group-64
+configuration were consistent at observation time. The checker also compares
+adapter files with the existing driver's adapter digest; only fixture adapter
+files were tested. This observation is not an execution registration, an
+independent witness, proof of artifact authenticity, or proof of what any
+server loaded. It did not run inference or training.
