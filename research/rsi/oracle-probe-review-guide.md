@@ -65,9 +65,10 @@ model inventories, and the image and container execution limits. Check the
 including its runner readback and limitations. Exact nonoverlap covers the
 available challenge inputs and visible training outputs; it does not establish
 semantic independence, complete history, or separation from unseen data.
-Private probes and their outputs must not be sent to Qwen. The duplicate
-reference pool still needs construction and independent provenance review;
-the historical candidate's training-gate policy remains a separate decision.
+Private probes and their outputs must not be sent to Qwen. Local duplicate
+reference pools have been prepared as described below; they still need
+independent provenance review. The historical candidate's training-gate
+policy remains a separate decision.
 Record the reviewer, input and code hashes, findings, missing artifacts, and
 remaining uncertainty before freezing a new execution registration.
 
