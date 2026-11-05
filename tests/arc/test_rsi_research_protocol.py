@@ -33,6 +33,20 @@ class ResearchProtocolTests(unittest.TestCase):
         self.assertEqual(budgets['authorized_external_spend_usd'], 0)
         self.assertTrue(budgets['separate_run_caps_required'])
 
+    def test_proposed_training_budget_is_bounded_but_not_authorized(self):
+        training = self.protocol['proposed_training']
+        self.assertEqual(training['preflight_max_steps'], 1)
+        self.assertEqual(training['max_steps_per_generation'], 20)
+        self.assertEqual(training['max_wall_seconds_per_generation'], 1800)
+        self.assertEqual(training['batch_size'], 1)
+        self.assertEqual(training['lora_rank'], 8)
+        self.assertFalse(self.protocol['execution_authorized'])
+
+    def test_recursive_improvement_compares_each_generation_to_its_parent(self):
+        evaluation = self.protocol['evaluation']
+        self.assertTrue(evaluation['each_generation_compared_to_parent'])
+        self.assertEqual(evaluation['recursive_transitions_required'], 2)
+
 
 if __name__ == '__main__':
     unittest.main()
