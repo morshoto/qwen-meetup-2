@@ -658,3 +658,11 @@ transport, preserving request IDs and bounded server-reported usage. Partial
 usage remains unknown, malformed or over-budget usage stops the run, and
 captured records remain subject to a separate replay and identity audit. Use a
 local fixture server only; do not authorize live dispatch.
+
+### Exploratory server contract guard
+
+Test independent base and adapter server declarations against the proposed
+exploratory token ceiling, fresh distinct ledgers and exact local reservation
+before each request. Stop on changed ledger identity, regressing counters,
+server reservations exceeding local totals or missing reservation. Declarations
+remain self-reported and do not authenticate the server or authorize inference.
