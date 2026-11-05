@@ -1,8 +1,10 @@
 """Build current reconstructions of historical prompt digests."""
 import hashlib
+import json
 
 from src.arc.agent import _code_analysis_prompt, _prompt_json
 from src.arc.data import Task, validate_grid
+from src.arc.prompting import system_prompt_for_kind
 
 
 def historical_prompt_hashes(tasks):
@@ -26,4 +28,9 @@ def historical_prompt_hashes(tasks):
                    'analysis': _code_analysis_prompt(task)}
         for kind, prompt in prompts.items():
             result[f'{task.id}/{kind}'] = hashlib.sha256(prompt.encode()).hexdigest()
+            for mode in (False, True):
+                messages = [{'role': 'system', 'content': system_prompt_for_kind(kind, analysis_mode=mode)},
+                            {'role': 'user', 'content': prompt}]
+                result[f'{task.id}/{kind}/wire_{mode}'] = hashlib.sha256(
+                    json.dumps(messages, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
     return result
