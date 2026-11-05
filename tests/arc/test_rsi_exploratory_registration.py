@@ -67,3 +67,12 @@ class ExploratoryRegistrationTests(unittest.TestCase):
     def test_rejects_changed_scheduled_slots(self):
         self.base['slots']=generation_slots(self.generation,1)
         with self.assertRaises(ValueError):self.prepare()
+
+    def test_accepts_v4_with_the_explicit_separate_task_policy(self):
+        self.inputs['design_registration']={'supersedes':'research/rsi/design-registration-v3.json',
+            'canary_policy':'independent_synthetic_only_no_promotion',
+            'evaluation_policy':'separate_exploratory_50_then_development_200',
+            'oracle_policy':'new_only_pending_historical_decision'}
+        self.assertFalse(self.prepare()['execution_ready'])
+        self.inputs['design_registration']['oracle_policy']='include_historical'
+        with self.assertRaises(ValueError): self.prepare()
