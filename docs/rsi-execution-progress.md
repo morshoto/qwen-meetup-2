@@ -289,3 +289,15 @@ runtime-manifest hash
 and `execution_ready: false`. This samples local runtime identity; it does not
 hash every transitive dependency, attest a server process, establish dataset
 independence, or authorize inference or training.
+
+### Local virtual-environment inventory
+
+A read-only inventory on 2026-11-05 hashed 6,249 files and 959 directories in
+the local MLX virtual environment, including unrecorded files and bytecode.
+The [observation](../research/rsi/local-environment-observation.json) binds the
+inventory to the interpreter hash. A fixture draft combining it with the runtime
+identity returned `draft_runtime_consistent` and `draft_environment_consistent`;
+the draft used a provisional split and synthetic verifier and sandbox inputs,
+and remained `execution_ready: false`. The inventory excludes the base Python
+standard library, operating-system libraries and server process identity. It
+is a local observation, not a complete execution dependency freeze.
