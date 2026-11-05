@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Preflight bundle input replay cycle
+
+Test recomputing the entire preflight proposal from the saved synthetic
+preparation, replay markers, generation and canary datasets, loader and fixed
+MLX settings before and after constructing a launch bundle. Reject changed
+datasets, markers and recomputed-digest changes to hyperparameters. This local
+replay does not establish provenance, containment or permission to train.
+
 ### Preflight launch bundle cycle
 
 Test a non-executing launch bundle that freezes the exact MLX YAML and the
