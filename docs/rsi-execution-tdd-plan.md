@@ -236,3 +236,11 @@ Test that complete comparisons freeze their shared budget counters, preserve
 interrupted reservations, and reconcile all captured model-call and token
 reservations against the frozen deltas. Sandbox counts remain local journal
 evidence; missing or inconsistent accounting must prevent a capture replay.
+
+### Collection server contract cycle
+
+Test collection transport against the declared guarded model, parent adapter,
+thinking canary, ledger identity and 200,000-token ceiling. Require a local
+pre-dispatch reservation for each request and reject ledger drift or excess
+server reservations. Server claims remain distinct from authenticated process
+and model identity and do not authorize execution.
