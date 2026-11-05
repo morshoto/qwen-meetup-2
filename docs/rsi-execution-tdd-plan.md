@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### MLX configuration preview cycle
+
+Test a pure preview of the proposed one-step preflight and 20-step generation
+MLX configurations. Check mask, learning rate, layer count, LoRA scale,
+resource timeouts and generation-parent adapter continuation. Require distinct
+synthetic canary and generation datasets, reject changed preparation settings,
+and never launch a process or mark the preview authorized.
+
 ### Replayed synthetic dataset cycle
 
 Test writing the replayed synthetic preparation as a quarantined MLX dataset
