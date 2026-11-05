@@ -204,6 +204,14 @@ a missing second-generation capture. The server declarations and logs remain
 locally supplied; they do not authenticate which weights or adapter a server
 actually loaded. No live comparison was performed.
 
+When the selected adapter is from generation two, a descriptive helper can
+pair its frozen development outcomes with the original base outcomes. It
+requires matching task content, settings and per-task sample seeds and reports
+the fixed paired bootstrap; a mismatched seed or missing capture is rejected.
+A two-generation HTTP fixture exercised the path. These are reused development
+outcomes, not a separately registered final evaluation, independently verified
+improvement or ARC-AGI-2 score.
+
 ### Quarantined training preparation
 
 Training preparation now checks the structural five-record threshold, canonical
