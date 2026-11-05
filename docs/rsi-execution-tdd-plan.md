@@ -717,3 +717,12 @@ Test the prospective v4 design hash chain through v3, v2 and v1. Preserve the
 750/50/200 draft binding and explicitly retain the new-only strict Oracle gate;
 a design registration must not authorize a canary, training or evaluation.
 Reject changed documents, missing policy fields and altered targets.
+
+### Separate synthetic technical canary proposal
+
+Test a non-executing canary proposal for the pinned 14B and 32B models that
+requires only a separately audited synthetic canary dataset, not generated
+Oracle records. Bind independent per-model configuration, resource limits,
+model/runtime/tokenizer claims and isolated output paths. Fix one training step,
+disable promotion and candidate reuse, and keep training authorization false.
+Reject invalid identities, data overlap, unsafe paths or resource limits.
