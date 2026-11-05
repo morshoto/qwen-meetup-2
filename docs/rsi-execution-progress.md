@@ -342,3 +342,14 @@ reserved tokens above the local total. A fixture runner exercised the binding
 and preserved the final reservation after interruption. Server declarations and
 local counters still require independent provenance; this change does not
 authorize live evaluation.
+
+### Duplicate-only historical references
+
+A reference-pool builder now recomputes source, AST and sampled-behavior
+fingerprints on the selected private probe set through a bounded supplied
+sandbox. It checks supplied source hashes, requires nonempty ancestry confined
+to the generation partition, rejects development overlap, and stops on a
+reference execution failure. Fixture tests connect its output to generation
+screening. The source origins and ancestry are caller claims, retained history
+is not proven complete, and the builder does not admit historical records into
+training. No historical source was executed during this observation.
