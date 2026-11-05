@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Generation reported-token accounting cycle
+
+Test token accounting for a complete captured collection generation, including
+repair attempts. Reconcile each ledger usage record with its raw response and
+the stage reservation, report missing or partial usage without imputing zero,
+and reject altered usage or incomplete capture coverage. Keep server-reported
+counts separate from reserved tokens and unknown monetary cost.
+
 ### Comparison reported-token accounting cycle
 
 Test accounting for prompt, completion and total tokens from captured server
