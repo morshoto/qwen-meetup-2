@@ -558,3 +558,11 @@ Test a read-only scan of retained JSON and JSONL string values for supplied exac
 prompt texts, including nested values, malformed files and changed inventories.
 Record matches and source paths without treating a match as proof of dispatch;
 absence cannot exclude other prompt formats, missing files or pretraining.
+
+### Historical prompt hash review cycle
+
+Test construction of the historical direct and analysis prompts from task-only
+inputs and check their SHA-256 digests against retained JSON string values.
+Record matched files and format-specific counts; a matching digest is evidence
+of a retained reference, not independent proof of model dispatch or complete
+historical coverage. Preserve the provisional split gate.
