@@ -55,6 +55,14 @@ class TrainingPreparationTests(unittest.TestCase):
             self.prepare()
         self.assertEqual(list(self.root.iterdir()), [])
 
+    def test_invalid_grid_is_not_frozen_as_training_data(self):
+        invalid = Task('t0', (([[99]], [[99]]),), ([[3, 4]],))
+        self.tasks['t0'] = invalid
+        self.drafts[0]['messages'][1]['content'] = solve_prompt(invalid)
+        with self.assertRaises(ValueError):
+            self.prepare()
+        self.assertEqual(list(self.root.iterdir()), [])
+
     def test_invalid_seed_or_registration_is_rejected(self):
         for changes in ({'seed': True}, {'registration_sha256': 'bad'}, {'seed': -1}):
             with self.assertRaises(ValueError):
