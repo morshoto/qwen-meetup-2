@@ -111,6 +111,10 @@ class GenerationAuditTests(unittest.TestCase):
         self.assertEqual(audit['status'], 'generation_replay_consistent')
         self.assertEqual(audit['checked_slots'], 10)
         self.assertFalse(audit['training_allowed'])
+        drafts = prepare_generation_drafts(**audit_args)
+        self.assertEqual(drafts['draft_count'], 1)
+        self.assertFalse(drafts['provisional_minimum_count_met'])
+        self.assertFalse(drafts['training_allowed'])
         with self.assertRaises(ValueError):
             audit_generation(**{**audit_args, 'request_records': capture[:-1]})
         with self.assertRaises(ValueError):
