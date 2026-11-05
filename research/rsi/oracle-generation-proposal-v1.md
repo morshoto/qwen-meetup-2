@@ -56,9 +56,7 @@ budget transfers to the other model or stage. These limits are ceilings, not
 proof that five candidates can be collected within them.
 
 The 14B and 32B runs require separate model identity, dependency, budget and
-provenance review and separate execution authorization. The current collector
-and identity integrations must be audited for each model; 32B support is not
-implied by the 14B path. Stop on a budget, infrastructure, provenance or
+provenance review and separate execution authorization. The captured-slot and generation replay paths now have model-specific offline fixtures for 14B and 32B. Those fixtures do not establish live server provenance or complete 32B training integration. The collector, registration, and identity integrations still require independent audit for each model. Stop on a budget, infrastructure, provenance or
 resource failure. A model with fewer than five independently audited **new**
 same-model Oracles stops before RSI training. Do not automatically extend the
 run or count an older Oracle; a change requires a new prospective registration.
