@@ -70,3 +70,9 @@ reference pool still needs construction and independent provenance review;
 the historical candidate's training-gate policy remains a separate decision.
 Record the reviewer, input and code hashes, findings, missing artifacts, and
 remaining uncertainty before freezing a new execution registration.
+
+## Historical duplicate references
+
+The retained 14B and 32B candidates have separate [14B static metadata](audits/historical-candidates/14b-static-reference.json) and [32B static metadata](audits/historical-candidates/32b-static-reference.json). Their source and AST hashes match the retained records; verifier-only fields were excluded from the comparison. Their behavior on the newly proposed private probes has not been evaluated.
+
+The historical task IDs are synthetic `e6f-...` IDs, not IDs in the proposed ARC generation partition. The existing `build_reference_pool` requires each supplied ancestor ID to belong to that generation partition, so these records cannot yet be passed to it under that contract. Do not substitute a generation task ID to satisfy the check. Independently review the legacy ancestry and register an explicit duplicate-only reference policy before constructing a behavioral pool. This remains separate from the pending decision about whether a historical candidate may count toward the training gate.
