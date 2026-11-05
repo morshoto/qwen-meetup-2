@@ -661,3 +661,13 @@ separate exploratory positive control, applying these reconstructions to all
 not a count of distinct tasks or independently verified dispatches. Historical
 format changes, missing records and pretraining remain unresolved, so these
 checks do not establish split independence.
+
+### Historical code task text review
+
+The [task-text review](../research/rsi/historical-task-text-review.json) found
+no exact legacy code-agent task blocks for the 200 provisional development tasks
+in retained JSON/JSONL strings. An exploratory scan of all 1,000 source tasks
+also found no matches, so there was no positive control showing that this text
+format is present in the retained files. Many request logs store hashes; this
+check cannot detect hash-only code prompts. Missing records, different formats
+and pretraining exposure remain unresolved.
