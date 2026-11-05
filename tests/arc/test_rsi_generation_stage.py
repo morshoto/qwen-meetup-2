@@ -10,6 +10,7 @@ from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_generation_stage import collect_generation
+from src.arc.rsi_generation_outcomes import summarize_incomplete_generation
 from src.arc.rsi_lineage_audit import probes_sha256
 from src.arc.rsi_reference_pool import build_reference_pool
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
@@ -79,6 +80,10 @@ class GenerationStageTests(unittest.TestCase):
         self.assertEqual(result['status'], 'generation_incomplete')
         self.assertEqual(result['completed_slots'], 1)
         self.assertEqual(result['budget_usage']['model_calls'], 3)
+        summary = summarize_incomplete_generation(model_key='14b', report=result)
+        self.assertEqual(summary['slot_outcomes']['provisional_new'], 1)
+        self.assertEqual(summary['unattributed_model_reservations'], 2)
+        self.assertEqual(summary['next_step'], 'stop_before_training')
         self.assertGreater(result['budget_usage']['reserved_tokens'], 0)
         self.assertFalse(result['training_allowed'])
         self.assertTrue((self.root / 'g0.stage.incomplete.json').exists())
