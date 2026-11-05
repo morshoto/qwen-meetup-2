@@ -46,6 +46,13 @@ class TransitionScreenTests(unittest.TestCase):
         self.assertEqual(result['status'], 'second_screen_nonpositive_unverified')
         self.assertEqual(result['provisional_selected_adapter'], 'b' * 64)
         self.assertFalse(result['improvement_claim_supported'])
+        wrong_parent = self.comparison('wrong-parent', 1, 'd' * 64, 'e' * 64, True)
+        with self.assertRaises(ValueError):
+            self.screen(first, wrong_parent)
+        record = second['root'] / 'comparison-000-candidate.json'
+        record.write_text('{}')
+        with self.assertRaises(ValueError):
+            self.screen(first, second)
 
     def test_nonpositive_first_stops_and_wrong_parent_fails(self):
         first = self.comparison('first', 0, 'none', 'b' * 64, False)
