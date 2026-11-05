@@ -8,6 +8,8 @@ from pathlib import Path
 
 _MODEL = 'mlx-community/Qwen3-14B-4bit'
 _REVISION = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
+_MODELS = {'14b':(_MODEL,_REVISION),
+           '32b':('mlx-community/Qwen3-32B-4bit','bcaaf7f538adf166c1080a2befdb4f6019f66639')}
 
 
 def _signature(info):
@@ -55,9 +57,12 @@ def _json_file(path, expected):
     return value
 
 
-def snapshot_model_manifest(model_dir):
+def snapshot_model_manifest(model_dir, *, model_key='14b'):
+    if not isinstance(model_key,str) or model_key not in _MODELS:
+        raise ValueError('invalid model key')
+    model_id, revision = _MODELS[model_key]
     root = Path(model_dir).expanduser().resolve()
-    if not root.is_dir() or root.name != _REVISION or root.parent.name != 'snapshots':
+    if not root.is_dir() or root.name != revision or root.parent.name != 'snapshots':
         raise ValueError('model must be the proposed local snapshot')
     repo = root.parent.parent
     names = sorted(item.name for item in root.iterdir())
@@ -71,7 +76,7 @@ def snapshot_model_manifest(model_dir):
             target = item.resolve(strict=True)
         except (OSError, RuntimeError) as exc:
             raise ValueError('snapshot file unavailable') from exc
-        shared_cache = (repo.name == 'models--mlx-community--Qwen3-14B-4bit' and
+        shared_cache = (repo.name == 'models--' + model_id.replace('/', '--') and
                         repo.parent.name == 'hub' and target.is_relative_to(repo.parent / 'blobs'))
         if not target.is_relative_to(root) and not target.is_relative_to(repo / 'blobs') and not shared_cache:
             raise ValueError('snapshot file escapes its repository')
@@ -97,12 +102,12 @@ def snapshot_model_manifest(model_dir):
     for name in names:
         if (root / name).resolve(strict=True) != paths[name]:
             raise ValueError('snapshot link changed')
-    return {'model_id': _MODEL, 'revision': _REVISION, 'quantization': {'bits': 4, 'group_size': 64},
+    return {'model_id': model_id, 'revision': revision, 'quantization': {'bits': 4, 'group_size': 64},
             'chat_template_sha256': hashlib.sha256(template.encode()).hexdigest(), 'files_sha256': hashes}
 
 
-def verify_model_manifest(model_dir, expected):
-    if not isinstance(expected, dict) or snapshot_model_manifest(model_dir) != expected:
+def verify_model_manifest(model_dir, expected, *, model_key='14b'):
+    if not isinstance(expected, dict) or snapshot_model_manifest(model_dir, model_key=model_key) != expected:
         raise ValueError('model snapshot differs from expected manifest')
     return {'status': 'local_model_files_consistent', 'execution_ready': False,
             'evidence_type': 'local_files_and_caller_supplied_manifest'}
