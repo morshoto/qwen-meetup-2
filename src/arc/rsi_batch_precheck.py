@@ -39,7 +39,8 @@ def precheck_batch(drafts: list[dict], *, generation: int, parent_adapter: str,
         if (draft.get('status') != 'pending_independent_audit' or
                 draft.get('eligible_for_training') is not False or
                 draft.get('source_type') != 'generator_distillation' or
-                draft.get('generation') != generation or draft.get('parent_adapter') != parent_adapter or
+                type(draft.get('generation')) is not int or draft['generation'] != generation or
+                draft.get('parent_adapter') != parent_adapter or
                 not isinstance(task, str) or task not in allowed_tasks or
                 draft.get('mask_prompt') is not True or draft.get('loss_target') != 'assistant_completion_only' or
                 not isinstance(provenance, dict) or provenance.get('source_type') != 'generator_distillation' or
