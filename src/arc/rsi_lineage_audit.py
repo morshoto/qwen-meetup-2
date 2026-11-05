@@ -1,7 +1,7 @@
 """Replay conditioned repair evidence without certifying an independent run.
 
 The supplied sandbox and transport records are not authenticated here. This
-precheck cannot authorize training, and supports visible-example repairs only.
+precheck cannot authorize training or establish sandbox provenance.
 """
 import hashlib
 
@@ -9,7 +9,7 @@ from src.arc.rsi_candidate import inspect_candidate
 from src.arc.data import validate_grid
 from src.arc.e6_curriculum import canonical
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
-from src.arc.rsi_task_generation import generation_slots, task_prompt, task_repair_prompt
+from src.arc.rsi_task_generation import _REPAIRABLE, generation_slots, task_prompt, task_repair_prompt
 from src.arc.rsi_transport_audit import audit_transport
 
 
@@ -61,7 +61,7 @@ def inspect_lineage(task_ids: list[str], task, *, generation: int, slot: int, at
             status = inspected['status']
         statuses.append(status)
         if index < len(attempts) - 1:
-            if status != 'visible_demonstration_mismatch':
+            if status not in _REPAIRABLE:
                 raise ValueError('attempt follows after terminal or unauditable outcome')
             prompt = task_repair_prompt(task, code, status)
     return {'status': 'lineage_consistent', 'task_id': task.id, 'generation': generation,
