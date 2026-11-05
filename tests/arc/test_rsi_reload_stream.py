@@ -33,11 +33,13 @@ class ReloadStreamTests(unittest.TestCase):
                 'adapter_sha256':'a'*64,'reload_verified':False,'training_allowed':False,'promotion_allowed':False,
                 'evidence_type':'caller_supplied_runtime_and_local_files'}
         baseline,result=self.watch('import time; print('+repr(json.dumps(output))+',flush=True); time.sleep(0.1)')
-        checked=review_reload_observation(baseline=baseline,observation=result,model_key='14b',adapter_sha256='a'*64)
+        # Exercise the review using fixture evidence; this is not containment proof.
+        review_fixture=dict(result,group_signals_confirmed=True)
+        checked=review_reload_observation(baseline=baseline,observation=review_fixture,model_key='14b',adapter_sha256='a'*64)
         self.assertEqual(checked['status'],'reload_observation_consistent_unverified')
         self.assertFalse(checked['reload_verified']);self.assertFalse(checked['training_allowed'])
         self.assertFalse(result['escaped_processes_excluded'])
-        self.assertEqual(review_reload_observation(baseline=baseline,observation=result,model_key='32b',
+        self.assertEqual(review_reload_observation(baseline=baseline,observation=review_fixture,model_key='32b',
                          adapter_sha256='a'*64)['status'],'reload_observation_rejected')
 
     def test_overflow_and_resource_stop_are_not_accepted(self):
