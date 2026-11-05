@@ -94,9 +94,14 @@ only and leave the competitive claim unverified.
    offline scan of the retained local artifacts: 316 of the 1,000 source tasks
    appeared in the union of that scan and the older registry. It records source
    hashes and uses `src.arc.rsi_split.make_split` to choose 200 development
-   tasks outside those known IDs. This is not the final manifest: the scanner
-   silently skips unreadable files and cannot prove its source inventory is
-   complete. Independently audit missing and unreadable history before use.
+   tasks outside those known IDs. The snapshot inventories 351 retained input
+   files and configurations, requires the named E2/E3 manifests, fails on
+   malformed inputs, and checks for changes while scanning. The historical
+   scanner alone silently skips unreadable files, so use the wrapper in
+   `src.arc.rsi_history.provisional_snapshot`, which validates the inventory
+   before invoking it. This is not the final manifest: the inventory cannot
+   establish that every historical source was retained or recognized.
+   Independently audit missing history before use.
 3. On generation tasks, Qwen writes and repairs candidate programs. Execute in
    the existing network-isolated sandbox with bounded resources. A generic
    verifier checks format, determinism, safety, output validity and independent
