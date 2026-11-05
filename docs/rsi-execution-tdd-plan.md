@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Adapter factor comparison cycle
+
+Test a read-only numerical comparison of structurally checked candidate and
+parent adapters. Reject a candidate with no LoRA factor pair containing
+nonzero values, and reject an unchanged generation-two adapter, including
+differences limited to signed zero. Treat observed factor changes as local file
+evidence only: they do not prove an effective matrix update, model reload,
+training provenance or improvement.
+
 ### Adapter structural precheck cycle
 
 Test a bounded, read-only check of a proposed Qwen3-14B MLX adapter: pinned
