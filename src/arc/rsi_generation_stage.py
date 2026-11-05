@@ -66,6 +66,8 @@ def collect_generation(*, root, registration_sha256, generation, parent_adapter,
     pool = [dict(item) for item in reference_pool]
     start = {'registration_sha256': registration_sha256, 'generation': generation,
              'parent_adapter': parent_adapter, 'manifest_sha256': expected_manifest_sha256,
+             'task_hashes': expected_task_hashes, 'public_probe_sha256': expected_public_probes_sha256,
+             'private_probe_sha256': expected_private_probes_sha256,
              'initial_reference_pool_sha256': expected_reference_pool_sha256}
     with _directory(root) as directory:
         _create(directory, f'g{generation}.stage.started.json', start)
