@@ -74,6 +74,30 @@ class ModelIdentityTests(unittest.TestCase):
         manifest = snapshot_model_manifest(model)
         self.assertIn('one.safetensors', manifest['files_sha256'])
 
+    def test_32b_snapshot_is_separate_and_hash_bound(self):
+        revision='bcaaf7f538adf166c1080a2befdb4f6019f66639'
+        model=self.repo / 'snapshots' / revision
+        shutil.copytree(self.model,model)
+        manifest=snapshot_model_manifest(model,model_key='32b')
+        self.assertEqual(manifest['model_id'],'mlx-community/Qwen3-32B-4bit')
+        self.assertEqual(manifest['revision'],revision)
+        self.assertFalse(verify_model_manifest(model,manifest,model_key='32b')['execution_ready'])
+        with self.assertRaises(ValueError):snapshot_model_manifest(model)
+        with self.assertRaises(ValueError):snapshot_model_manifest(self.model,model_key='32b')
+        with self.assertRaises(ValueError):verify_model_manifest(model,manifest,model_key='14b')
+        (model/'two.safetensors').write_bytes(b'changed')
+        with self.assertRaises(ValueError):verify_model_manifest(model,manifest,model_key='32b')
+
+    def test_32b_shared_blob_cannot_cross_repository_boundary(self):
+        revision='bcaaf7f538adf166c1080a2befdb4f6019f66639'
+        hub=self.root/'hub'; repo=hub/'models--mlx-community--Qwen3-32B-4bit'; model=repo/'snapshots'/revision
+        shutil.copytree(self.model,model)
+        blob=hub/'blobs'/'fixture'; blob.parent.mkdir(parents=True); blob.write_bytes(b'fixture one')
+        weight=model/'one.safetensors';weight.unlink();weight.symlink_to(blob)
+        snapshot_model_manifest(model,model_key='32b')
+        wrong=hub/'models--other'/'snapshots'/revision;shutil.copytree(model,wrong,symlinks=True)
+        with self.assertRaises(ValueError):snapshot_model_manifest(wrong,model_key='32b')
+
     def test_adapter_digest_matches_existing_driver_and_detects_drift(self):
         adapter = self.root / 'adapter'
         adapter.mkdir()
