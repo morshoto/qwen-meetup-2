@@ -256,6 +256,18 @@ accepted the 21 previewed keys for both phases. This checks the key names, not
 trainer execution, adapter compatibility, path contents or resource limits.
 The preview is not an execution registration or training authorization.
 
+### Synthetic preflight canary dataset
+
+A separate, owner-only canary artifact now contains five fixed synthetic chat
+rows and rejects exact grid overlap with a supplied visible task inventory.
+On 2026-11-05, the local 14B tokenizer and MLX-LM 0.30.7 format check accepted
+the rows against the 1,000 locally supplied training tasks. The JSONL SHA-256
+was `c7ca0ab04a51cebc44d0b4cf95de24519c3595448efbabd1abef2700bb26d19b`.
+The check did not cover a complete evaluation or historical inventory. The
+canary is human-authored infrastructure data, separate from generated research
+records; it is unregistered and ineligible for training. No model weights,
+preflight or trainer were run.
+
 ### RSI chat format and mask precheck
 
 A format precheck converts quarantined rows to MLX-style chat JSONL and checks
