@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Replayed synthetic dataset cycle
+
+Test writing the replayed synthetic preparation as a quarantined MLX dataset
+only after checking the completion marker, its stage and preparation hashes,
+and another replay of the captured generation. Reject absent or changed
+markers, read the completed dataset back, and record a completion marker only
+after post-write replay succeeds. Keep the artifact ineligible for training.
+
 ### Synthetic preparation completion cycle
 
 Test that a replayed preparation receives an exclusive completion marker only
