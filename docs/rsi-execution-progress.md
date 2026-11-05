@@ -159,3 +159,16 @@ require their own provenance schema; this precheck does not adapt or bypass
 that contract. Actual tokenizer/runtime identity, loss masking in the pinned
 MLX environment, independent batch audit and training authorization remain
 unverified. No tokenizer model, preflight or training was run.
+
+### Local 14B tokenizer fixture observation
+
+On 2026-11-05, the read-only fixture procedure
+`python -m tests.arc.rsi_tokenizer_fixture MODEL_DIRECTORY` ran against the
+local 14B revision `a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4` using native
+arm64 MLX-LM 0.30.7 with offline mode enabled. Its [recorded output](../research/rsi/tokenizer-format-fixture.json)
+shows five synthetic rows with 148 masked prefix tokens and 29 completion tokens
+per row. The procedure computes its expected tokenizer hashes from the local
+files, so it demonstrates local format behavior and drift checking during the
+call, not independently authenticated tokenizer provenance. The rows are
+fabricated test inputs; no inference, preflight or training occurred. The
+existing MLX trainer's source-specific provenance contract remains unresolved.
