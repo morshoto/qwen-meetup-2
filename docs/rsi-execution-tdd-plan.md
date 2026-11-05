@@ -597,3 +597,11 @@ and derives the development split. Bind dataset, reviewed code and inventories;
 reject missing inputs, invalid records, changing files and insufficient eligible
 tasks. This local proposal is not independent review, a frozen execution
 registration, or proof of absent historical or pretraining exposure.
+
+### Prompt review reconciliation
+
+Test matching the proposal's development IDs to the earlier provisional split,
+binding each review to the same dataset, split and retained artifact inventory,
+and comparing replayed match sets with all three saved reviews. Reject missing,
+changed or overlapping evidence; the result remains a local consistency check,
+not independent review or evidence that missing records do not exist.
