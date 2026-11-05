@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 from src.arc.rsi_http_backend import CapturingBackend
+from src.arc.http_backend import BackendError
 from src.arc.rsi_slot_lifecycle import _directory
 
 _MODEL = 'mlx-community/Qwen3-14B-4bit'
@@ -47,7 +48,20 @@ class CapturedComparisonTransport:
             raise ValueError('invalid comparison request routing')
         events = []
         backend = self._backend(arm, min(timeout, self.max_request_seconds), events.append)
-        code = backend.generate(prompt, kind='e5_self_solve', candidate=seed)
+        try:
+            code = backend.generate(prompt, kind='e5_self_solve', candidate=seed)
+        except BackendError as exc:
+            if exc.kind != 'malformed_thinking':
+                raise
+            if len(events) != 1 or not isinstance(events[0].get('request_id'), str):
+                raise ValueError('comparison request event unavailable') from exc
+            if events[0].get('finish_reason') not in ('stop', 'length'):
+                raise BackendError('invalid_response', 'missing model completion status') from exc
+            return {'code': None, 'request_id': events[0]['request_id'], 'failure': 'invalid_model_output'}
         if len(events) != 1 or not isinstance(events[0].get('request_id'), str):
             raise ValueError('comparison request event unavailable')
+        if events[0].get('finish_reason') == 'length':
+            return {'code': None, 'request_id': events[0]['request_id'], 'failure': 'invalid_model_output'}
+        if events[0].get('finish_reason') != 'stop':
+            raise BackendError('invalid_response', 'missing model completion status')
         return {'code': code, 'request_id': events[0]['request_id']}
