@@ -60,14 +60,16 @@ def read_incomplete_exploratory(*, root, registration, registration_sha256, task
                     recorded[name] = record_raw
                     data['arms'][arm]['results'].append(record['row'])
             summary = summarize_exploratory(data)
-            if summary['complete']:
-                raise ValueError('complete comparison requires completed audit')
+            row_coverage_complete = summary['complete']
+            # All rows can exist even when finalization fails; stage completion is still false.
+            summary['complete'] = False
             if _read(directory, 'exploratory.incomplete.json')[0] != incomplete_raw or any(
                     _read(directory, name)[0] != value for name, value in recorded.items()):
                 raise ValueError('partial exploratory evidence changed')
     except (KeyError, TypeError, AttributeError, IndexError) as exc:
         raise ValueError('invalid partial exploratory inputs') from exc
     return {'status':'exploratory_partial_view_unverified', 'claim_eligible':False, 'independently_verified':False,
-            'failure_type':incomplete.get('failure_type'), 'data':data, 'summary':summary,
+            'failure_type':incomplete.get('failure_type'), 'row_coverage_complete':row_coverage_complete,
+            'data':data, 'summary':summary,
             'limitations':['completed rows and caller-supplied identities are not independently audited',
                            'the interrupted request may lack a completed row', 'missing measurements are unknown']}
