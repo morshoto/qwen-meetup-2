@@ -71,4 +71,5 @@ def inspect_candidate(task: Task, code: str, *, public_probes: list, private_pro
             'source_type': 'generator_distillation',
             'synthetic_task': {'parent_task_id': task.id, 'train': synthetic_train,
                                'query_inputs': list(task.test_inputs), 'query_outputs': query_outputs},
-            'private_behavior_sha256': hashlib.sha256(canonical(hidden_outputs).encode()).hexdigest()}
+            'private_behavior_sha256': hashlib.sha256(canonical(hidden_outputs).encode()).hexdigest(),
+            'private_probe_set_sha256': hashlib.sha256(canonical(private).encode()).hexdigest()}
