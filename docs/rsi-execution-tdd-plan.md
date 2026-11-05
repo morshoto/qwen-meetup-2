@@ -580,3 +580,11 @@ Test parsing of P3-A candidate reservation keys from retained budget journals,
 including incomplete runs, malformed keys, duplicate reservations and changing
 files. Compare task identifiers with the provisional development split; a
 reservation is conservative possible exposure and does not prove dispatch.
+
+### Version 3 exposure amendment cycle
+
+Record the accepted bounded-history amendment as a new design version, keeping
+the earlier versioned files intact. Test that draft registration verifies the
+complete v3-to-v2-to-v1 hash chain and rejects changed documents or mismatched
+targets. It must keep the split provisional, require independent review of the
+bounded inventory, and remain non-authorizing until all execution gates pass.
