@@ -42,10 +42,11 @@ class BatchPrecheckTests(unittest.TestCase):
         self.assertFalse(result['training_allowed'])
 
     def test_fake_wrong_generation_and_source_substitution_are_rejected(self):
-        for mutation in ('fake', 'generation', 'source'):
+        for mutation in ('fake', 'generation', 'boolean_generation', 'source'):
             item = row(0)
             if mutation == 'fake': item['provenance']['execution_mode'] = 'fake_fixture'
             if mutation == 'generation': item['generation'] = 1
+            if mutation == 'boolean_generation': item['generation'] = False
             if mutation == 'source': item['messages'][-1]['content'] += '\n# changed'
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 precheck_batch([item], generation=0, parent_adapter='none', allowed_tasks={'t0'})
