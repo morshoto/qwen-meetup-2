@@ -43,8 +43,10 @@ class BoundedInventoryTests(unittest.TestCase):
 
     def test_detects_dataset_or_review_code_changes(self):
         p = self.root / 'data/tasks.json'
-        original = p.read_bytes
-        def change():
-            b = original(); p.write_text('{"different": {}}'); return b
-        with patch.object(Path, 'read_bytes', lambda path: change() if path == p.resolve() else original()):
+        original = Path.read_bytes
+        def change(path):
+            b = original(path)
+            if path.resolve() == p.resolve(): p.write_text('{"different": {}}')
+            return b
+        with patch.object(Path, 'read_bytes', change):
             with self.assertRaises(ValueError): self.propose()
