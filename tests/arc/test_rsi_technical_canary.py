@@ -89,7 +89,8 @@ class TechnicalCanaryBundleTests(TechnicalCanaryTests):
         from unittest.mock import patch
         from src.arc.rsi_technical_bundle import prepare_technical_canary_bundle
         proposal = self.propose('32b')
-        args = dict(root=self.root, proposal=proposal, manifest_bytes={}, source_root=Path.cwd(),
+        manifests={key: b'{}' for key in ('model_manifest','runtime_manifest','environment_manifest','source_inventory')}
+        args = dict(root=self.root, proposal=proposal, manifest_bytes=manifests, source_root=Path.cwd(),
                     python_executable=sys.executable, forbidden_tasks=self.f.tasks,
                     tokenizer=self.f.tokenizer, render=self.f.render, load_local_dataset=self.loader)
         ok={'status':'technical_canary_local_identities_consistent','execution_ready':False,
@@ -103,6 +104,7 @@ class TechnicalCanaryBundleTests(TechnicalCanaryTests):
         config=json.loads((bundle/'mlx_lora.json').read_text())
         launch=json.loads((bundle/'launch.json').read_text())
         self.assertEqual(json.loads((bundle/'proposal.json').read_text()),proposal)
+        for key, raw in manifests.items(): self.assertEqual((bundle/(key+'.json')).read_bytes(),raw)
         self.assertEqual(config,proposal['config'])
         self.assertEqual(config['iters'],1)
         self.assertEqual(launch['model_key'],'32b')
