@@ -14,7 +14,7 @@ class PreflightReviewTests(unittest.TestCase):
         self.baseline = sample(100)
         self.observation = {'stop_reason': 'process_exited', 'exit_code': 0,
             'samples': [sample(101)], 'training_verified': False, 'group_signals_confirmed': True,
-            'escaped_processes_excluded': False, 'stream_complete': True,
+            'escaped_processes_excluded': False, 'stream_complete': True, 'elapsed_seconds': 1.1,
             'loss': {'status': 'ok', 'last_step': 1, 'last_loss': 0.125}}
 
     def review(self, observation=None):
@@ -37,6 +37,7 @@ class PreflightReviewTests(unittest.TestCase):
             {'loss': {'status': 'ok', 'last_step': 1, 'last_loss': float('nan')}},
             {'loss': {'status': 'nonfinite_loss', 'last_step': 0, 'last_loss': None}},
             {'samples': []}, {'samples': [sample(101, free=19)]}, {'samples': [sample(401)]},
+            {'elapsed_seconds': 301}, {'elapsed_seconds': True},
         ]
         for change in changes:
             value = copy.deepcopy(self.observation)
