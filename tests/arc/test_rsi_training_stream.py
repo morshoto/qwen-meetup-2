@@ -1,10 +1,13 @@
 import os
+import platform
+from pathlib import Path
 import subprocess
 import sys
 import unittest
 
 from src.arc.rsi_training_stream import watch_training_stream
 from src.arc.rsi_preflight_review import review_preflight_observation
+from src.arc.rsi_process_sampling import sample_baseline, sample_process
 from tests.arc.test_rsi_process_monitor import state
 
 
@@ -37,6 +40,25 @@ class TrainingStreamTests(unittest.TestCase):
                 terminate_grace_seconds=0.1, resource_limits=limits)
             self.assertEqual(result['stop_reason'], 'memory_pressure_limit')
             self.assertFalse(result['training_verified'])
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+            process.stdout.close()
+
+    @unittest.skipUnless(platform.system() == 'Darwin', 'macOS sampler required')
+    def test_real_local_sampler_observes_synthetic_fixture(self):
+        baseline = sample_baseline(Path('.'))
+        process = child('import time; print("Iter 1: Train loss 0.125, x", flush=True); time.sleep(1.5)')
+        try:
+            result = watch_training_stream(process, baseline=baseline, sampler=lambda pid: sample_process(Path('.'), pid),
+                timeout_seconds=4, interval_seconds=0.2, sample_timeout_seconds=1, terminate_grace_seconds=0.1)
+            self.assertEqual(result['stop_reason'], 'process_exited')
+            self.assertGreater(len(result['samples']), 0)
+            self.assertTrue(any(item['process_tree_rss_bytes'] > 0 for item in result['samples']))
+            self.assertTrue(result['stream_complete'])
+            self.assertFalse(result['training_verified'])
+            self.assertFalse(result['escaped_processes_excluded'])
         finally:
             if process.poll() is None:
                 os.killpg(process.pid, 9)
