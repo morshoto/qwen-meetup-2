@@ -106,6 +106,31 @@ class DraftRegistrationTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
 
+    def test_v4_design_chain_keeps_canaries_non_authorizing(self):
+        digest = lambda name: hashlib.sha256((self.root / name).read_bytes()).hexdigest()
+        (self.root / 'research/rsi/design-v3.md').write_text('v3 design')
+        v3 = {'kind':'design_only','execution_ready':False,'competitive_target_percent':42.4,
+              'supersedes':'research/rsi/design-registration-v2.json',
+              'exposure_policy':'bounded_review_unknown_project_exposure',
+              'files':{p:digest(p) for p in ('research/rsi/design-registration-v2.json','research/rsi/design-v3.md')}}
+        (self.root / 'research/rsi/design-registration-v3.json').write_text(json.dumps(v3))
+        (self.root / 'research/rsi/design-v4.md').write_text('v4 design')
+        v4 = {'kind':'design_only','execution_ready':False,'competitive_target_percent':42.4,
+              'supersedes':'research/rsi/design-registration-v3.json',
+              'canary_policy':'independent_synthetic_only_no_promotion',
+              'evaluation_policy':'separate_exploratory_50_then_development_200',
+              'oracle_policy':'new_only_pending_historical_decision',
+              'files':{p:digest(p) for p in ('research/rsi/design-registration-v3.json','research/rsi/design-v4.md')}}
+        path=self.root / 'research/rsi/design-registration-v4.json'; path.write_text(json.dumps(v4))
+        self.paths['design_registration']='research/rsi/design-registration-v4.json'
+        result=prepare_draft_registration(self.root,input_paths=self.paths,generation=0)
+        self.assertFalse(result['execution_ready'])
+        self.assertIn('bounded exposure review not independently completed',result['blockers'])
+        self.assertIn('research/rsi/design-v4.md',result['design_file_sha256'])
+        verify_draft_registration(self.root,result)
+        (self.root / 'research/rsi/design-v4.md').write_text('changed')
+        with self.assertRaisesRegex(ValueError,'design'):verify_draft_registration(self.root,result)
+
     def test_tampered_or_missing_inputs_and_source_are_rejected(self):
         result = prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
         (self.root / self.paths['solutions']).write_text('{}')
