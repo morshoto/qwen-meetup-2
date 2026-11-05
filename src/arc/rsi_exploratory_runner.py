@@ -22,7 +22,12 @@ from src.arc.rsi_slot_lifecycle import _create, _directory
 
 def run_exploratory(*, root, registration_sha256, generation, registration, task_ids, confirmatory_task_ids,
                     tasks, task_hashes, seeds, task_types, candidate_adapter, generate, sandbox, verifier, budget):
-    if (type(budget) is not ExploratoryBudget or budget.identity != {'registration_sha256':registration_sha256,'generation':generation} or
+    try:
+        registration_raw=json.dumps(registration,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()
+    except (TypeError,ValueError) as exc:
+        raise ValueError('invalid exploratory registration') from exc
+    if (hashlib.sha256(registration_raw).hexdigest()!=registration_sha256 or
+            type(budget) is not ExploratoryBudget or budget.identity != {'registration_sha256':registration_sha256,'generation':generation} or
             Path(budget.root).resolve() != Path(root).resolve() or not isinstance(registration,dict) or
             registration.get('status') != 'exploratory_registration_draft_unverified' or
             registration.get('execution_ready') is not False or not isinstance(task_ids,list) or len(task_ids)!=50 or
@@ -50,6 +55,8 @@ def run_exploratory(*, root, registration_sha256, generation, registration, task
     before=budget.snapshot()
     if any(before[k]!=0 for k in ('model_calls','reserved_tokens','sandbox_runs')):
         raise ValueError('exploratory budget must be fresh')
+    if json.dumps(registration,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()!=registration_raw:
+        raise ValueError('exploratory registration changed')
     with _directory(root) as directory:
         _create(directory,'exploratory.started.json',{'registration_sha256':registration_sha256,'generation':generation,
                                                      'task_hashes':task_hashes,'budget_before':before})
