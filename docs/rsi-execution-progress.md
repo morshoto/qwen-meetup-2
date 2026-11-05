@@ -160,6 +160,17 @@ that contract. Actual tokenizer/runtime identity, loss masking in the pinned
 MLX environment, independent batch audit and training authorization remain
 unverified. No tokenizer model, preflight or training was run.
 
+### Quarantined dataset artifact and readback
+
+The format-checked chat rows can be written once to an owner-only quarantine
+directory with a hash-bound audit record. A separate readback recomputes the
+rows from the supplied preparation, tasks, tokenizer and renderer, and rejects
+changed data, audit records or unexpected files. Fixture tests exercise these
+checks. The result stays `training_allowed: false`: these inputs and their
+origins are not independently authenticated, and the existing MLX trainer
+expects a different provenance contract. The artifact is not a registered
+training dataset and no preflight or training was started.
+
 ### Local 14B tokenizer fixture observation
 
 On 2026-11-05, the read-only fixture procedure
