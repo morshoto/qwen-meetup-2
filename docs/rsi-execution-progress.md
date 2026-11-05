@@ -332,3 +332,13 @@ Fixture tests exercised both generation seed ranges and the existing contract
 parser. The declaration remains self-reported, and the counters depend on
 cooperating local components; this is not server attestation or authorization.
 No live model call was made.
+
+### Comparison reservation binding
+
+The guarded comparison transport now shares the comparison budget and requires
+one exact call and token reservation before checking either server or sending a
+request. It rejects a reused or mismatched reservation and server-declared
+reserved tokens above the local total. A fixture runner exercised the binding
+and preserved the final reservation after interruption. Server declarations and
+local counters still require independent provenance; this change does not
+authorize live evaluation.
