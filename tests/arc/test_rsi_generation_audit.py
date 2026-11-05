@@ -13,6 +13,7 @@ from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_generation_audit import audit_generation
+from src.arc.rsi_generation_outcomes import summarize_generation_outcomes
 from src.arc.rsi_generation_usage import audit_generation_usage
 from src.arc.rsi_generation_drafts import audit_generation_drafts, prepare_generation_drafts
 from src.arc.rsi_synthetic_mapping import map_synthetic_row
@@ -120,6 +121,10 @@ class GenerationAuditTests(unittest.TestCase):
         ledger = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
         response = [json.loads(line) for line in (self.root / 'llm_responses.jsonl').read_text().splitlines()]
         kwargs = dict(**common, request_records=capture, ledger_records=ledger, response_records=response, sandbox=Sandbox())
+        outcome = summarize_generation_outcomes(**kwargs, model_key='14b')
+        self.assertEqual(outcome['slot_outcomes'], {'provisional_new': 9, 'duplicate_or_behavior_match': 1, 'invalid': 0})
+        self.assertIsNone(outcome['independently_verified_new_oracles'])
+        self.assertFalse(outcome['training_allowed'])
         usage = audit_generation_usage(**kwargs)
         self.assertEqual(usage['reported']['request_count'], len(ledger))
         self.assertEqual(usage['reported']['total_tokens_if_complete'], 15 * len(ledger))
