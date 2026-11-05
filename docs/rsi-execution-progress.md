@@ -31,6 +31,14 @@ non-finite update. The sampler and stream are caller supplied, and process
 containment and adapter verification remain open. No model or training process
 was started.
 
+`watch_training_stream` now connects the loss parser to the owned-process
+monitor through a bounded binary stdout reader. Fixture processes exercised
+non-finite and malformed loss, finite loss and an escaped descendant keeping
+the stream open. The last case is reported as an incomplete stream; the
+supervisor cannot prove that escaped descendants have stopped. The caller must
+drain or redirect stderr, and the actual MLX trainer is not connected. Loss
+observations and clean fixture exit do not establish a successful preflight.
+
 ## Current gates
 
 - The slot lifecycle consumes a claimed slot before fixture execution. A
