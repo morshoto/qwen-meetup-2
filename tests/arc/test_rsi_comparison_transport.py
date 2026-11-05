@@ -15,6 +15,7 @@ from src.arc.rsi_comparison_runner import run_comparison
 from src.arc.rsi_comparison_transport import CapturedComparisonTransport
 from src.arc.rsi_transport_audit import audit_transport
 from src.arc.rsi_transition_screen import screen_captured_rsi_chain
+from src.arc.rsi_base_comparison import _paired_frozen_summary, summarize_captured_base_comparison
 
 MODEL = 'mlx-community/Qwen3-14B-4bit'
 CODE = 'def transform(grid):\n    return grid[::-1]'
@@ -150,6 +151,21 @@ class ComparisonTransportTests(unittest.TestCase):
             sandbox=FakeE6Sandbox(), verifier=verifier)
         self.assertEqual(screened['status'], 'second_screen_positive_unverified')
         self.assertFalse(screened['execution_ready'])
+        summary = summarize_captured_base_comparison(first=refs[0], second=refs[1], tasks=tasks,
+            sandbox=FakeE6Sandbox(), verifier=verifier)
+        self.assertEqual(summary['base_solved'], 0)
+        self.assertEqual(summary['candidate_solved'], 200)
+        self.assertEqual(summary['difference_percentage_points'], 100.0)
+        self.assertEqual(summary['selected_adapter'], 'c' * 64)
+        self.assertFalse(summary['improvement_claim_supported'])
+        first_record = json.loads((refs[0]['root'] / 'comparison.frozen.json').read_text())
+        selected_record = json.loads((refs[1]['root'] / 'comparison.frozen.json').read_text())
+        key = ids[0]
+        selected_record['seeds'][key] = [90000, 90001]
+        for arm in ('parent', 'candidate'):
+            selected_record[arm][key]['seeds'] = [90000, 90001]
+        with self.assertRaises(ValueError):
+            _paired_frozen_summary(first_record, selected_record)
         (refs[1]['root'] / 'candidate.capture.jsonl').unlink()
         with self.assertRaises(ValueError):
             screen_captured_rsi_chain(first=refs[0], second=refs[1], tasks=tasks,
