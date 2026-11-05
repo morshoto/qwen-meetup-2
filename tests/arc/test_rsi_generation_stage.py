@@ -43,6 +43,7 @@ class GenerationStageTests(unittest.TestCase):
         result = self.run_stage()
         self.assertEqual(result['status'], 'generation_complete_unverified')
         self.assertEqual(result['counts'], {'novel_unverified': 1, 'repeated_code': 9})
+        self.assertEqual(result['attempt_counts'], {'novel_unverified': 1, 'duplicate_source': 9, 'repeated_code': 9})
         self.assertEqual(self.transport.call_count, 19)
         self.assertEqual(self.budget.snapshot()['model_calls'], 19)
         self.assertEqual(result['budget_usage']['model_calls'], 19)
