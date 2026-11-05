@@ -33,6 +33,15 @@ class RegisteredRuntimeTests(unittest.TestCase):
         self.assertFalse(checked['execution_ready'])
         self.assertEqual(checked['runtime_manifest_sha256'], self.registration['input_sha256']['runtime_manifest'])
 
+    def test_runtime_check_supports_composite_manifest(self):
+        self.path.write_text(json.dumps({'runtime_identity': self.runtime.report, 'environment_inventory': {'fixture': True}}))
+        self.registration = prepare_draft_registration(self.reg.root, input_paths=self.reg.paths, generation=0)
+        result = SimpleNamespace(returncode=0, stdout=json.dumps(self.runtime.report), stderr='')
+        with patch('src.arc.rsi_runtime_identity.subprocess.run', return_value=result):
+            checked = self.verify()
+        self.assertEqual(checked['status'], 'draft_runtime_consistent')
+        self.assertFalse(checked['execution_ready'])
+
     def test_changed_runtime_or_registration_fails(self):
         changed = dict(self.runtime.report, generate_step_sha256='b' * 64)
         with patch('src.arc.rsi_runtime_identity.subprocess.run', return_value=SimpleNamespace(returncode=0, stdout=json.dumps(changed), stderr='')):
