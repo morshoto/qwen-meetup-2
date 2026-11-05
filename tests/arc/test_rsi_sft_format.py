@@ -1,4 +1,5 @@
 import json
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -52,6 +53,20 @@ class SFTFormatTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.audit()
         self.render.assert_not_called()
+
+    def test_modified_content_with_recomputed_digest_is_rejected(self):
+        rows = self.plan['generation_training']['records']
+        rows[0]['messages'][1]['content'] += ' hidden'
+        encoded = json.dumps(rows, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
+        self.plan['dataset_sha256'] = hashlib.sha256(encoded).hexdigest()
+        with self.assertRaises(ValueError):
+            self.audit()
+        self.render.assert_not_called()
+
+    def test_wrong_prefix_tokens_are_rejected(self):
+        self.render.return_value = ([10, 99, 12, 13], 3)
+        with self.assertRaises(ValueError):
+            self.audit()
 
     def test_preparation_hash_and_mask_must_match(self):
         self.plan['dataset_sha256'] = 'f' * 64
