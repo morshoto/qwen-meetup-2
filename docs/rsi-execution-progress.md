@@ -72,3 +72,14 @@ the caller, the input digests are caller-supplied, and its local output is not
 an independently authenticated run record or an eligible SFT record. A concrete
 transport binding, execution registration, independent audit, training and
 matched evaluation remain unfinished. Tests use scripted fake components only.
+
+### Captured transport binding
+
+The slot transport now constructs a guarded, local-only capturing backend for
+each scheduled attempt, with the pinned model settings, scheduled seed, and a
+per-request timeout bounded by the remaining stage budget. A fixture HTTP run
+exercised a repair and replayed its captured request and response bytes through
+the lineage precheck. This is local consistency evidence only: neither the
+fixture server nor the caller-supplied sandbox establishes live provenance,
+registered model weights, adapter identity, or independent audit. No live model
+call was performed.
