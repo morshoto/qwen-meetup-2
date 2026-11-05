@@ -1,6 +1,6 @@
 # Qwen RSI experiment: current result
 
-The [protocol](rsi-research-protocol.md) and [v2 benchmark amendment](../research/rsi/design-v2.md) [v3 exposure amendment](../research/rsi/design-v3.md), and [v4 sequencing amendment](../research/rsi/design-v4.md) describe a proposed experiment. The execution gate remains closed; the experiment has not been run. This is a report of the stopping point, not an RSI performance result.
+The [protocol](rsi-research-protocol.md), [v2 benchmark amendment](../research/rsi/design-v2.md), [v3 exposure amendment](../research/rsi/design-v3.md), and [v4 sequencing amendment](../research/rsi/design-v4.md) describe a proposed experiment. The execution gate remains closed; the experiment has not been run. This is a report of the stopping point, not an RSI performance result.
 
 ## Evidence available
 
