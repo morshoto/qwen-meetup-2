@@ -221,3 +221,11 @@ unrecorded files and bytecode, with stable file reads and symlink boundaries.
 Bind the inventory to the interpreter and compare it against a draft runtime
 manifest. Keep base Python libraries, operating-system libraries and process
 attestation as separate unresolved dependencies.
+
+### Generation accounting cycle
+
+Test that collection records the stage budget counters before and after the
+scheduled slots, reports their deltas, and reconciles captured call and token
+reservations against those deltas. Missing or conflicting accounting must fail
+the replay; sandbox counts remain local journal evidence, not authenticated
+execution traces.
