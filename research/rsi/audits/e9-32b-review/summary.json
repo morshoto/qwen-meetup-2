@@ -1,0 +1,40 @@
+{
+  "aggregate_request_count": 12,
+  "audit_status": "passed",
+  "auditor_sha256": "8e39cf4da1a8c265be0820059e05bde99697e51b0ea9d75343ff29cc002d9e02",
+  "checks": {
+    "budgets": true,
+    "model_revision_and_template": true,
+    "monitoring_and_public_eval_unused": true,
+    "operator_search_unreferenced_by_pipeline": true,
+    "protocol_and_tree_seals": true,
+    "request_provenance": true,
+    "source_hashes": true,
+    "strict_gate_and_sft_mask": true
+  },
+  "generation_requests_audited": 10,
+  "model_id": "mlx-community/Qwen3-32B-4bit",
+  "model_key": "32b",
+  "note": "Observed tokens are independently summed from per-slot request logs; they may reconcile a null pipeline summary field.",
+  "observed_tokens_reconciled": 3045,
+  "observed_usage_calls": 12,
+  "observed_usage_complete": true,
+  "planned_slots": 10,
+  "protocol_sha256": "f3b9078412c79eacec4b7f773a3a1c8ef6f539465410a8f0cfe287176bb1a881",
+  "reserved_tokens": 25396,
+  "result_summary_observed_tokens_matches": true,
+  "revision": "bcaaf7f538adf166c1080a2befdb4f6019f66639",
+  "run_dir": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/e9/32b/initial-20261105",
+  "sandbox_dispatches_audited": 200,
+  "slots_audited": 10,
+  "strict_existing": 1,
+  "strict_new_oracles": 0,
+  "strict_parent_e9": 0,
+  "strict_total": 1,
+  "training": {
+    "promotion": "not_applicable",
+    "reason": "insufficient_strict_oracles",
+    "trained": false,
+    "weights_updated": false
+  }
+}
