@@ -1,5 +1,6 @@
 """Provisional novelty screening; pool provenance needs an independent audit."""
 import hashlib
+import json
 import re
 
 from src.arc.ast_fingerprint import stable_ast_sha256
@@ -34,4 +35,8 @@ def screen_novelty(code: str, behavior_sha256: str, probe_set_sha256: str,
         status = 'sampled_behavior_match'
     else:
         status = 'novel_unverified'
-    return {'status': status, 'eligible_for_training': False}
+    pool_bytes = json.dumps(reference_pool, sort_keys=True, separators=(',', ':')).encode()
+    return {'status': status, 'eligible_for_training': False,
+            'source_sha256': source_hash, 'ast_sha256': ast_hash,
+            'behavior_sha256': behavior_sha256, 'probe_set_sha256': probe_set_sha256,
+            'reference_pool_sha256': hashlib.sha256(pool_bytes).hexdigest()}
