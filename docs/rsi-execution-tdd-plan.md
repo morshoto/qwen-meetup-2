@@ -273,3 +273,11 @@ private probe-derived feedback is not sent to the model.
 Test that the generation report counts every attempt status, including exact
 duplicates followed by repairs, alongside final slot outcomes. Replay must
 recompute the attempt counts and reject conflicting summaries.
+
+### Quarantined MLX dataset cycle
+
+Test materializing the checked chat rows into an owner-only, non-overwritable
+JSONL dataset and an audit record bound to the preparation and dataset hashes.
+A failed or interrupted write must not be silently reused. This artifact is
+quarantined and cannot bypass provenance, preflight, trainer or authorization
+gates.
