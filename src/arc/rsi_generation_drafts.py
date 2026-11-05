@@ -1,6 +1,7 @@
 """Derive a quarantined batch from replayed local generation evidence."""
 import hashlib
 import json
+import re
 
 from src.arc.rsi_capture_draft import make_capture_artifacts
 from src.arc.rsi_comparison_audit import _read
@@ -10,7 +11,7 @@ from src.arc.rsi_task_generation import generation_slots
 from src.arc.rsi_synthetic_mapping import RepeatedSyntheticInput, map_synthetic_row
 
 
-def prepare_generation_drafts(**inputs):
+def _derive_generation_drafts(**inputs):
     audit_generation(**inputs)
     root, generation = inputs['root'], inputs['generation']
     pool = [dict(item) for item in inputs['reference_pool']]
@@ -59,8 +60,32 @@ def prepare_generation_drafts(**inputs):
     raw = (json.dumps(report, sort_keys=True, separators=(',', ':')) + '\n').encode()
     if len(raw) > 4 * 1024 * 1024:
         raise ValueError('draft batch exceeds size limit')
+    return report, raw
+
+
+def prepare_generation_drafts(**inputs):
+    report, raw = _derive_generation_drafts(**inputs)
+    root, generation = inputs['root'], inputs['generation']
     with _directory(root) as directory:
         _create(directory, f'g{generation}.stage.drafts.json', report)
-    return {'status': report['status'], 'draft_count': len(drafts),
+    return {'status': report['status'], 'draft_count': report['draft_count'],
             'provisional_minimum_count_met': report['provisional_minimum_count_met'],
             'training_allowed': False, 'sha256': hashlib.sha256(raw).hexdigest()}
+
+
+def audit_generation_drafts(*, expected_sha256, **inputs):
+    if not isinstance(expected_sha256, str) or not re.fullmatch(r'[0-9a-f]{64}', expected_sha256):
+        raise ValueError('invalid generation draft digest')
+    name = f"g{inputs['generation']}.stage.drafts.json"
+    with _directory(inputs['root']) as directory:
+        before, saved = _read(directory, name)
+    if hashlib.sha256(before).hexdigest() != expected_sha256:
+        raise ValueError('generation draft digest differs')
+    report, raw = _derive_generation_drafts(**inputs)
+    with _directory(inputs['root']) as directory:
+        after, _ = _read(directory, name)
+    if before != after or before != raw or saved != report:
+        raise ValueError('generation drafts differ from replay')
+    return {'status': 'generation_drafts_replay_consistent', 'training_allowed': False,
+            'draft_count': report['draft_count'], 'sha256': expected_sha256,
+            'evidence_type': 'caller_supplied_capture_and_sandbox'}
