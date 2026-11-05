@@ -99,6 +99,8 @@ class SlotTransportTests(unittest.TestCase):
         self.assertEqual(draft['provenance']['execution_mode'], 'unverified_capture')
         self.assertEqual(draft['provenance']['request_id'], evidence['attempts'][-1]['request_id'])
         self.assertEqual(draft['provenance']['raw_response_sha256'], ledger[-1]['response_sha256'])
+        self.assertEqual(draft['provenance']['slot_evidence_sha256'], result['evidence_sha256'])
+        self.assertEqual(draft['provenance']['slot'], 0)
         self.assertFalse(draft['eligible_for_training'])
         self.assertNotIn('query_outputs', json.dumps(draft))
         with self.assertRaises(ValueError):
