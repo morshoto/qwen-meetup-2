@@ -631,3 +631,9 @@ not sent to the model. Replay recomputes duplicate decisions against the same
 reference pool for each attempt. Generation reports now count intermediate
 attempt outcomes as well as final slot outcomes; uncertain interrupted attempts
 remain visible through budget usage. These checks used fixtures only.
+
+## Experiment outcome
+
+The concise [results and gate report](rsi-experiment-results.md) links the
+protocol to the current stopping point and identifies the evidence needed before
+continuation. It does not report a live RSI result.

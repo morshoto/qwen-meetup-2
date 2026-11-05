@@ -1,0 +1,19 @@
+# Qwen RSI experiment: current result
+
+The [protocol](rsi-research-protocol.md) and [v2 benchmark amendment](../research/rsi/design-v2.md) describe a proposed experiment. The execution gate remains closed; the experiment has not been run. This is a report of the stopping point, not an RSI performance result.
+
+## Evidence available
+
+- The retained-history review identified 317 of 1,000 source tasks in known records. The provisional development split excludes those IDs. A broader metadata review found no development overlap in its recognized task identifiers, but neither review establishes complete historical prompt exposure. See the [provisional split](../research/rsi/provisional-split.json) and [extended review](../research/rsi/extended-exposure-review.json).
+- Local fixture and synthetic checks exercise parts of collection, training preparation, monitoring and comparison. The [execution progress](rsi-execution-progress.md) records their scope and limitations. The latest full offline suite at commit `fbc841b` reported 513 passing tests; these are not live experiment results.
+- No new Qwen collection, model training, matched comparison, or independent ARC-AGI-2 evaluation was performed for this issue. Strict eligible Oracle count, model improvement, ARC-AGI-2 score and experiment compute cost are therefore not measured. No competitiveness claim can be made.
+
+## Gates before continuation
+
+1. Independently account for retained and missing task exposure, freeze a defensible split, and record any remaining contamination uncertainty. The current review cannot prove the historical record complete.
+2. Freeze and independently audit the execution registration, including model, runtime, sandbox and transitive dependencies, prompts, data mapping, seeds and budgets. The current registration is a draft.
+3. Obtain separately scoped authorization before live collection; independently verify provenance and the five strict same-model Oracle threshold before training.
+4. Establish and authorize the one-step preflight, including process containment and independent adapter reload; audit its observations before any training stage.
+5. If gates permit, compare against the same untrained model under matched conditions and independently score ARC-AGI-2. The 42.4% v2 target is a contextual reference for a different model and setting, not a measured result or matched-compute baseline.
+
+If any gate cannot be satisfied, preserve this stopping point and report the specific missing evidence. The detailed [implementation status](rsi-execution-progress.md) lists additional limitations.
