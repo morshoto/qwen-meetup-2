@@ -1,0 +1,88 @@
+experiment:
+  name: e6-cpu-fake
+  seed: 42
+  conditions: [B, C]
+  generations: 0
+  evaluation_generations: [0]
+  evaluation_split: exploration
+model:
+  id: fake-qwen
+  revision: fake-qwen-v1
+  backend: fake
+  temperature: 0.0
+  max_tokens: 512
+data:
+  challenges: tests/fixtures/arc_challenges.json
+  solutions: tests/fixtures/arc_solutions.json
+  split_seed: 42
+  exploration: 4
+  promotion_gate: 2
+  monitoring: 2
+agent:
+  max_repairs: 1
+  timeout_seconds: 2
+  memory_mb: 128
+  candidates: 1
+  sandbox: fake
+rsi:
+  exploration_per_generation: 1
+  min_samples: 1
+  replay_ratio: 0.0
+  trainer: dry_run
+  learning_rate: 0.0001
+  epochs: 1
+  lora_rank: 8
+  lora_alpha: 16
+  promotion_rule: not_applicable
+tracking:
+  output_dir: artifacts
+budget:
+  max_seconds: 300
+  max_gpu_hours: 0
+  max_llm_calls: 100
+  max_tokens: 100000
+  max_candidates: 100
+  max_container_starts: 1000
+  token_enforcement: strict
+p3b:
+  training:
+    backend: none
+    method: qlora_sft
+    batch_size: 1
+    learning_rate: 0.0001
+    max_steps: 1
+    lora_rank: 8
+    lora_alpha: 16
+    continue_previous_adapter: false
+    replay_buffer_enabled: false
+    max_seq_length: 2048
+    num_layers: 2
+    timeout_seconds: 300
+    collection_tasks: 5
+    mlx_lm_version: 0.30.7
+    python_executable: ''
+    model_path: ''
+  insufficient_data:
+    min_verified_samples: 5
+    min_verified_unique_tasks: 5
+    action: skip_training
+e6:
+  enabled: true
+  profile: cpu_fake
+  e5_artifact: artifacts/e5-live-smoke-20261101-compact-feedback-final
+  min_unique_verified_tasks: 5
+  max_collection_attempts: 5
+  train_examples: 3
+  query_inputs: 1
+  heldout_inputs: 3
+  promotion_gate_tasks: 2
+  allow_source_mixing: false
+  max_model_calls: 100
+  max_reserved_tokens: 100000
+  max_sandbox_runs: 1000
+  max_training_steps: 0
+  max_generations: 2
+  max_wall_seconds: 300
+  max_training_seconds: 180
+  checkpoint_dir: checkpoints/e6
+  log_dir: logs/e6

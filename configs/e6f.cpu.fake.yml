@@ -1,0 +1,11 @@
+e6f:
+  profile: cpu_fake
+  base_config: configs/e6.fake.yml
+  initial_candidates: 6
+  max_repair_attempts: 2
+  target_unique_oracles: 5
+  reuse_existing: false
+  max_model_calls: 20
+  max_reserved_tokens: 100000
+  max_sandbox_runs: 1000
+  max_wall_seconds: 300

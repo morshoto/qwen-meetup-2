@@ -1,0 +1,16 @@
+e8:
+  profile: fake_full
+  base_config: configs/e6.fake.yml
+  slots: 10
+  slot_offset: 10
+  candidate_sandbox: 30
+  sandbox: 300
+  calls: 32
+  reserved_tokens: 200000
+  wall_seconds: 3600
+  candidate_seconds: 300
+  max_repairs: 2
+  seed: 42
+  min_free_disk_gib: 5
+  min_memory_free_percent: 10
+  max_swap_increase_mib: 4096

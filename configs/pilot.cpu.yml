@@ -1,0 +1,41 @@
+experiment:
+  name: cpu-pilot
+  seed: 42
+  conditions: [A, B, C]
+  generations: 1
+  evaluation_generations: [0, 1]
+  evaluation_split: exploration
+model:
+  id: fake-identity
+  revision: v1
+  backend: fake
+  temperature: 0.0
+  max_tokens: 512
+data:
+  challenges: tests/fixtures/arc_challenges.json
+  solutions: tests/fixtures/arc_solutions.json
+  split_seed: 42
+  exploration: 4
+  promotion_gate: 2
+  monitoring: 2
+agent:
+  max_repairs: 2
+  timeout_seconds: 2
+  memory_mb: 128
+  candidates: 2
+  sandbox: fake
+rsi:
+  exploration_per_generation: 4
+  min_samples: 1
+  replay_ratio: 0.5
+  trainer: dry_run
+  learning_rate: 0.0002
+  epochs: 1
+  lora_rank: 8
+  lora_alpha: 16
+  promotion_rule: not_applicable
+tracking:
+  output_dir: artifacts
+budget:
+  max_seconds: 300
+  max_gpu_hours: 0

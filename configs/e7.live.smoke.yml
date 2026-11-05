@@ -1,0 +1,16 @@
+e7:
+  profile: live_smoke
+  base_config: configs/e6.local.smoke.yml
+  slots: 2
+  candidate_sandbox: 20
+  arm_sandbox: 40
+  total_sandbox: 80
+  candidate_calls: 3
+  arm_calls: 10
+  total_calls: 20
+  candidate_tokens: 15000
+  arm_tokens: 50000
+  total_tokens: 100000
+  candidate_seconds: 300
+  arm_seconds: 450
+  total_seconds: 900

@@ -1,0 +1,11 @@
+e6f:
+  profile: live_collection
+  base_config: configs/e6.local.smoke.yml
+  initial_candidates: 20
+  max_repair_attempts: 2
+  target_unique_oracles: 5
+  reuse_existing: true
+  max_model_calls: 60
+  max_reserved_tokens: 400000
+  max_sandbox_runs: 200
+  max_wall_seconds: 2400

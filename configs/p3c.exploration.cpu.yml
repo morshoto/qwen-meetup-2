@@ -1,0 +1,74 @@
+experiment:
+  name: p3c-exploration-cpu-fake
+  seed: 42
+  conditions: [B]
+  generations: 0
+  evaluation_generations: [0]
+  evaluation_split: exploration
+model:
+  id: fake-arc-model
+  revision: cpu-fake-v1
+  backend: fake
+  base_url: http://127.0.0.1:8080/v1
+  temperature: 0
+  max_tokens: 128
+  timeout_seconds: 10
+  thinking: server_default
+  allow_remote: false
+  quantization: none
+  adapter_sha256: none
+data:
+  challenges: tests/fixtures/exploration_cpu_challenges.json
+  solutions: tests/fixtures/exploration_cpu_solutions.json
+  split_seed: 42
+  exploration: 10
+  promotion_gate: 0
+  monitoring: 0
+agent:
+  max_repairs: 1
+  timeout_seconds: 2
+  memory_mb: 64
+  candidates: 1
+  sandbox: fake
+  sandbox_image: arc-sandbox:local
+  cpus: 1.0
+  pids: 8
+  max_output_bytes: 4096
+  max_code_bytes: 4096
+rsi:
+  exploration_per_generation: 1
+  exploration_offset: 0
+  min_samples: 1
+  replay_ratio: 0
+  trainer: dry_run
+  learning_rate: 0.0001
+  epochs: 1
+  lora_rank: 2
+  lora_alpha: 2
+  promotion_rule: not_applicable
+tracking:
+  output_dir: artifacts
+  profile: cpu_fake
+budget:
+  max_seconds: 300
+  max_gpu_hours: 0
+  max_llm_calls: 500
+  max_tokens: 2000000
+  max_candidates: 200
+  max_container_starts: 1000
+  token_enforcement: strict
+search:
+  enabled: true
+  strategies: [S0, S1, S2, S3]
+  max_calls_per_task: 3
+  max_reserved_tokens_per_task: 200000
+  max_sandbox_starts_per_task: 200
+  max_seconds_per_task: 30
+  comparison_task_ids: [cpu_000, cpu_001, cpu_002]
+  comparison_task_count: 3
+  independent_candidates: 3
+  target_unique_verified_tasks: 5
+  collection_max_tasks: 7
+  exclusion_manifest: configs/p3c.exploration.exclusions.v1.json
+  thinking_policy: S2_on_others_configured
+  selection_rules: [train_exact_match_count, no_execution_error, static_filter_pass, candidate_index]

@@ -1,0 +1,59 @@
+experiment:
+  name: p3a-guarded-mlx
+  seed: 42
+  conditions:
+  - A
+  - B
+  generations: 0
+  evaluation_generations:
+  - 0
+  evaluation_split: exploration
+model:
+  id: mlx-community/Qwen3-4B-4bit
+  revision: 4dcb3d101c2a062e5c1d4bb173588c54ea6c4d25
+  backend: guarded_mlx
+  base_url: http://127.0.0.1:8080/v1
+  temperature: 0.2
+  max_tokens: 1024
+  timeout_seconds: 120
+  thinking: 'off'
+  allow_remote: false
+  quantization: 4bit
+data:
+  challenges: data/raw/arc-agi_training_challenges.json
+  solutions: data/raw/arc-agi_training_solutions.json
+  split_seed: 42
+  exploration: 400
+  promotion_gate: 400
+  monitoring: 200
+agent:
+  max_repairs: 1
+  timeout_seconds: 5
+  memory_mb: 256
+  candidates: 1
+  sandbox: docker
+  sandbox_image: arc-sandbox:local
+  cpus: 1.0
+  pids: 32
+  max_output_bytes: 65536
+  max_code_bytes: 65536
+rsi:
+  exploration_per_generation: 3
+  min_samples: 1
+  replay_ratio: 0.5
+  trainer: dry_run
+  learning_rate: 0.0002
+  epochs: 1
+  lora_rank: 8
+  lora_alpha: 16
+  promotion_rule: not_applicable
+tracking:
+  output_dir: artifacts
+budget:
+  max_seconds: 1800
+  max_gpu_hours: 0
+  max_llm_calls: 24
+  max_tokens: 100000
+  max_candidates: 6
+  max_container_starts: 100
+  token_enforcement: strict

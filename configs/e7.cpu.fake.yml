@@ -1,0 +1,16 @@
+e7:
+  profile: cpu_fake
+  base_config: configs/e6.fake.yml
+  slots: 3
+  candidate_sandbox: 30
+  arm_sandbox: 90
+  total_sandbox: 180
+  candidate_calls: 3
+  arm_calls: 9
+  total_calls: 18
+  candidate_tokens: 12000
+  arm_tokens: 36000
+  total_tokens: 72000
+  candidate_seconds: 120
+  arm_seconds: 450
+  total_seconds: 900

@@ -1,0 +1,61 @@
+experiment:
+  name: p3b-local-qwen8b-b20
+  seed: 42
+  conditions:
+  - B
+  generations: 0
+  evaluation_generations:
+  - 0
+  evaluation_split: exploration
+model:
+  id: mlx-community/Qwen3-8B-4bit
+  revision: 545dc4251c05440727734bcd94334791f6ab0192
+  backend: guarded_mlx
+  base_url: http://127.0.0.1:8080/v1
+  temperature: 0.7
+  max_tokens: 2048
+  timeout_seconds: 240
+  max_prompt_tokens: 32768
+  thinking: 'off'
+  allow_remote: false
+  quantization: 4bit
+  adapter_sha256: none
+data:
+  challenges: data/raw/arc-agi_training_challenges.json
+  solutions: data/raw/arc-agi_training_solutions.json
+  split_seed: 42
+  exploration: 400
+  promotion_gate: 400
+  monitoring: 200
+agent:
+  max_repairs: 2
+  timeout_seconds: 5
+  memory_mb: 256
+  candidates: 2
+  sandbox: docker
+  sandbox_image: arc-sandbox:local
+  cpus: 1.0
+  pids: 32
+  max_output_bytes: 65536
+  max_code_bytes: 65536
+rsi:
+  exploration_per_generation: 20
+  exploration_offset: 240
+  min_samples: 5
+  replay_ratio: 0.5
+  trainer: dry_run
+  learning_rate: 0.0001
+  epochs: 1
+  lora_rank: 8
+  lora_alpha: 16
+  promotion_rule: not_applicable
+tracking:
+  output_dir: artifacts
+budget:
+  max_seconds: 5400
+  max_gpu_hours: 0
+  max_llm_calls: 200
+  max_tokens: 2000000
+  max_candidates: 40
+  max_container_starts: 1000
+  token_enforcement: strict

@@ -1,0 +1,17 @@
+e9:
+  profile: live
+  models: [14b]
+  base_config: configs/e6.local.smoke.yml
+  slots: 30
+  slot_offset: 10
+  candidate_sandbox: 30
+  sandbox: 900
+  calls: 100
+  reserved_tokens: 300000
+  wall_seconds: 1200
+  candidate_seconds: 120
+  max_repairs: 2
+  seed: 142
+  min_free_disk_gib: 20
+  min_memory_free_percent: 10
+  max_swap_increase_mib: 4096

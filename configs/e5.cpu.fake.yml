@@ -1,0 +1,82 @@
+experiment:
+  name: e5-cpu-fake
+  seed: 42
+  conditions:
+  - A
+  - B
+  - C
+  generations: 2
+  evaluation_generations:
+  - 0
+  - 1
+  - 2
+  evaluation_split: exploration
+model:
+  id: fake-identity
+  revision: v1
+  backend: fake
+  temperature: 0.0
+  max_tokens: 512
+data:
+  challenges: tests/fixtures/arc_challenges.json
+  solutions: tests/fixtures/arc_solutions.json
+  split_seed: 42
+  exploration: 4
+  promotion_gate: 2
+  monitoring: 2
+agent:
+  max_repairs: 2
+  timeout_seconds: 2
+  memory_mb: 128
+  candidates: 2
+  sandbox: fake
+rsi:
+  exploration_per_generation: 4
+  min_samples: 1
+  replay_ratio: 0.5
+  trainer: dry_run
+  learning_rate: 0.0002
+  epochs: 1
+  lora_rank: 8
+  lora_alpha: 16
+  promotion_rule: not_applicable
+tracking:
+  output_dir: artifacts
+budget:
+  max_seconds: 300
+  max_gpu_hours: 0
+e5:
+  enabled: true
+  profile: cpu_fake
+  conditions:
+  - A
+  - B
+  - C1
+  - C2
+  generations: 2
+  real_arc_tasks_per_generation: 1
+  synthetic_tasks_per_generation: 2
+  generator_candidates: 1
+  self_solve_attempts: 1
+  train_examples: 3
+  hidden_test_inputs: 2
+  generator_validation_inputs: 2
+  minimum_successful_tasks: 5
+  continue_previous_adapter: true
+  replay_ratio: 0.5
+  replay_max_records: 200
+  promotion_gate_tasks: 1
+  promotion_min_delta: 0.0
+  rollback_on_regression: true
+  monitoring_tasks: 1
+  monitoring_generations:
+  - 0
+  - 2
+  max_model_calls: 100
+  max_reserved_tokens: 100000
+  max_sandbox_runs: 1000
+  max_training_steps: 6
+  max_wall_seconds: 300
+  max_training_seconds: 180
+  checkpoint_dir: checkpoints/e5
+  log_dir: logs/e5

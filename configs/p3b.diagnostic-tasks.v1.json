@@ -1,0 +1,15 @@
+{
+  "protocol": "p3b_diagnostic_task_exclusion_v1",
+  "version": 1,
+  "source_artifact": "artifacts/p3b3-compare-9a26aaf6340c",
+  "source_protocol": "p3b_unused_exploration_holdout_v1",
+  "source_report": "artifacts/p3b-hardening-history-compare-9a26aaf6340c/report.json",
+  "reason": "Previously used for B/C format-failure diagnosis; exclude from future promotion holdouts and P3-C collection.",
+  "task_ids": [
+    "57edb29d",
+    "b0722778",
+    "5582e5ca",
+    "7953d61e",
+    "44d8ac46"
+  ]
+}

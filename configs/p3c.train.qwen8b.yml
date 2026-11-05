@@ -1,0 +1,112 @@
+experiment:
+  name: p3c-train-qwen8b-offset285
+  seed: 42
+  conditions: [B]
+  generations: 0
+  evaluation_generations: [0]
+  evaluation_split: exploration
+model:
+  id: mlx-community/Qwen3-8B-4bit
+  revision: 545dc4251c05440727734bcd94334791f6ab0192
+  backend: guarded_mlx
+  base_url: http://127.0.0.1:8080/v1
+  temperature: 0.7
+  max_tokens: 2048
+  timeout_seconds: 240
+  max_prompt_tokens: 32768
+  thinking: 'off'
+  allow_remote: false
+  quantization: 4bit
+  adapter_sha256: none
+data:
+  challenges: data/raw/arc-agi_training_challenges.json
+  solutions: data/raw/arc-agi_training_solutions.json
+  split_seed: 42
+  exploration: 400
+  promotion_gate: 400
+  monitoring: 200
+agent:
+  max_repairs: 1
+  timeout_seconds: 5
+  memory_mb: 256
+  candidates: 1
+  sandbox: docker
+  sandbox_image: arc-sandbox:local
+  cpus: 1.0
+  pids: 32
+  max_output_bytes: 65536
+  max_code_bytes: 65536
+rsi:
+  exploration_per_generation: 20
+  exploration_offset: 285
+  min_samples: 5
+  replay_ratio: 0.5
+  trainer: mlx_lora
+  learning_rate: 0.0001
+  epochs: 1
+  lora_rank: 8
+  lora_alpha: 16
+  promotion_rule: rollback_on_regression
+tracking:
+  output_dir: artifacts
+budget:
+  max_seconds: 1800
+  max_gpu_hours: 0.5
+  max_llm_calls: 120
+  max_tokens: 2000000
+  max_candidates: 20
+  max_container_starts: 500
+  token_enforcement: strict
+p3b:
+  training:
+    backend: mlx_lora
+    method: qlora_sft
+    batch_size: 1
+    learning_rate: 0.0001
+    max_steps: 20
+    lora_rank: 8
+    lora_alpha: 16
+    continue_previous_adapter: false
+    replay_buffer_enabled: false
+    max_seq_length: 2048
+    num_layers: 2
+    timeout_seconds: 1800
+    collection_tasks: 20
+    mlx_lm_version: 0.30.7
+    python_executable: /tmp/qwen-p3a-mlx-venv/bin/python
+    model_path: /Users/shotomorisaki/.cache/huggingface/hub/models--mlx-community--Qwen3-8B-4bit/snapshots/545dc4251c05440727734bcd94334791f6ab0192
+  promotion:
+    enabled: true
+    rollback_on_regression: true
+    minimum_tasks: 5
+    diagnostic_task_manifest: configs/p3b.diagnostic-tasks.v1.json
+    exclude_diagnostic_tasks: true
+  insufficient_data:
+    min_verified_samples: 5
+    min_verified_unique_tasks: 5
+    action: skip_training
+p3c:
+  enabled: true
+  task_ids:
+    - da2b0fe3
+    - 4c4377d9
+    - 79cce52d
+    - e69241bd
+    - c6141b15
+    - 9172f3a0
+    - 321b1fc6
+    - 941d9a10
+    - a416fc5b
+    - 6fa7a44f
+    - d968ffd4
+    - 05269061
+    - 363442ee
+    - 7039b2d7
+    - 8ee62060
+    - 0d3d703e
+    - 9841fdad
+    - 6bcdb01e
+    - 4be741c5
+    - 762cd429
+  diagnostic_task_manifest: configs/p3b.diagnostic-tasks.v1.json
+  max_code_attempts: 2

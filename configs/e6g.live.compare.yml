@@ -1,0 +1,13 @@
+e6g:
+  profile: live_compare
+  base_config: configs/e6.local.smoke.yml
+  candidates_per_condition: 10
+  max_repairs: 2
+  per_condition_calls: 30
+  per_condition_reserved_tokens: 140000
+  per_condition_sandbox: 100
+  per_condition_wall_seconds: 1200
+  total_calls: 60
+  total_reserved_tokens: 280000
+  total_sandbox: 200
+  total_wall_seconds: 2400

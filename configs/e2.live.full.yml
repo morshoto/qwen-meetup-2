@@ -1,0 +1,86 @@
+experiment:
+  name: p3c-e2-live-full
+  seed: 42
+  conditions:
+  - B
+  generations: 0
+  evaluation_generations:
+  - 0
+  evaluation_split: exploration
+model:
+  id: mlx-community/Qwen3-8B-4bit
+  revision: 545dc4251c05440727734bcd94334791f6ab0192
+  backend: guarded_mlx
+  base_url: http://127.0.0.1:8080/v1
+  temperature: 0.7
+  max_tokens: 4096
+  timeout_seconds: 240
+  max_prompt_tokens: 32768
+  thinking: 'off'
+  allow_remote: false
+  quantization: 4bit
+  adapter_sha256: none
+  local_model_path: /Users/shotomorisaki/.cache/huggingface/hub/models--mlx-community--Qwen3-8B-4bit/snapshots/545dc4251c05440727734bcd94334791f6ab0192
+data:
+  challenges: data/raw/arc-agi_training_challenges.json
+  solutions: data/raw/arc-agi_training_solutions.json
+  split_seed: 42
+  exploration: 400
+  promotion_gate: 400
+  monitoring: 200
+agent:
+  max_repairs: 1
+  timeout_seconds: 5
+  memory_mb: 256
+  candidates: 1
+  sandbox: docker
+  sandbox_image: arc-sandbox:local
+  cpus: 1.0
+  pids: 32
+  max_output_bytes: 65536
+  max_code_bytes: 65536
+rsi:
+  exploration_per_generation: 20
+  exploration_offset: 0
+  min_samples: 5
+  replay_ratio: 0.5
+  trainer: dry_run
+  learning_rate: 0.0001
+  epochs: 1
+  lora_rank: 8
+  lora_alpha: 16
+  promotion_rule: not_applicable
+tracking:
+  output_dir: artifacts
+  profile: e2_full
+budget:
+  max_seconds: 5400
+  max_gpu_hours: 0
+  max_llm_calls: 80
+  max_tokens: 500000
+  max_candidates: 80
+  max_container_starts: 240
+  token_enforcement: strict
+search:
+  enabled: true
+  strategies:
+  - S0
+  - S1
+  - S2
+  - S3
+  max_calls_per_task: 3
+  max_reserved_tokens_per_task: 100000
+  max_sandbox_starts_per_task: 200
+  max_seconds_per_task: 1800
+  comparison_task_ids: []
+  comparison_task_count: 5
+  independent_candidates: 3
+  target_unique_verified_tasks: 5
+  collection_max_tasks: 20
+  exclusion_manifest: configs/p3c.exploration.exclusions.v1.json
+  thinking_policy: S2_on_others_configured
+  selection_rules:
+  - train_exact_match_count
+  - no_execution_error
+  - static_filter_pass
+  - candidate_index

@@ -1,0 +1,125 @@
+experiment:
+  name: e5-local-3gen
+  seed: 42
+  conditions:
+  - B
+  generations: 2
+  evaluation_generations:
+  - 0
+  - 1
+  - 2
+  evaluation_split: exploration
+model:
+  id: mlx-community/Qwen3-8B-4bit
+  revision: 545dc4251c05440727734bcd94334791f6ab0192
+  backend: guarded_mlx
+  base_url: http://127.0.0.1:8080/v1
+  temperature: 0.7
+  max_tokens: 1024
+  timeout_seconds: 240
+  max_prompt_tokens: 32768
+  thinking: 'off'
+  allow_remote: false
+  quantization: 4bit
+  adapter_sha256: none
+data:
+  challenges: data/raw/arc-agi_training_challenges.json
+  solutions: data/raw/arc-agi_training_solutions.json
+  split_seed: 42
+  exploration: 400
+  promotion_gate: 400
+  monitoring: 200
+agent:
+  max_repairs: 1
+  timeout_seconds: 5
+  memory_mb: 256
+  candidates: 1
+  sandbox: docker
+  sandbox_image: arc-sandbox:local
+  cpus: 1.0
+  pids: 32
+  max_output_bytes: 65536
+  max_code_bytes: 65536
+rsi:
+  exploration_per_generation: 3
+  exploration_offset: 0
+  min_samples: 5
+  replay_ratio: 0.5
+  trainer: mlx_lora
+  learning_rate: 0.0001
+  epochs: 1
+  lora_rank: 8
+  lora_alpha: 16
+  promotion_rule: adapter_only_non_regression
+tracking:
+  output_dir: artifacts
+budget:
+  max_seconds: 21600
+  max_gpu_hours: 3
+  max_llm_calls: 300
+  max_tokens: 2000000
+  max_candidates: 100
+  max_container_starts: 4000
+  token_enforcement: strict
+p3b:
+  training:
+    backend: mlx_lora
+    method: qlora_sft
+    batch_size: 1
+    learning_rate: 0.0001
+    max_steps: 3
+    lora_rank: 8
+    lora_alpha: 16
+    continue_previous_adapter: true
+    replay_buffer_enabled: true
+    max_seq_length: 2048
+    num_layers: 2
+    timeout_seconds: 1800
+    collection_tasks: 3
+    mlx_lm_version: 0.30.7
+    python_executable: /tmp/qwen-p3a-mlx-venv/bin/python
+    model_path: /Users/shotomorisaki/.cache/huggingface/hub/models--mlx-community--Qwen3-8B-4bit/snapshots/545dc4251c05440727734bcd94334791f6ab0192
+  promotion:
+    enabled: true
+    rollback_on_regression: true
+    minimum_tasks: 5
+    diagnostic_task_manifest: configs/p3b.diagnostic-tasks.v1.json
+    exclude_diagnostic_tasks: true
+  insufficient_data:
+    min_verified_samples: 5
+    action: skip_training
+    min_verified_unique_tasks: 5
+e5:
+  enabled: true
+  profile: local_3gen
+  conditions:
+  - A
+  - B
+  - C1
+  generations: 2
+  real_arc_tasks_per_generation: 3
+  synthetic_tasks_per_generation: 2
+  generator_candidates: 2
+  self_solve_attempts: 1
+  train_examples: 3
+  hidden_test_inputs: 2
+  generator_validation_inputs: 2
+  minimum_successful_tasks: 5
+  continue_previous_adapter: true
+  replay_ratio: 0.5
+  replay_max_records: 200
+  promotion_gate_tasks: 5
+  promotion_min_delta: 0.0
+  rollback_on_regression: true
+  monitoring_tasks: 10
+  monitoring_generations:
+  - 0
+  - 2
+  max_model_calls: 300
+  max_reserved_tokens: 1000000
+  max_sandbox_runs: 4000
+  max_training_steps: 6
+  max_wall_seconds: 21600
+  max_training_seconds: 1800
+  checkpoint_dir: checkpoints/e5
+  log_dir: logs/e5

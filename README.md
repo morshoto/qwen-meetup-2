@@ -80,3 +80,76 @@ Run the evaluation tests and executable examples with the existing NumPy depende
 uv run --no-project --with 'numpy>=2.2.6' python -m unittest discover -s tests/core -v
 uv run --no-project --with 'numpy>=2.2.6' python -m doctest README.md src/pipelines/train.py
 ```
+
+### ARC-AGI-2 CPU experiment
+
+See [docs/implementation.md](docs/implementation.md) for the offline FakeLLM / DryRunTrainer pilot, configuration, artifacts, and remaining GPU work.
+
+For local model inference and isolated code execution, see [docs/p3a-local.md](docs/p3a-local.md).
+
+For the local QLoRA synthetic pilot and verifier-backed Exploration training path, see [docs/p3b-local.md](docs/p3b-local.md).
+
+For offline P3-C failure diagnosis, paired S0–S3 search comparison, and
+verifier-backed solution collection without training, see
+[docs/p3c-exploration.md](docs/p3c-exploration.md).
+
+The deterministic P3-C fixture path is:
+
+```bash
+uv run --locked python -m src.cli.exploration_compare \
+  --config configs/p3c.exploration.cpu.yml --dry-run \
+  --output-dir artifacts/e2-exploration-cpu-fake
+uv run --locked python -m src.cli.exploration_collect \
+  --config configs/p3c.exploration.cpu.yml \
+  --selection-dir artifacts/e2-exploration-cpu-fake --dry-run \
+  --output-dir artifacts/e3-exploration-cpu-fake
+```
+
+Live E2 Smoke requires the guarded MLX server and Docker to be started
+separately; inspect its bounded preflight before inference:
+
+```bash
+uv run --locked python -m src.cli.exploration_compare \
+  --config configs/e2.live.smoke.yml --check --live
+uv run --locked python -m src.cli.exploration_compare \
+  --config configs/e2.live.smoke.yml --live
+```
+
+See the P3-C guide for server setup, Resume, E3 gates, and the separate Full
+comparison and collection budgets.
+
+For E4 saved-trace diagnosis and the ten-task synthetic transformation-search
+comparison, see [docs/e4-analysis.md](docs/e4-analysis.md).
+
+After a complete live E2 Full run, the current run's corrected offline
+selection and E3 live commands are documented in
+[docs/p3c-exploration.md](docs/p3c-exploration.md). For the retained 2026-11-01
+run, the exact progression was:
+
+```bash
+uv run --locked python -m src.cli.exploration_compare \
+  --reselect-from artifacts/e2-live-full \
+  --output-dir artifacts/e2-live-full-reselected
+
+# Start a fresh guarded server with the E3 Smoke token ledger before this check.
+uv run --locked python -m src.cli.exploration_collect \
+  --config configs/e3.live.smoke.yml \
+  --selection-dir artifacts/e2-live-full-reselected --check --live
+uv run --locked python -m src.cli.exploration_collect \
+  --config configs/e3.live.smoke.yml \
+  --selection-dir artifacts/e2-live-full-reselected --live \
+  --output-dir artifacts/e3-live-smoke
+
+# E3 Collection is a separate bounded run with its own fresh guarded ledger.
+uv run --locked python -m src.cli.exploration_collect \
+  --config configs/e3.live.collection.yml \
+  --selection-dir artifacts/e2-live-full-reselected --check --live
+uv run --locked python -m src.cli.exploration_collect \
+  --config configs/e3.live.collection.yml \
+  --selection-dir artifacts/e2-live-full-reselected --live \
+  --output-dir artifacts/e3-live-collection
+```
+
+For the 14B/32B E9 autonomous RSI collection, strict Oracle gate, audit results,
+and exact additional-slot approval command, see
+[docs/e9-dual-model-rsi.md](docs/e9-dual-model-rsi.md).

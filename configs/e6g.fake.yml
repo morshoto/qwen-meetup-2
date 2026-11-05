@@ -1,0 +1,13 @@
+e6g:
+  profile: cpu_fake
+  base_config: configs/e6.fake.yml
+  candidates_per_condition: 3
+  max_repairs: 2
+  per_condition_calls: 9
+  per_condition_reserved_tokens: 40000
+  per_condition_sandbox: 60
+  per_condition_wall_seconds: 300
+  total_calls: 18
+  total_reserved_tokens: 80000
+  total_sandbox: 120
+  total_wall_seconds: 600
