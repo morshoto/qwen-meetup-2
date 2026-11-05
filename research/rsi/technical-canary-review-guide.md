@@ -7,8 +7,8 @@ model separately; a successful 14B run does not approve or prove a 32B run.
 
 ## Current draft inputs
 
-- [14B registration](technical-canary-registration-14b-v14.json)
-- [32B registration](technical-canary-registration-32b-v14.json)
+- [14B registration](technical-canary-registration-14b-v15.json)
+- [32B registration](technical-canary-registration-32b-v15.json)
 - [Reload review procedure](technical-canary-reload-review.md)
 - [Tiny fabricated-model fixture](audits/tiny-mlx-restricted-fixture.json)
 - [Exited group signal fixture](audits/exited-group-signal-fixture.json) and
@@ -30,7 +30,7 @@ import json
 from pathlib import Path
 
 for key in ('14b', '32b'):
-    path = Path(f'research/rsi/technical-canary-registration-{key}-v14.json')
+    path = Path(f'research/rsi/technical-canary-registration-{key}-v15.json')
     registration = json.loads(path.read_bytes())
     root = Path(registration['local_root'])
     for name, expected in registration['local_file_sha256'].items():
