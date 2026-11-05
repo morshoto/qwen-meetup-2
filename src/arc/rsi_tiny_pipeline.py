@@ -47,16 +47,30 @@ def run_tiny_pipeline_fixture(*, root, python_executable):
             os.killpg(process.pid, 9)
             process.wait()
         process.stdout.close()
-    result.update(tiny_adapter_reloaded=False, promotion_allowed=False)
+    result.update(tiny_adapter_reloaded=False, tiny_reloaded_factor_matches=0, promotion_allowed=False)
     if result['stop_reason'] != 'process_exited' or result['exit_code'] != 0 or not result['stream_complete']:
         return result
-    probe = ("import sys; import mlx.core as mx; from mlx.utils import tree_flatten; "
-             "from mlx_lm.utils import load; m,_=load(sys.argv[1],adapter_path=sys.argv[2],"
-             "tokenizer_config={'trust_remote_code':False}); "
-             "p=[v for k,v in tree_flatten(m.parameters()) if k.endswith(('.lora_a','.lora_b'))]; "
-             "assert len(p)==28; mx.eval(p); print('TINY_RELOAD_OK')")
+    probe = """import json,sys
+import mlx.core as mx
+import numpy as np
+from mlx.utils import tree_flatten
+from mlx_lm.utils import load
+model,_=load(sys.argv[1],adapter_path=sys.argv[2],tokenizer_config={'trust_remote_code':False})
+loaded={key:value for key,value in tree_flatten(model.parameters()) if key.endswith(('.lora_a','.lora_b'))}
+saved=mx.load(sys.argv[2]+'/adapters.safetensors')
+assert len(saved)==28 and set(loaded)==set(saved)
+for key,value in saved.items():
+    mx.eval(value,loaded[key])
+    assert np.array_equal(np.asarray(value),np.asarray(loaded[key]))
+print(json.dumps({'tiny_adapter_reloaded':True,'tiny_reloaded_factor_matches':len(saved)}))
+"""
     reload_command = fork_restricted_command([python,'-B','-c',probe,str(model),str(adapter)])['argv']
     reload_result = subprocess.run(reload_command, cwd=source, env=env, capture_output=True, text=True,
                                    timeout=60, start_new_session=True)
-    result['tiny_adapter_reloaded'] = reload_result.returncode == 0 and reload_result.stdout.strip() == 'TINY_RELOAD_OK'
+    try:
+        parsed = json.loads(reload_result.stdout)
+    except (ValueError, TypeError):
+        parsed = None
+    if reload_result.returncode == 0 and parsed == {'tiny_adapter_reloaded':True, 'tiny_reloaded_factor_matches':28}:
+        result.update(parsed)
     return result
