@@ -641,3 +641,12 @@ seconds (one quarter of the proposed 200-task ceilings). Setup canaries require
 separate registration. Test durable reopen, limits and separation from the
 200-task ledger. These are proposed ceilings, not authorization or proof of
 server enforcement.
+
+### Exploratory runner fixture cycle
+
+Test a separate 50-task, two-arm runner with identical prompts and seeds,
+registered manifest hashes, separate durable budget, per-task elapsed time,
+server-reported usage coverage and explicit failure outcomes. Check that
+interruption remains incomplete and cannot be automatically retried. Fixture
+execution is not model identity attestation, independent provenance, training
+eligibility, an improvement claim or live-run authorization.
