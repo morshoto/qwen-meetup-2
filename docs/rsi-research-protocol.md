@@ -165,6 +165,14 @@ do not establish QLoRA training feasibility. Start with 14B only; do not infer
 RAM pressure, runtime versions, model hashes and Docker image. Preserve all
 existing sealed artifacts.
 
+At 2026-11-05 15:58 JST, the local 14B snapshot's two weight shards occupied
+approximately 7.7 GiB on disk; the volume had approximately 69 GiB available,
+the macOS system-wide memory-free indicator was 88%, and swap usage was zero.
+These are single observations, not reserved capacity or evidence that training
+fits. The prior audited 14B collection sampled peak server RSS of 8,436,512 KiB;
+that was inference, not training. The 14B model snapshot is locally present,
+but its presence does not validate the contents or authorize use.
+
 Design caps for each proposed collection stage are at most 32 calls, 200,000
 reserved tokens, 300 sandbox starts and 3,600 seconds, matching the E8 per-model
 ceiling; exact slots, seeds, prompt and dependency closure must be registered
@@ -197,9 +205,17 @@ The proposed training configuration follows the existing 8B
 pilot, without assuming 14B will fit: batch size 1, rank 8, alpha 16, learning
 rate 0.0001, maximum sequence length 2048, two adapted layers, and at most 20
 steps and 1,800 seconds per generation. A separately authorized preflight uses
-one step. The preflight and full run each need numeric memory, disk, and
-preflight wall-time caps based on a measured resource assessment before
-registration; these design limits are ceilings, not permission to execute.
+one step with a 300-second cap. For both phases, propose a minimum 20 GiB free
+disk, minimum 20% on the macOS system-wide memory-free indicator, maximum
+512 MiB swap growth from the phase's initial measurement, and maximum 32 GiB
+summed process-tree RSS. Sample at least every five seconds; stop on a limit,
+an increasing swap trend, or unavailable monitoring. The process-tree RSS is
+an additional conservative indicator, not a complete measure of unified GPU
+memory; the system-wide limit also applies. The ceilings are design choices
+informed by the available host and inference observations, not measured 14B
+training peaks or permission to execute. The resource monitor and one-step
+training preflight do not yet exist for this protocol and must be implemented,
+tested and separately authorized before any training.
 Budget exhaustion, provenance
 mismatch, incomplete audit, inadequate strict data, failed preflight or a failed
 comparison stops the dependent stage. Do not transfer unused budgets or silently

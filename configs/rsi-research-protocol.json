@@ -42,6 +42,11 @@
   },
   "proposed_training": {
     "preflight_max_steps": 1,
+    "preflight_max_wall_seconds": 300,
+    "min_free_disk_gib": 20,
+    "min_system_memory_free_percent": 20,
+    "max_swap_increase_mib": 512,
+    "max_process_tree_rss_gib": 32,
     "max_steps_per_generation": 20,
     "max_wall_seconds_per_generation": 1800,
     "batch_size": 1,
