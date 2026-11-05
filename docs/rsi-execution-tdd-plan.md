@@ -205,3 +205,11 @@ Test stage replay followed by slot-ordered draft derivation using the evolving
 reference pool. Record the provisional draft count and the five-record
 threshold without marking any draft independently audited or training eligible.
 Reject altered captures and preserve private probe and query-output boundaries.
+
+### Local runtime identity cycle
+
+Test a read-only native interpreter probe that checks the proposed MLX-LM
+version, reviewed generation source, Python executable digest and selected
+package versions. Bind the observation to the draft runtime manifest and detect
+drift. A local probe does not prove complete dependency closure, process
+identity, live execution authorization or training safety.
