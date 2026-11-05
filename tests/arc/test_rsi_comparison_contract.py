@@ -8,6 +8,8 @@ from unittest.mock import Mock, patch
 
 from src.arc.http_backend import BackendError
 from src.arc.guarded_contract import AUDITED_GENERATE_STEP, source_fingerprints
+from src.arc.prompting import system_prompt_for_kind
+from src.arc.rsi_comparison_budget import ComparisonBudget
 from src.arc.rsi_comparison_contract import ContractCheckedComparisonTransport
 from src.arc.rsi_comparison_transport import CapturedComparisonTransport
 
@@ -22,6 +24,9 @@ class ComparisonContractTests(unittest.TestCase):
         self.transport = CapturedComparisonTransport(root=self.root, parent_url=self.parent_url,
             candidate_url=self.candidate_url, parent_adapter='none', candidate_adapter='b' * 64,
             max_request_seconds=2)
+        self.budget = ComparisonBudget.create(self.root, registration_sha256='a' * 64, generation=0)
+        self.reservation = 512 + len(json.dumps([{'role': 'system', 'content': system_prompt_for_kind('e5_self_solve')},
+                                                   {'role': 'user', 'content': 'prompt'}], ensure_ascii=False).encode()) + 1024
         self.states = {self.parent_url: {'ledger_id': '1' * 32, 'token_limit': 8000000, 'reserved_tokens': 0},
                        self.candidate_url: {'ledger_id': '2' * 32, 'token_limit': 8000000, 'reserved_tokens': 0}}
 
@@ -30,6 +35,10 @@ class ComparisonContractTests(unittest.TestCase):
         if kwargs['expected_adapter_sha256'] != expected or kwargs['required_thinking_modes'] != ('off',):
             raise BackendError('budget_unverified', 'wrong contract')
         return dict(self.states[url])
+
+    def wrap(self, transport=None):
+        return ContractCheckedComparisonTransport(transport or self.transport, budget=self.budget,
+            registration_sha256='a' * 64, generation=0, expected_max_prompt_tokens=4096)
 
     def test_real_contract_parser_checks_loopback_fixture(self):
         model = 'mlx-community/Qwen3-14B-4bit'
@@ -77,10 +86,12 @@ class ComparisonContractTests(unittest.TestCase):
         urls = [f'http://127.0.0.1:{server.server_port}/v1' for server in servers]
         transport = CapturedComparisonTransport(root=self.root, parent_url=urls[0], candidate_url=urls[1],
             parent_adapter='none', candidate_adapter='b' * 64, max_request_seconds=2)
-        checked = ContractCheckedComparisonTransport(transport, expected_max_prompt_tokens=4096)
+        checked = self.wrap(transport)
+        self.budget.reserve_model(self.reservation, kind='evaluation')
         checked('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=2)
         self.assertEqual(servers[0].posts, 1)
         servers[1].adapter = 'c' * 64
+        self.budget.reserve_model(self.reservation, kind='evaluation')
         with self.assertRaises(BackendError):
             checked('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=2)
         self.assertEqual(servers[0].posts, 1)
@@ -88,10 +99,11 @@ class ComparisonContractTests(unittest.TestCase):
     @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
     def test_verifies_both_arms_before_each_dispatch(self, verify):
         verify.side_effect = self.contract
-        wrapped = ContractCheckedComparisonTransport(self.transport, expected_max_prompt_tokens=4096)
+        wrapped = self.wrap()
         self.assertEqual(verify.call_count, 2)
         with patch.object(CapturedComparisonTransport, '__call__', return_value={'code': 'code', 'request_id': 'a' * 32}) as dispatch:
             self.states[self.parent_url]['reserved_tokens'] = 100
+            self.budget.reserve_model(self.reservation, kind='evaluation')
             wrapped('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=1)
             dispatch.assert_called_once()
             self.assertEqual(verify.call_count, 4)
@@ -99,8 +111,33 @@ class ComparisonContractTests(unittest.TestCase):
     @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
     def test_rejects_ledger_or_budget_drift_before_dispatch(self, verify):
         verify.side_effect = self.contract
-        wrapped = ContractCheckedComparisonTransport(self.transport, expected_max_prompt_tokens=4096)
+        wrapped = self.wrap()
         self.states[self.parent_url]['ledger_id'] = '3' * 32
+        self.budget.reserve_model(self.reservation, kind='evaluation')
+        with patch.object(CapturedComparisonTransport, '__call__') as dispatch:
+            with self.assertRaises(ValueError):
+                wrapped('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=1)
+            dispatch.assert_not_called()
+
+    @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
+    def test_requires_exact_pre_dispatch_reservation(self, verify):
+        verify.side_effect = self.contract
+        wrapped = self.wrap()
+        with patch.object(CapturedComparisonTransport, '__call__') as dispatch:
+            with self.assertRaises(ValueError):
+                wrapped('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=1)
+            self.assertEqual(verify.call_count, 2)
+            self.budget.reserve_model(self.reservation - 1, kind='evaluation')
+            with self.assertRaises(ValueError):
+                wrapped('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=1)
+            dispatch.assert_not_called()
+
+    @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
+    def test_server_reservations_cannot_exceed_local_budget(self, verify):
+        verify.side_effect = self.contract
+        wrapped = self.wrap()
+        self.budget.reserve_model(self.reservation, kind='evaluation')
+        self.states[self.parent_url]['reserved_tokens'] = self.reservation + 1
         with patch.object(CapturedComparisonTransport, '__call__') as dispatch:
             with self.assertRaises(ValueError):
                 wrapped('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=1)
@@ -116,4 +153,4 @@ class ComparisonContractTests(unittest.TestCase):
             if change == 'budget': self.states[self.candidate_url]['token_limit'] += 1
             if change == 'used': self.states[self.parent_url]['reserved_tokens'] = 1
             with self.subTest(change=change), self.assertRaises(ValueError):
-                ContractCheckedComparisonTransport(self.transport, expected_max_prompt_tokens=4096)
+                self.wrap()
