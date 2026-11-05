@@ -212,6 +212,18 @@ A two-generation HTTP fixture exercised the path. These are reused development
 outcomes, not a separately registered final evaluation, independently verified
 improvement or ARC-AGI-2 score.
 
+### Final diagnostic proposal
+
+A local proposal can freeze the provisionally selected adapter, captured
+comparison digests, diagnostic task hashes, harness and settings hashes, an
+explicit budget, and the v2 42.4% semi-private target. It checks task-ID
+separation against caller-supplied generation and development lists; the budget
+is constrained by the proposed comparison ceilings. A two-generation fixture
+exercised the proposal and rejected overlap and an excessive budget. This is
+an unwitnessed proposal, not an immutable execution registration, proof of
+complete exposure history, a once-only reservation or authorization. No public
+diagnostic or independent submission was run.
+
 ### Quarantined training preparation
 
 Training preparation now checks the structural five-record threshold, canonical
