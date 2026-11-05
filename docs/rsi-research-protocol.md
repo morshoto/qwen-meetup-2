@@ -74,8 +74,12 @@ only and leave the competitive claim unverified.
    to development, recording hashes of both manifests. Do not use public
    evaluation or hidden evaluation tasks for generation, tuning, or selection.
    Check source dataset hashes and keep generated descendants with their parent
-   task in the same partition. Model pretraining exposure is unknown and must be
-   disclosed; this split cannot prove absence of contamination.
+   task in the same partition. Before including historical records, audit their
+   complete ancestry against the development manifest; exclude any record whose
+   parent overlaps it or whose ancestry cannot be established. If historical
+   experiment decisions used development tasks, disclose that exposure and do
+   not call this development split independent. Model pretraining exposure is
+   unknown and must be disclosed; this split cannot prove absence of contamination.
 3. On generation tasks, Qwen writes and repairs candidate programs. Execute in
    the existing network-isolated sandbox with bounded resources. A generic
    verifier checks format, determinism, safety, output validity and independent
