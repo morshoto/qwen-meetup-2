@@ -6,12 +6,15 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+from src.arc.data import Task, Verifier
+from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.http_backend import BackendError
 from src.arc.guarded_contract import AUDITED_GENERATE_STEP, source_fingerprints
 from src.arc.prompting import system_prompt_for_kind
 from src.arc.rsi_comparison_budget import ComparisonBudget
 from src.arc.rsi_comparison_contract import ContractCheckedComparisonTransport
 from src.arc.rsi_comparison_transport import CapturedComparisonTransport
+from src.arc.rsi_comparison_runner import run_comparison
 
 
 class ComparisonContractTests(unittest.TestCase):
@@ -107,6 +110,25 @@ class ComparisonContractTests(unittest.TestCase):
             wrapped('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=1)
             dispatch.assert_called_once()
             self.assertEqual(verify.call_count, 4)
+
+    @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
+    def test_runner_reservations_drive_guarded_dispatch(self, verify):
+        verify.side_effect = self.contract
+        wrapped = self.wrap()
+        ids = [f'task-{i:03}' for i in range(200)]
+        tasks = {key: Task(key, (([[1, 2]], [[2, 1]]),), ([[3, 4]],)) for key in ids}
+        verifier = Verifier({key: [[[4, 3]]] for key in ids})
+        seeds = {key: [10000 + 2 * i, 10001 + 2 * i] for i, key in enumerate(ids)}
+        replies = [{'code': FAKE_PROGRAMS[1], 'request_id': '1' * 32},
+                   {'code': FAKE_PROGRAMS[1], 'request_id': '2' * 32}, TimeoutError('fixture stop')]
+        with patch.object(CapturedComparisonTransport, '__call__', side_effect=replies) as dispatch:
+            outcome = run_comparison(root=self.root, registration_sha256='a' * 64, generation=0,
+                task_ids=ids, tasks=tasks, seeds=seeds, parent_adapter='none', candidate_adapter='b' * 64,
+                generate=wrapped, sandbox=FakeE6Sandbox(), verifier=verifier, budget=self.budget)
+        self.assertEqual(outcome['status'], 'incomplete')
+        self.assertEqual(outcome['budget_usage']['model_calls'], 3)
+        self.assertEqual(dispatch.call_count, 3)
+        self.assertEqual(verify.call_count, 8)
 
     @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
     def test_rejects_ledger_or_budget_drift_before_dispatch(self, verify):
