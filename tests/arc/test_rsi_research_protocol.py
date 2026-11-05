@@ -42,6 +42,14 @@ class ResearchProtocolTests(unittest.TestCase):
         self.assertEqual(training['lora_rank'], 8)
         self.assertFalse(self.protocol['execution_authorized'])
 
+    def test_training_resource_proposal_has_enforceable_stop_limits(self):
+        training = self.protocol['proposed_training']
+        self.assertEqual(training['preflight_max_wall_seconds'], 300)
+        self.assertEqual(training['min_free_disk_gib'], 20)
+        self.assertEqual(training['min_system_memory_free_percent'], 20)
+        self.assertEqual(training['max_swap_increase_mib'], 512)
+        self.assertEqual(training['max_process_tree_rss_gib'], 32)
+
     def test_recursive_improvement_compares_each_generation_to_its_parent(self):
         evaluation = self.protocol['evaluation']
         self.assertTrue(evaluation['each_generation_compared_to_parent'])
