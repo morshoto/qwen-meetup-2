@@ -650,3 +650,11 @@ server-reported usage coverage and explicit failure outcomes. Check that
 interruption remains incomplete and cannot be automatically retried. Fixture
 execution is not model identity attestation, independent provenance, training
 eligibility, an improvement claim or live-run authorization.
+
+### Exploratory captured transport binding
+
+Test routing exploratory base/trained arms through the existing captured HTTP
+transport, preserving request IDs and bounded server-reported usage. Partial
+usage remains unknown, malformed or over-budget usage stops the run, and
+captured records remain subject to a separate replay and identity audit. Use a
+local fixture server only; do not authorize live dispatch.
