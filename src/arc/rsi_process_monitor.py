@@ -46,7 +46,7 @@ def _exited_unreaped(process: subprocess.Popen):
     return info if info.pid else None
 
 
-def _stop_group(process: subprocess.Popen, grace: float) -> tuple[int, bool]:
+def _stop_group(process: subprocess.Popen, grace: float) -> tuple[int, bool, dict]:
     group_signals_confirmed = True
     try:
         os.killpg(process.pid, signal.SIGTERM)
@@ -65,8 +65,16 @@ def _stop_group(process: subprocess.Popen, grace: float) -> tuple[int, bool]:
         pass
     except PermissionError:
         group_signals_confirmed = False
+    # Capture only a bounded, unverified listing while the leader PID remains reserved.
+    # It neither changes the signal result nor establishes escaped-process cleanup.
     try:
-        return process.wait(timeout=max(1.0, grace)), group_signals_confirmed
+        from src.arc.rsi_group_observation import observe_exited_group
+        observation = observe_exited_group(process)
+    except (OSError, ValueError):
+        observation = {'status': 'group_observation_unavailable', 'group_cleanup_verified': False,
+                       'escaped_processes_excluded': False}
+    try:
+        return process.wait(timeout=max(1.0, grace)), group_signals_confirmed, observation
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError('owned process termination could not be confirmed') from exc
 
@@ -164,8 +172,9 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
     except BaseException:
         _stop_group(process, terminate_grace_seconds)
         raise
-    exit_code, group_signals_confirmed = _stop_group(process, terminate_grace_seconds)
+    exit_code, group_signals_confirmed, cleanup_observation = _stop_group(process, terminate_grace_seconds)
     return {'stop_reason': stop_reason, 'exit_code': exit_code, 'samples': samples,
             'elapsed_seconds': time.monotonic() - start,
             'training_verified': False, 'group_signals_confirmed': group_signals_confirmed,
+            'cleanup_observation': cleanup_observation,
             'escaped_processes_excluded': False}
