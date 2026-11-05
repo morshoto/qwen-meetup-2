@@ -27,10 +27,10 @@ proposal; do not silently substitute another file.
 
 ## Recompute the candidate inventory
 
-From the issue 2 worktree, with the repository's Python environment:
+From the issue 2 worktree, with a Python environment that has the repository dependencies, including PyYAML:
 
 ```sh
-python -B - <<'PY'
+python3 -B - <<'PY'
 import json
 from pathlib import Path
 from src.arc.rsi_bounded_inventory import propose_bounded_inventory
@@ -75,7 +75,7 @@ The following are the exact review inputs from the local check:
 Recompute the allocation in the issue worktree:
 
 ```sh
-python -B - <<'PY'
+python3 -B - <<'PY'
 from pathlib import Path
 import hashlib
 import json
