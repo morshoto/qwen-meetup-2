@@ -26,7 +26,8 @@ reviews and authorization.
    Record a separate wall-clock limit and memory, swap, disk and process-tree
    samples for the reload. Stop if the registered limits are exceeded or
    monitoring is unavailable. A 32B reload is not presumed to fit.
-4. From the actual loaded model, use the pinned runtime's
+4. The proposed `python -m src.cli.rsi_reload_probe` command accepts the model key, local model and adapter paths, adapter digest, and exact model-manifest path and digest. It is an observation command, not a supervisor or authorization; use it only inside the separately reviewed and monitored reload process. It verifies the model files before and after the load.
+5. From the actual loaded model, use the pinned runtime's
    `mlx.utils.tree_flatten(model.parameters())` and select the names ending in
    `.lora_a` or `.lora_b`. Evaluate each tensor with `mlx.core.eval`, convert it
    to a NumPy array without changing shape or dtype, and pass the resulting
@@ -34,7 +35,7 @@ reviews and authorization.
    and adapter digest. The comparison requires exactly the expected names,
    shapes, float32 values and digest, and rechecks the saved files. Keep the
    probe output free of ARC data and generated answers.
-5. Record process exit, samples and identities and recheck the base and adapter
+6. Record process exit, samples and identities and recheck the base and adapter
    digests after the process. An independent reviewer must examine the complete
    record, including whether the tensors actually came from that loaded model
    in the observed process. The comparison helper alone reports
