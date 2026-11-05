@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Once-only diagnostic journal cycle
+
+Test an exclusive local diagnostic attempt marker bound to a digest-checked
+final proposal. A claimed attempt remains consumed after interruption; completion
+requires the matching claim token and an evidence digest, and concurrent claims
+cannot both succeed. The local journal is bookkeeping for cooperating callers,
+not execution authorization or proof that an evaluation actually ran.
+
 ### Diagnostic content separation cycle
 
 Test final diagnostic proposals against actual generation, development and
