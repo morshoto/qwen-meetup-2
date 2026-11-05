@@ -85,7 +85,8 @@ def run_exploratory(*, root, registration_sha256, generation, registration, task
                         raise ValueError('invalid or duplicate request ID')
                     seen.add(rid); request_ids.append(rid)
                     if usage is not None and (not isinstance(usage,dict) or set(usage)!={'prompt_tokens','completion_tokens'} or
-                            any(type(v) is not int or v<0 for v in usage.values())):
+                            any(type(v) is not int or v<0 for v in usage.values()) or
+                            usage['completion_tokens'] > 512 or sum(usage.values()) > reservation):
                         raise ValueError('invalid reported usage')
                     usages.append(usage)
                     if 'failure' in response:
@@ -108,8 +109,15 @@ def run_exploratory(*, root, registration_sha256, generation, registration, task
                         'score':score,'request_ids':request_ids,'reported_usage':usages,'row':row})
                 data['arms'][arm]['results'].append(row)
         summary=summarize_exploratory(data)
+        after=budget.snapshot()
+        counters={k:after[k] for k in ('model_calls','reserved_tokens','sandbox_runs')}
+        if counters['model_calls']!=200 or counters['reserved_tokens']<=0:
+            raise ValueError('exploratory budget coverage differs')
         raw=(json.dumps(data,sort_keys=True,separators=(',',':'))+'\n').encode()
-        with _directory(root) as directory: _create(directory,'exploratory-results.json',data)
+        with _directory(root) as directory:
+            _create(directory,'exploratory-results.json',data)
+            _create(directory,'exploratory.completed.json',{'result_sha256':hashlib.sha256(raw).hexdigest(),
+                'registration_sha256':registration_sha256,'budget_after':counters,'claim_eligible':False})
         return {'status':'exploratory_complete_unverified','claim_eligible':False,
                 'independently_verified':False,'sha256':hashlib.sha256(raw).hexdigest(),'summary':summary}
     except Exception as exc:
