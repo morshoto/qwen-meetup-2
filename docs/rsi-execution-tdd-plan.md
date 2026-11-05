@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Collection setup accounting cycle
+
+Test reporting the full collection budget before and after slot execution,
+separately from the captured slot-attempt token usage. A prior setup or canary
+reservation without matching captured usage must make the full-stage token
+total unknown. Reconcile counter deltas and reject changed stage records;
+reserved amounts remain distinct from server-reported usage and monetary cost.
+
 ### Generation reported-token accounting cycle
 
 Test token accounting for a complete captured collection generation, including
