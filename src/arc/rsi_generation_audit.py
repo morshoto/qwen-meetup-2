@@ -1,12 +1,14 @@
 """Replay generation capture consistency without authenticating provenance."""
 import hashlib
+import json
 from collections import Counter
 
-from src.arc.rsi_collected_slot_audit import _index, audit_collected_slot
+from src.arc.rsi_collected_slot_audit import _decode, _index, audit_collected_slot
 from src.arc.rsi_comparison_audit import _read
-from src.arc.rsi_generation_stage import _pool_sha
+from src.arc.rsi_generation_stage import _budget_delta, _pool_sha
 from src.arc.rsi_slot_lifecycle import _directory, _exists, observe_slot
 from src.arc.rsi_task_generation import generation_slots
+from src.arc.rsi_transport_audit import _json_object
 
 
 def audit_generation(*, root, registration_sha256, generation, parent_adapter, task_ids, tasks,
@@ -29,6 +31,8 @@ def audit_generation(*, root, registration_sha256, generation, parent_adapter, t
             raise ValueError('incomplete generation cannot be replayed as complete')
         _, start = _read(directory, f'g{generation}.stage.started.json')
         _, report = _read(directory, f'g{generation}.stage.completed.json')
+        expected_start['budget_before'] = start.get('budget_before')
+        usage = _budget_delta(start.get('budget_before'), report.get('budget_after'))
         if start != expected_start or not isinstance(report.get('slots'), list) or len(report['slots']) != 10:
             raise ValueError('generation stage identity or coverage differs')
         for slot in slots:
@@ -58,10 +62,23 @@ def audit_generation(*, root, registration_sha256, generation, parent_adapter, t
                              ('source_sha256', 'ast_sha256', 'behavior_sha256', 'probe_set_sha256')})
             counts[value['status']] += 1
             checked.append(expected_entry)
+    reserved_tokens = 0
+    for request_id in seen:
+        request = _json_object(_decode(requests[request_id].get('body_base64')))
+        messages = request.get('messages')
+        if not isinstance(messages, list):
+            raise ValueError('captured request messages unavailable')
+        reservation = 512 + len(json.dumps(messages, ensure_ascii=False).encode('utf-8')) + 1024
+        if ledger[request_id].get('token_reservation') != reservation:
+            raise ValueError('request token reservation differs')
+        reserved_tokens += reservation
+    if usage['model_calls'] != len(seen) or usage['reserved_tokens'] != reserved_tokens:
+        raise ValueError('generation budget usage differs from captures')
     expected_report = {'status': 'generation_complete_unverified', 'completed_slots': 10,
                        'slots': checked, 'counts': dict(counts), 'final_reference_pool_sha256': _pool_sha(pool),
+                       'budget_after': report['budget_after'], 'budget_usage': usage,
                        'training_allowed': False, 'evidence_type': 'caller_supplied_components_unverified'}
     if report != expected_report or any(set(group) != seen for group in (requests, responses, ledger)):
         raise ValueError('generation stage report or capture coverage differs')
-    return {'status': 'generation_replay_consistent', 'checked_slots': 10, 'counts': dict(counts),
+    return {'status': 'generation_replay_consistent', 'checked_slots': 10, 'counts': dict(counts), 'budget_usage': usage,
             'training_allowed': False, 'evidence_type': 'caller_supplied_capture_and_sandbox'}

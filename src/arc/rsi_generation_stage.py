@@ -25,6 +25,25 @@ def _pool_sha(pool):
     return hashlib.sha256(json.dumps(pool, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
+_BUDGET_LIMITS = {'model_calls': 32, 'reserved_tokens': 200000, 'sandbox_runs': 300}
+
+
+def _counters(state):
+    return {key: state[key] for key in _BUDGET_LIMITS}
+
+
+def _budget_delta(before, after):
+    for item in (before, after):
+        if (not isinstance(item, dict) or set(item) != set(_BUDGET_LIMITS) or
+                any(type(item[key]) is not int or not 0 <= item[key] <= limit
+                    for key, limit in _BUDGET_LIMITS.items())):
+            raise ValueError('invalid generation budget counters')
+    delta = {key: after[key] - before[key] for key in _BUDGET_LIMITS}
+    if any(value < 0 for value in delta.values()):
+        raise ValueError('generation budget counters regressed')
+    return delta
+
+
 def collect_generation(*, root, registration_sha256, generation, parent_adapter, task_ids, tasks,
                        expected_manifest_sha256, expected_task_hashes, public_probes, private_probes,
                        expected_public_probes_sha256, expected_private_probes_sha256, reference_pool,
@@ -64,11 +83,12 @@ def collect_generation(*, root, registration_sha256, generation, parent_adapter,
         raise ValueError('reference pool differs')
     screen_novelty('def transform(grid): return grid', '0' * 64, expected_private_probes_sha256, reference_pool)
     pool = [dict(item) for item in reference_pool]
+    budget_before = _counters(budget.snapshot())
     start = {'registration_sha256': registration_sha256, 'generation': generation,
              'parent_adapter': parent_adapter, 'manifest_sha256': expected_manifest_sha256,
              'task_hashes': expected_task_hashes, 'public_probe_sha256': expected_public_probes_sha256,
              'private_probe_sha256': expected_private_probes_sha256,
-             'initial_reference_pool_sha256': expected_reference_pool_sha256}
+             'initial_reference_pool_sha256': expected_reference_pool_sha256, 'budget_before': budget_before}
     with _directory(root) as directory:
         _create(directory, f'g{generation}.stage.started.json', start)
     completed, counts = [], Counter()
@@ -92,15 +112,24 @@ def collect_generation(*, root, registration_sha256, generation, parent_adapter,
             counts[result['status']] += 1
             completed.append({'slot': index, 'task_id': key, 'status': result['status'],
                               'evidence_sha256': result['evidence_sha256']})
+        budget_after = _counters(budget.snapshot())
+        usage = _budget_delta(budget_before, budget_after)
         report = {'status': 'generation_complete_unverified', 'completed_slots': len(completed),
                   'slots': completed, 'counts': dict(counts), 'final_reference_pool_sha256': _pool_sha(pool),
+                  'budget_after': budget_after, 'budget_usage': usage,
                   'training_allowed': False, 'evidence_type': 'caller_supplied_components_unverified'}
         with _directory(root) as directory:
             _create(directory, f'g{generation}.stage.completed.json', report)
         return report
     except Exception as exc:
+        try:
+            budget_after = _counters(budget.snapshot())
+            usage = _budget_delta(budget_before, budget_after)
+        except Exception:
+            budget_after, usage = None, None
         report = {'status': 'generation_incomplete', 'completed_slots': len(completed), 'slots': completed,
                   'counts': dict(counts), 'failure_type': type(exc).__name__, 'training_allowed': False,
+                  'budget_after': budget_after, 'budget_usage': usage,
                   'evidence_type': 'caller_supplied_components_unverified'}
         with _directory(root) as directory:
             _create(directory, f'g{generation}.stage.incomplete.json', report)
