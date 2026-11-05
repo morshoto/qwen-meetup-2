@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Preflight specification cycle
+
+Test freezing a non-authorizing preflight proposal after rechecking the canary
+dataset through its MLX loader and translating the pinned training settings.
+Bind the preparation, canary, tokenizer, model, runtime and source-inventory
+digests, parent claim, paths and fixed resource limits. Reject changed inputs,
+overlapping paths, inconsistent settings and repeated writes. Supplied hashes
+are claims, not independent attestation or authorization to execute.
+
 ### Canary MLX loader cycle
 
 Test loading the verified canary JSONL with an injected MLX dataset loader,
