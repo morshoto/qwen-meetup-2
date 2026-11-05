@@ -48,3 +48,16 @@ reserved tokens, sandbox starts or wall time, and a writer with access to the
 run directory can alter them. Coordinated completion and dispatch, a shared
 stage budget, independent provenance audit, and live authorization remain
 required before any live collector can rely on them.
+
+### Shared stage budget
+
+A local, lock-serialized budget now reserves generation and canary calls against
+one per-generation ceiling of 32 calls and 200,000 tokens, and reserves sandbox
+starts against the 300-start ceiling. Reservations survive process interruption;
+wall and monotonic clocks enforce the 3,600-second window and fail closed on
+observed rollback. Adapters connect the budget to the capturing backend and
+sandbox interface. The caller must supply the remaining-time callback and use
+these adapters for every dispatch. These controls depend on cooperating local
+processes and mutable local files; they do not authenticate a ledger, provide
+hard termination of an already running sandbox, or authorize a live experiment.
+No full collector or independent run audit is claimed by these components.
