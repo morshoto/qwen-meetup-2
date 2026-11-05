@@ -4,6 +4,10 @@ from src.arc.e5_selfplay import solve_prompt
 from src.arc.e6f_repair import _static_failure, classify_failure
 
 
+class _InvalidOutput(Exception):
+    pass
+
+
 def evaluate_task(task, *, generate, sandbox):
     """Collect two independent programs with the same label-free prompt.
 
@@ -26,19 +30,23 @@ def evaluate_task(task, *, generate, sandbox):
             if starts >= 10:
                 raise TimeoutError('per-sample sandbox budget exhausted')
             starts += 1
-            return sandbox.run(code, grid)
+            result = sandbox.run(code, grid)
+            try:
+                return validate_grid(result)
+            except (ValueError, TypeError) as exc:
+                raise _InvalidOutput from exc
 
         try:
             mismatch = False
             for grid, expected in task.train:
-                if validate_grid(run(grid)) != validate_grid(expected):
+                if run(grid) != validate_grid(expected):
                     mismatch = True
                     break
             if mismatch:
                 statuses.append('visible_demonstration_mismatch')
                 continue
-            outputs = [validate_grid(run(grid)) for grid in task.test_inputs]
-        except (ValueError, TypeError):
+            outputs = [run(grid) for grid in task.test_inputs]
+        except _InvalidOutput:
             statuses.append('invalid_output')
             continue
         except RuntimeError as exc:
