@@ -1,10 +1,12 @@
 import tempfile
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
 from src.arc.data import Task, Verifier
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
+from src.arc.rsi_comparison_audit import replay_comparison
 from src.arc.rsi_comparison_budget import ComparisonBudget
 from src.arc.rsi_comparison_freeze import summarize_frozen_comparison
 from src.arc.rsi_comparison_runner import run_comparison
@@ -40,6 +42,23 @@ class ComparisonRunnerTests(unittest.TestCase):
         self.assertEqual([c.kwargs['seed'] for c in first_task], [10000, 10001, 10000, 10001])
         self.assertTrue(all(c.args[0] == first_task[0].args[0] for c in first_task))
         self.assertNotIn('[[4, 3]]', first_task[0].args[0])
+        replay = replay_comparison(self.root, expected_sha256=result['sha256'], tasks=self.tasks,
+                                   sandbox=FakeE6Sandbox(), verifier=self.verifier)
+        self.assertEqual(replay['status'], 'comparison_replay_consistent')
+        self.assertFalse(replay['independently_verified'])
+        record_path = self.root / 'comparison-000-parent.json'
+        original = record_path.read_text()
+        changed = json.loads(original)
+        changed['score']['solved'] = False
+        record_path.write_text(json.dumps(changed))
+        with self.assertRaises(ValueError):
+            replay_comparison(self.root, expected_sha256=result['sha256'], tasks=self.tasks,
+                              sandbox=FakeE6Sandbox(), verifier=self.verifier)
+        record_path.write_text(original)
+        record_path.unlink()
+        with self.assertRaises(ValueError):
+            replay_comparison(self.root, expected_sha256=result['sha256'], tasks=self.tasks,
+                              sandbox=FakeE6Sandbox(), verifier=self.verifier)
         with self.assertRaises(FileExistsError):
             self.run_comparison()
 
