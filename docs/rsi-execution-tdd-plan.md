@@ -141,3 +141,10 @@ captures, joined by unique request ID. Replay the saved programs and scores,
 reject mismatched seeds, prompts, source bytes, missing or duplicate records,
 and preserve the distinction between capture consistency and authenticated
 server, adapter, sandbox or model provenance.
+
+### Comparison server contract cycle
+
+Test both local guarded endpoints before collection and again before dispatch,
+checking the declared model, adapter, thinking canary, reviewed driver, distinct
+ledgers and combined token ceilings. Reject changing or regressing contract
+state. A server declaration is not process or weight attestation.
