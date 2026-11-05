@@ -321,3 +321,14 @@ frozen call and token totals. Incomplete runs retain their local budget deltas.
 Fixture replay rejected altered reservation data. Sandbox counts remain local
 journal values, and neither the budget nor captured records independently
 prove process identity or actual compute cost.
+
+### Guarded collection server declaration
+
+A collection transport wrapper checks the declared model, generation parent
+adapter, thinking canary, ledger identity and token ceiling before dispatch. It
+also requires one exact local call and token reservation for each invocation and
+rejects ledger drift or a server reservation greater than the local budget.
+Fixture tests exercised both generation seed ranges and the existing contract
+parser. The declaration remains self-reported, and the counters depend on
+cooperating local components; this is not server attestation or authorization.
+No live model call was made.
