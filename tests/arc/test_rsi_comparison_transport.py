@@ -17,6 +17,7 @@ from src.arc.rsi_transport_audit import audit_transport
 from src.arc.rsi_transition_screen import screen_captured_rsi_chain
 from src.arc.rsi_base_comparison import _paired_frozen_summary, summarize_captured_base_comparison
 from src.arc.rsi_final_proposal import prepare_final_diagnostic_proposal
+from src.arc.rsi_comparison_usage import audit_comparison_usage
 
 MODEL = 'mlx-community/Qwen3-14B-4bit'
 CODE = 'def transform(grid):\n    return grid[::-1]'
@@ -33,9 +34,12 @@ class ComparisonTransportTests(unittest.TestCase):
                 content = self.server.content
                 if self.server.arm_difference and (len(self.server.requests) - 1) % 4 < 2:
                     content = 'def transform(grid):\n    return [row[:] for row in grid]'
-                raw = json.dumps({'model': MODEL, 'thinking_mode': 'off',
+                body = {'model': MODEL, 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
-                    'choices': [{'message': {'role': 'assistant', 'content': content}, 'finish_reason': ('length' if self.server.truncate_first and len(self.server.requests) == 1 else self.server.finish_reason)}]}).encode()
+                    'choices': [{'message': {'role': 'assistant', 'content': content}, 'finish_reason': ('length' if self.server.truncate_first and len(self.server.requests) == 1 else self.server.finish_reason)}]}
+                if self.server.usage is not None:
+                    body['usage'] = self.server.usage
+                raw = json.dumps(body).encode()
                 self.send_response(200)
                 self.send_header('Content-Length', str(len(raw)))
                 self.end_headers()
@@ -47,6 +51,7 @@ class ComparisonTransportTests(unittest.TestCase):
         self.server.content, self.server.finish_reason = CODE, 'stop'
         self.server.truncate_first = False
         self.server.arm_difference = False
+        self.server.usage = None
         self.worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.worker.start()
         self.addCleanup(self.server.server_close)
@@ -71,6 +76,7 @@ class ComparisonTransportTests(unittest.TestCase):
 
     def test_full_comparison_captures_join_and_replay(self):
         self.server.truncate_first = True
+        self.server.usage = {'prompt_tokens': 10, 'completion_tokens': 5, 'total_tokens': 15}
         ids = [f'task-{i:03}' for i in range(200)]
         tasks = {key: Task(key, (([[1], [2]], [[2], [1]]),), ([[3], [4]],)) for key in ids}
         verifier = Verifier({key: [[[4], [3]]] for key in ids})
@@ -88,6 +94,12 @@ class ComparisonTransportTests(unittest.TestCase):
         self.assertEqual(report['budget_usage']['model_calls'], 800)
         self.assertGreater(report['budget_usage']['reserved_tokens'], 0)
         self.assertFalse(report['independently_verified'])
+        usage = audit_comparison_usage(self.root, expected_sha256=result['sha256'], tasks=tasks,
+                                       sandbox=FakeE6Sandbox(), verifier=verifier)
+        self.assertEqual(usage['arms']['parent']['complete_requests'], 400)
+        self.assertEqual(usage['arms']['parent']['total_tokens_if_complete'], 6000)
+        self.assertEqual(usage['arms']['candidate']['prompt_tokens_reported'], 4000)
+        self.assertFalse(usage['independently_verified'])
         screened = screen_captured_rsi_chain(first={'root': self.root, 'sha256': result['sha256']},
             tasks=tasks, sandbox=FakeE6Sandbox(), verifier=verifier)
         self.assertEqual(screened['status'], 'first_screen_nonpositive_unverified')
@@ -105,6 +117,13 @@ class ComparisonTransportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             screen_captured_rsi_chain(first={'root': self.root, 'sha256': result['sha256']},
                 tasks=tasks, sandbox=FakeE6Sandbox(), verifier=verifier)
+        ledger_path.write_text('\n'.join(ledger_lines) + '\n')
+        changed = json.loads(ledger_lines[0])
+        changed['usage']['prompt_tokens'] += 1
+        ledger_path.write_text('\n'.join([json.dumps(changed), *ledger_lines[1:]]) + '\n')
+        with self.assertRaises(ValueError):
+            audit_comparison_usage(self.root, expected_sha256=result['sha256'], tasks=tasks,
+                                   sandbox=FakeE6Sandbox(), verifier=verifier)
         ledger_path.write_text('\n'.join(ledger_lines) + '\n')
         capture = self.root / 'parent.capture.jsonl'
         lines = capture.read_text().splitlines()
