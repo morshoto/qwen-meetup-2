@@ -85,6 +85,24 @@ class CandidateTests(unittest.TestCase):
         self.assertEqual(result['source_sha256'], hashlib.sha256(self.code.strip().encode()).hexdigest())
         self.assertEqual(result['ast_sha256'], stable_ast_sha256(self.code))
 
+    def test_syntax_and_prohibited_code_receive_distinct_safe_categories(self):
+        invalid = inspect_candidate(self.task, 'def transform(grid):\n    return (',
+                                    public_probes=self.public, private_probes=self.private, sandbox=self.sandbox)
+        forbidden = inspect_candidate(self.task, 'import os\ndef transform(grid): return grid',
+                                      public_probes=self.public, private_probes=self.private, sandbox=self.sandbox)
+        self.assertEqual(invalid['status'], 'syntax_error')
+        self.assertEqual(forbidden['status'], 'prohibited_operation')
+        self.assertEqual(self.sandbox.inputs, [])
+
+    def test_public_runtime_failure_is_sanitized_for_repair(self):
+        class BrokenSandbox:
+            def run(self, code, grid):
+                raise RuntimeError('sandbox execution failed:\nIndexError: secret detail')
+        result = inspect_candidate(self.task, self.code, public_probes=self.public,
+                                   private_probes=self.private, sandbox=BrokenSandbox())
+        self.assertEqual(result['status'], 'runtime_exception')
+        self.assertNotIn('secret', repr(result))
+
 
 if __name__ == '__main__':
     unittest.main()
