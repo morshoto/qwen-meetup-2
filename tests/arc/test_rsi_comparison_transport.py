@@ -171,6 +171,11 @@ class ComparisonTransportTests(unittest.TestCase):
             sandbox=FakeE6Sandbox(), verifier=verifier)
         self.assertEqual(screened['status'], 'second_screen_positive_unverified')
         self.assertFalse(screened['execution_ready'])
+        missing = audit_comparison_usage(refs[0]['root'], expected_sha256=refs[0]['sha256'], tasks=tasks,
+                                         sandbox=FakeE6Sandbox(), verifier=verifier)
+        self.assertEqual(missing['arms']['parent']['total_tokens_missing_requests'], 400)
+        self.assertIsNone(missing['arms']['parent']['total_tokens_if_complete'])
+        self.assertIsNone(missing['monetary_cost'])
         summary = summarize_captured_base_comparison(first=refs[0], second=refs[1], tasks=tasks,
             sandbox=FakeE6Sandbox(), verifier=verifier)
         self.assertEqual(summary['base_solved'], 0)
