@@ -1,4 +1,5 @@
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -58,6 +59,20 @@ class ModelIdentityTests(unittest.TestCase):
         file.symlink_to(outside)
         with self.assertRaises(ValueError):
             snapshot_model_manifest(self.model)
+
+    def test_shared_hub_blob_is_allowed_for_named_model_repository(self):
+        hub = self.root / 'hub'
+        repository = hub / 'models--mlx-community--Qwen3-14B-4bit'
+        model = repository / 'snapshots' / REV
+        shutil.copytree(self.model, model)
+        blob = hub / 'blobs' / 'ab' / 'fixture'
+        blob.parent.mkdir(parents=True)
+        blob.write_bytes(b'fixture one')
+        weight = model / 'one.safetensors'
+        weight.unlink()
+        weight.symlink_to(blob)
+        manifest = snapshot_model_manifest(model)
+        self.assertIn('one.safetensors', manifest['files_sha256'])
 
     def test_adapter_digest_matches_existing_driver_and_detects_drift(self):
         adapter = self.root / 'adapter'
