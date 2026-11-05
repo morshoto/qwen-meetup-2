@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Bounded adapter product probe cycle
+
+Test bounded deterministic probes of LoRA A/B matrix products in the candidate
+and its optional parent. Distinguish factor changes that cancel or preserve the
+product from a sampled nonzero product difference. An absent witness is
+inconclusive, and a witnessed file-level difference is not a model reload,
+execution attestation or improvement claim.
+
 ### Adapter factor comparison cycle
 
 Test a read-only numerical comparison of structurally checked candidate and
