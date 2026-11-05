@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Synthetic training preparation cycle
+
+Test deriving an owner-only, non-authorizing training preparation directly
+from a digest-checked generation artifact and supplied source tasks. Recompute
+each proposed synthetic row, reject changed or duplicate identities and
+require at least five distinct mapped records. Freeze both source and synthetic
+task hashes and use the existing token-mask audit on the synthetic tasks.
+Preserve all registration, independent provenance and training gates.
+
 ### Proposed synthetic task mapping cycle
 
 Test a deterministic, non-authorizing mapping from each retained generated
