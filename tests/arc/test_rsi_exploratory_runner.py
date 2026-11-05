@@ -11,6 +11,7 @@ from src.arc.data import Task, Verifier
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_exploratory_budget import ExploratoryBudget
 from src.arc.rsi_exploratory_runner import run_exploratory
+from src.arc.rsi_exploratory_incomplete import read_incomplete_exploratory
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
 
 
@@ -56,6 +57,27 @@ class ExploratoryRunnerTests(unittest.TestCase):
         self.assertFalse(result['claim_eligible'])
         self.assertFalse((self.root/'exploratory.completed.json').exists())
         with self.assertRaisesRegex(ValueError, "fresh"): self.run_trial()
+    def test_incomplete_completed_rows_can_be_read_without_fabricating_scores(self):
+        calls = self.generate.side_effect
+        def interrupted(*args, **kwargs):
+            if self.generate.call_count > 4: raise TimeoutError('unavailable')
+            return calls(*args, **kwargs)
+        self.generate.side_effect = interrupted
+        result = self.run_trial()
+        self.assertEqual(result['completed'], {'base':1, 'trained':1})
+        view = read_incomplete_exploratory(root=self.root, registration=self.reg, registration_sha256=self.reg_sha,
+            task_ids=self.ids, confirmatory_task_ids=self.final, candidate_adapter='b'*64)
+        self.assertEqual(view['status'], 'exploratory_partial_view_unverified')
+        self.assertFalse(view['claim_eligible'])
+        self.assertFalse(view['summary']['complete'])
+        for arm in ('base', 'trained'):
+            self.assertEqual(view['summary']['arms'][arm]['evaluated'],1)
+            self.assertIsNone(view['summary']['arms'][arm]['total_tokens'])
+        self.assertFalse((self.root/'exploratory-results.json').exists())
+        with self.assertRaises(ValueError):
+            read_incomplete_exploratory(root=self.root,registration=self.reg,registration_sha256='0'*64,
+                task_ids=self.ids,confirmatory_task_ids=self.final,candidate_adapter='b'*64)
+
     def test_changed_manifest_fails_before_dispatch(self):
         self.final[0]=self.ids[0]
         with self.assertRaises(ValueError): self.run_trial()
