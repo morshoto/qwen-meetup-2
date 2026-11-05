@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Final diagnostic proposal cycle
+
+Test a non-authorizing final diagnostic proposal derived from captured
+development screening. Freeze the provisionally selected adapter, comparison
+digests, evaluation task hashes, harness and settings hashes, explicit budget,
+and the v2 target before any diagnostic. Reject task overlap, invalid budgets,
+changed selection evidence and repeated proposal writes. A local proposal is
+not an execution registration, a diagnostic reservation or authorization.
+
 ### Matched base comparison cycle
 
 Test a descriptive paired comparison of the provisionally selected adapter
