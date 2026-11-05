@@ -73,9 +73,9 @@ remaining uncertainty before freezing a new execution registration.
 
 ## Historical duplicate references
 
-The retained 14B and 32B candidates have separate [14B static metadata](audits/historical-candidates/14b-static-reference.json) and [32B static metadata](audits/historical-candidates/32b-static-reference.json). Their source and AST hashes match the retained records; verifier-only fields were excluded from the comparison. Their behavior on the newly proposed private probes has not been evaluated.
+The retained 14B and 32B candidates have separate [14B static metadata](audits/historical-candidates/14b-static-reference.json) and [32B static metadata](audits/historical-candidates/32b-static-reference.json). Their source and AST hashes match the retained records; verifier-only fields were excluded from the comparison. Their behavior on the proposed private probes was evaluated locally, with [14B](audits/historical-candidates/14b-behavior-reference.json) and [32B](audits/historical-candidates/32b-behavior-reference.json) fingerprint indexes. These local results are not independently audited and contain no private grids or outputs.
 
-The historical task IDs are synthetic `e6f-...` IDs, not IDs in the proposed ARC generation partition. The existing `build_reference_pool` requires each supplied ancestor ID to belong to that generation partition, so these records cannot yet be passed to it under that contract. Do not substitute a generation task ID to satisfy the check. A separate `build_legacy_duplicate_reference` path retains the synthetic ID and has fixture coverage; it does not claim ARC ancestry or training eligibility. It has not been run on the retained candidates or new probes. Independently review its provenance, sandbox and duplicate-only policy before constructing a behavioral pool. This remains separate from the pending decision about whether a historical candidate may count toward the training gate.
+The historical task IDs are synthetic `e6f-...` IDs, not IDs in the proposed ARC generation partition. The existing `build_reference_pool` requires each supplied ancestor ID to belong to that generation partition, so these records cannot yet be passed to it under that contract. Do not substitute a generation task ID to satisfy the check. A separate `build_legacy_duplicate_reference` path retains the synthetic ID and has fixture coverage; it does not claim ARC ancestry or training eligibility. It was run once per model on the retained candidate and that model’s proposed private probes. Each local preparation used ten sandbox starts. Independently review its provenance, sandbox and duplicate-only policy before accepting the behavioral pool; do not automatically rerun it. This remains separate from the pending decision about whether a historical candidate may count toward the training gate.
 
 ### Recheck retained source identity
 
@@ -128,3 +128,9 @@ The earlier offline audit summaries are available in
 corresponding auditors against the archived inputs in a new output location;
 leave the sealed source artifacts unchanged. The local summaries do not
 replace the requested independent review.
+
+### Local preparation and budget accounting
+
+The separate local preparation drafts are [14B](legacy-reference-preparation-14b.json) and [32B](legacy-reference-preparation-32b.json). The [preserved script](audits/legacy-reference-preparation-20261106.py) records the actual local procedure. The detailed fingerprint files remain owner-only under `artifacts/rsi-legacy-reference-preparation-20261106-v1/`; the tracked indexes contain their hashes. No model calls or training steps were used.
+
+Each preparation used ten sandbox starts. Before any generation run, independently audit these records and ensure those starts are charged against the proposed 300-start cap if the references are used. The existing generation budget must not silently reset or extend that cap. These local preparations do not freeze the provisional probes, authorize collection, or make either historical candidate eligible for training.
