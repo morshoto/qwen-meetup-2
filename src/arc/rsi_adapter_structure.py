@@ -1,4 +1,4 @@
-"""Read-only structural precheck for the proposed Qwen3-14B MLX adapter."""
+"""Read-only structural precheck for proposed Qwen3 MLX adapters."""
 import os
 import stat
 import struct
@@ -8,13 +8,19 @@ from src.arc.rsi_model_identity import _hash_file, _json_file, _signature, verif
 from src.arc.rsi_transport_audit import _json_object
 
 
-def _expected_shapes():
+def _expected_shapes(model_key='14b'):
+    if model_key not in ('14b', '32b'):
+        raise ValueError('unsupported adapter model')
     dimensions = {'self_attn.q_proj': (5120, 5120), 'self_attn.k_proj': (5120, 1024),
                   'self_attn.v_proj': (5120, 1024), 'self_attn.o_proj': (5120, 5120),
                   'mlp.gate_proj': (5120, 17408), 'mlp.up_proj': (5120, 17408),
                   'mlp.down_proj': (17408, 5120)}
+    if model_key == '32b':
+        dimensions.update({'self_attn.q_proj': (5120, 8192), 'self_attn.o_proj': (8192, 5120),
+                           'mlp.gate_proj': (5120, 25600), 'mlp.up_proj': (5120, 25600),
+                           'mlp.down_proj': (25600, 5120)})
     result = {}
-    for layer in (38, 39):
+    for layer in ((38, 39) if model_key == '14b' else (62, 63)):
         for name, (input_size, output_size) in dimensions.items():
             prefix = f'model.layers.{layer}.{name}'
             result[prefix + '.lora_a'] = [input_size, 8]
@@ -22,7 +28,8 @@ def _expected_shapes():
     return result
 
 
-def inspect_adapter_structure(adapter_dir, *, expected_sha256):
+def inspect_adapter_structure(adapter_dir, *, expected_sha256, model_key='14b'):
+    shapes = _expected_shapes(model_key)
     root = Path(adapter_dir).expanduser().resolve()
     verify_adapter_identity(root, expected_sha256)
     config_path, weights_path = root / 'adapter_config.json', root / 'adapters.safetensors'
@@ -48,7 +55,6 @@ def inspect_adapter_structure(adapter_dir, *, expected_sha256):
             if not isinstance(metadata, dict) or any(not isinstance(k, str) or not isinstance(v, str)
                                                      for k, v in metadata.items()):
                 raise ValueError('invalid adapter metadata')
-            shapes = _expected_shapes()
             if set(header) != set(shapes):
                 raise ValueError('adapter tensor names differ')
             ranges = []
