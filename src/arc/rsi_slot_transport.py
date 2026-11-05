@@ -3,6 +3,7 @@ import math
 
 from src.arc.rsi_http_backend import CapturingBackend
 from src.arc.http_backend import BackendError
+from src.arc.rsi_model_identity import _MODELS
 
 _MODEL = 'mlx-community/Qwen3-14B-4bit'
 _REVISION = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
@@ -15,11 +16,15 @@ class CapturedSlotTransport:
     configured without a second reservation callback. HTTP capture does not
     authenticate the server, model weights, or adapter.
     """
-    def __init__(self, *, base_url, log_path, request_capture_path, max_request_seconds):
+    def __init__(self, *, base_url, log_path, request_capture_path, max_request_seconds, model_key='14b'):
+        if not isinstance(model_key, str) or model_key not in _MODELS:
+            raise ValueError('unsupported model identity')
+        model, revision = _MODELS[model_key]
+        self.model_key = model_key
         if (type(max_request_seconds) not in (int, float) or not math.isfinite(max_request_seconds)
                 or max_request_seconds <= 0):
             raise ValueError('invalid request time limit')
-        self.options = dict(model=_MODEL, revision=_REVISION, base_url=base_url,
+        self.options = dict(model=model, revision=revision, base_url=base_url,
                             temperature=0.2, max_tokens=512, seed=12000, thinking='off',
                             guarded=True, log_path=log_path, request_capture_path=request_capture_path)
         self.max_request_seconds = max_request_seconds

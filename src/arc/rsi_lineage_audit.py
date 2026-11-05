@@ -25,7 +25,7 @@ def inspect_lineage(task_ids: list[str], task, *, generation: int, slot: int, at
                     expected_manifest_sha256: str, expected_task_sha256: str,
                     public_probes: list, private_probes: list,
                     expected_public_probes_sha256: str, expected_private_probes_sha256: str,
-                    sandbox: object, reference_pool: list[dict] | None = None) -> dict:
+                    sandbox: object, reference_pool: list[dict] | None = None, model_key: str = '14b') -> dict:
     if not isinstance(attempts, list) or not 1 <= len(attempts) <= 3:
         raise ValueError('lineage must contain one to three attempts')
     slots = generation_slots(task_ids, generation)
@@ -50,7 +50,7 @@ def inspect_lineage(task_ids: list[str], task, *, generation: int, slot: int, at
             raise ValueError('invalid completion marker')
         transport = audit_transport(attempt.get('request_body'), attempt.get('response_body'),
                                     attempt['ledger'], expected_prompt=prompt, expected_code=code,
-                                    expected_seed=selected['attempt_seeds'][index], expected_invalid=invalid)
+                                    expected_seed=selected['attempt_seeds'][index], expected_invalid=invalid, model_key=model_key)
         request_id = transport['request_id']
         if request_id in seen_requests:
             raise ValueError('duplicate request identifier')

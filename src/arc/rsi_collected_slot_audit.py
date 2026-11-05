@@ -36,7 +36,7 @@ def audit_collected_slot(*, evidence_bytes, evidence_sha256, request_records, re
                          ledger_records, task_ids, task, generation, slot, expected_manifest_sha256,
                          expected_task_sha256, public_probes, private_probes,
                          expected_public_probes_sha256, expected_private_probes_sha256,
-                         reference_pool, sandbox):
+                         reference_pool, sandbox, model_key='14b'):
     if (not isinstance(evidence_bytes, bytes) or len(evidence_bytes) > 1024 * 1024 or
             hashlib.sha256(evidence_bytes).hexdigest() != evidence_sha256):
         raise ValueError('slot evidence digest differs')
@@ -82,7 +82,8 @@ def audit_collected_slot(*, evidence_bytes, evidence_sha256, request_records, re
         expected_manifest_sha256=expected_manifest_sha256, expected_task_sha256=expected_task_sha256,
         public_probes=public_probes, private_probes=private_probes,
         expected_public_probes_sha256=expected_public_probes_sha256,
-        expected_private_probes_sha256=expected_private_probes_sha256, sandbox=sandbox, reference_pool=reference_pool)
+        expected_private_probes_sha256=expected_private_probes_sha256, sandbox=sandbox, reference_pool=reference_pool,
+        model_key=model_key)
     statuses = checked['attempt_statuses']
     for attempt, status in zip(attempts[:-1], statuses[:-1]):
         if attempt.get('status') != status:
