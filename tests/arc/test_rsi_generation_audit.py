@@ -42,7 +42,7 @@ class GenerationAuditTests(unittest.TestCase):
             def do_POST(self):
                 request = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 code = self.server.codes.get(request['seed'], FAKE_PROGRAMS[1])
-                body = {'model': 'mlx-community/Qwen3-14B-4bit', 'thinking_mode': 'off',
+                body = {'model': self.server.model, 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
                     'choices': [{'message': {'role': 'assistant', 'content': code}, 'finish_reason': 'stop'}]}
                 if self.server.usage is not None:
@@ -55,6 +55,7 @@ class GenerationAuditTests(unittest.TestCase):
             def log_message(self, *args):
                 pass
         self.server = HTTPServer(('127.0.0.1', 0), Handler)
+        self.server.model = 'mlx-community/Qwen3-14B-4bit'
         self.server.codes = {}
         self.server.usage = None
         worker = threading.Thread(target=self.server.serve_forever, daemon=True)
@@ -66,6 +67,30 @@ class GenerationAuditTests(unittest.TestCase):
             log_path=self.root / 'requests.jsonl', request_capture_path=self.root / 'capture.jsonl', max_request_seconds=2)
         self.pool = []
         self.pool_hash = hashlib.sha256(b'[]').hexdigest()
+
+    def test_32b_stage_replay_and_drafts_are_model_isolated(self):
+        self.server.model = 'mlx-community/Qwen3-32B-4bit'
+        self.transport = CapturedSlotTransport(base_url=f'http://127.0.0.1:{self.server.server_port}/v1',
+            log_path=self.root/'requests.jsonl', request_capture_path=self.root/'capture.jsonl',
+            max_request_seconds=2, model_key='32b')
+        common = dict(root=self.root, registration_sha256='a'*64, generation=0, parent_adapter='none',
+            task_ids=self.ids, tasks=self.tasks, expected_manifest_sha256=manifest_sha256(self.ids),
+            expected_task_hashes=self.hashes, public_probes=self.public, private_probes=self.private,
+            expected_public_probes_sha256=probes_sha256(self.public), expected_private_probes_sha256=probes_sha256(self.private),
+            reference_pool=self.pool, expected_reference_pool_sha256=self.pool_hash)
+        budget = CollectionBudget.create(self.root, registration_sha256='a'*64, generation=0)
+        result = collect_generation(**common, transport=self.transport, sandbox=FakeE6Sandbox(), budget=budget)
+        self.assertEqual(result['status'], 'generation_complete_unverified')
+        load = lambda name: [json.loads(line) for line in (self.root/name).read_text().splitlines()]
+        args = dict(**common, request_records=load('capture.jsonl'), ledger_records=load('requests.jsonl'),
+                    response_records=load('llm_responses.jsonl'), sandbox=FakeE6Sandbox())
+        self.assertEqual(audit_generation(**args, model_key='32b')['status'], 'generation_replay_consistent')
+        with self.assertRaises(ValueError): audit_generation(**args, model_key='14b')
+        prepared = prepare_generation_drafts(**args, model_key='32b')
+        self.assertEqual(prepared['draft_count'], 1)
+        self.assertFalse(prepared['training_allowed'])
+        saved = json.loads((self.root/'g0.stage.drafts.json').read_text())
+        self.assertEqual(saved['drafts'][0]['provenance']['model_id'], self.server.model)
 
     def test_nine_distinct_fixture_drafts_remain_quarantined(self):
         self.server.usage = {'prompt_tokens': 10, 'completion_tokens': 5, 'total_tokens': 15}
