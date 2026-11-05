@@ -16,6 +16,7 @@ class ReloadProbeTests(unittest.TestCase):
         expected = {'status':'loaded_adapter_factors_match_unverified','matched_tensor_count':2,
                     'reload_verified':False,'training_allowed':False,'promotion_allowed':False}
         with patch('src.arc.rsi_adapter_reload.verify_model_manifest') as verify_model, \
+             patch('src.arc.rsi_adapter_reload.verify_adapter_identity'), \
              patch('src.arc.rsi_adapter_reload.inspect_adapter_structure') as inspect, \
              patch('src.arc.rsi_adapter_reload.compare_reloaded_factors',return_value=expected) as compare:
             result=observe_model_reload(model_key='32b',model_dir='/model',adapter_dir='/adapter',
