@@ -3,7 +3,7 @@ import hashlib
 import json
 import re
 
-from src.arc.data import Task
+from src.arc.data import Task, validate_grid
 from src.arc.e5_selfplay import solve_prompt
 from src.arc.prompting import FINAL_ANSWER_SYSTEM_PROMPT
 from src.arc.rsi_batch_precheck import precheck_batch
@@ -22,6 +22,17 @@ def prepare_training_inputs(*, root, drafts, tasks, generation, parent_adapter, 
             or any(not isinstance(key, str) or not isinstance(task, Task) or task.id != key
                    for key, task in tasks.items())):
         raise ValueError('invalid training preparation identity')
+    try:
+        for task in tasks.values():
+            if not task.train or not task.test_inputs:
+                raise ValueError('empty training task')
+            for input_grid, output_grid in task.train:
+                validate_grid(input_grid)
+                validate_grid(output_grid)
+            for input_grid in task.test_inputs:
+                validate_grid(input_grid)
+    except (TypeError, ValueError) as exc:
+        raise ValueError('invalid training task grids') from exc
     precheck = precheck_batch(drafts, generation=generation, parent_adapter=parent_adapter,
                               allowed_tasks=set(tasks))
     for draft in drafts:
