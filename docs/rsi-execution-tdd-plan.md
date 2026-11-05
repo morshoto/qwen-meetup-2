@@ -32,3 +32,11 @@ No cycle authorizes model calls, training, cloud resources, or benchmark
 submission. Do not change sealed prior artifacts, reuse uncertain results as new,
 expose hidden labels in prompts, or use human-authored ARC solving heuristics.
 Live resource feasibility and independent semi-private scoring remain unproven.
+
+### Shared collection budget cycle
+
+Test a per-generation durable budget with atomic concurrent reservations for
+all model calls including canaries, reserved tokens, sandbox starts and elapsed
+wall time. Test exhaustion, restart, clock rollback, and fail-closed persistence.
+Implement it as a cooperating local guard; independent authentication and a
+final registered budget remain separate prerequisites for live execution.
