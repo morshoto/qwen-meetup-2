@@ -1,0 +1,14 @@
+{
+  "conclusion": "group signal failure remains unconfirmed cleanup; no inference about escaped descendants",
+  "exit_code": 0,
+  "fixture": "already_exited_unreaped_owned_child_session",
+  "independent_review_completed": false,
+  "model_loaded": false,
+  "platform": "Darwin",
+  "signals": {
+    "SIGKILL": "errno_1",
+    "SIGTERM": "errno_1"
+  },
+  "status": "local_fixture_observation_unverified",
+  "training_started": false
+}
