@@ -69,6 +69,14 @@ class CandidateTests(unittest.TestCase):
         self.assertEqual(result['status'], 'identity_only_rejected')
         self.assertFalse(any(grid in self.private for grid in self.sandbox.inputs))
 
+    def test_candidate_records_private_probe_identity_without_exposing_inputs(self):
+        result = inspect_candidate(self.task, self.code, public_probes=self.public,
+                                   private_probes=self.private, sandbox=self.sandbox)
+        self.assertEqual(len(result['private_probe_set_sha256']), 64)
+        other = inspect_candidate(self.task, self.code, public_probes=self.public,
+                                  private_probes=_quality_grids(44, 5), sandbox=RecordingSandbox())
+        self.assertNotEqual(result['private_probe_set_sha256'], other['private_probe_set_sha256'])
+
 
 if __name__ == '__main__':
     unittest.main()
