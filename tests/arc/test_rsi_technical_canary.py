@@ -108,6 +108,9 @@ class TechnicalCanaryBundleTests(TechnicalCanaryTests):
         self.assertEqual(config,proposal['config'])
         self.assertEqual(config['iters'],1)
         self.assertEqual(launch['model_key'],'32b')
+        self.assertEqual(launch['fork_restricted_argv'][:2], ['/usr/bin/sandbox-exec', '-p'])
+        self.assertEqual(launch['fork_restricted_argv'][3:], launch['argv'])
+        self.assertFalse(launch['containment_verified'])
         self.assertFalse(launch['training_allowed'])
         self.assertFalse((self.root/'technical-32b.adapter').exists())
         with patch('src.arc.rsi_technical_bundle.verify_technical_canary_identities',return_value=ok):
