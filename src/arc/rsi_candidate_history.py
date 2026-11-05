@@ -26,7 +26,7 @@ def audit_candidate_journals(root, dataset_ids):
                 if not isinstance(keys, list) or any(not isinstance(k, str) for k in keys) or len(set(keys)) != len(keys):
                     raise ValueError('invalid candidate keys')
                 for key in keys:
-                    match = re.fullmatch(r'[ABC]:([0-9a-f]{8}):(0|[1-9][0-9]*)', key)
+                    match = re.fullmatch(r'[ABC]:([A-Za-z0-9_-]+):(0|[1-9][0-9]*)', key)
                     if not match:
                         raise ValueError('invalid candidate key')
                     found.add(match.group(1))
