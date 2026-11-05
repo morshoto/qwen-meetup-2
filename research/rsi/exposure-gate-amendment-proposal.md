@@ -1,8 +1,8 @@
 # Proposal: proceed with documented exposure uncertainty
 
-**Status: draft for review.** This proposal does not amend the registered
-protocol, freeze a split, authorize a model call or approve training. The
-existing [stop condition](../../docs/rsi-research-protocol.md) remains in force.
+**Status: accepted as a proposal.** The adopted design is recorded separately
+in [version 3](design-v3.md). This proposal does not itself freeze a split,
+authorize a model call or approve training.
 
 ## Proposed change
 

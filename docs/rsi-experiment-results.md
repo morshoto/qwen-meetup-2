@@ -1,6 +1,6 @@
 # Qwen RSI experiment: current result
 
-The [protocol](rsi-research-protocol.md) and [v2 benchmark amendment](../research/rsi/design-v2.md) describe a proposed experiment. The execution gate remains closed; the experiment has not been run. This is a report of the stopping point, not an RSI performance result.
+The [protocol](rsi-research-protocol.md) and [v2 benchmark amendment](../research/rsi/design-v2.md) and [v3 exposure amendment](../research/rsi/design-v3.md) describe a proposed experiment. The execution gate remains closed; the experiment has not been run. This is a report of the stopping point, not an RSI performance result.
 
 ## Evidence available
 
@@ -14,7 +14,7 @@ The [protocol](rsi-research-protocol.md) and [v2 benchmark amendment](../researc
 
 ## Gates before continuation
 
-1. Independently account for retained and missing task exposure, freeze a defensible split, and record any remaining contamination uncertainty. The current review cannot prove the historical record complete.
+1. Independently review the bounded retained-history inventory, record missing records and uncertainty, and freeze a development split excluding all known exposures. The current reviews are local and not independently witnessed.
 2. Freeze and independently audit the execution registration, including model, runtime, sandbox and transitive dependencies, prompts, data mapping, seeds and budgets. The current registration is a draft.
 3. Obtain separately scoped authorization before live collection; independently verify provenance and the five strict same-model Oracle threshold before training.
 4. Establish and authorize the one-step preflight, including process containment and independent adapter reload; audit its observations before any training stage.
