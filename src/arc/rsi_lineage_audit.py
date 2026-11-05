@@ -1,0 +1,55 @@
+"""Replay conditioned repair evidence without certifying an independent run.
+
+The supplied sandbox and transport records are not authenticated here. This
+precheck cannot authorize training, and supports visible-example repairs only.
+"""
+import hashlib
+
+from src.arc.rsi_candidate import inspect_candidate
+from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
+from src.arc.rsi_task_generation import generation_slots, task_prompt, task_repair_prompt
+from src.arc.rsi_transport_audit import audit_transport
+
+
+def inspect_lineage(task_ids: list[str], task, *, generation: int, slot: int, attempts: list[dict],
+                    expected_manifest_sha256: str, expected_task_sha256: str,
+                    public_probes: list, private_probes: list, sandbox: object) -> dict:
+    if not isinstance(attempts, list) or not 1 <= len(attempts) <= 3:
+        raise ValueError('lineage must contain one to three attempts')
+    slots = generation_slots(task_ids, generation)
+    if type(slot) is not int or not 0 <= slot < len(slots):
+        raise ValueError('invalid scheduled slot')
+    selected = slots[slot]
+    if (manifest_sha256(task_ids) != expected_manifest_sha256 or
+            task_sha256(task) != expected_task_sha256 or task.id != selected['task_id']):
+        raise ValueError('task or schedule differs from registration')
+    seen_requests, seen_sources = set(), set()
+    statuses = []
+    prompt = task_prompt(task)
+    for index, attempt in enumerate(attempts):
+        if not isinstance(attempt, dict) or not isinstance(attempt.get('ledger'), dict):
+            raise ValueError('invalid attempt evidence')
+        code = attempt.get('code')
+        transport = audit_transport(attempt.get('request_body'), attempt.get('response_body'),
+                                    attempt['ledger'], expected_prompt=prompt, expected_code=code,
+                                    expected_seed=selected['attempt_seeds'][index])
+        request_id = transport['request_id']
+        if request_id in seen_requests:
+            raise ValueError('duplicate request identifier')
+        seen_requests.add(request_id)
+        source_hash = hashlib.sha256(code.strip().encode()).hexdigest()
+        if source_hash in seen_sources:
+            status = 'repeated_code'
+        else:
+            seen_sources.add(source_hash)
+            inspected = inspect_candidate(task, code, public_probes=public_probes,
+                                          private_probes=private_probes, sandbox=sandbox)
+            status = inspected['status']
+        statuses.append(status)
+        if index < len(attempts) - 1:
+            if status != 'visible_demonstration_mismatch':
+                raise ValueError('attempt follows after terminal or unauditable outcome')
+            prompt = task_repair_prompt(task, code, status)
+    return {'status': 'lineage_consistent', 'task_id': task.id, 'generation': generation,
+            'slot': slot, 'attempt_statuses': statuses, 'eligible_for_training': False,
+            'evidence_type': 'caller_supplied_sandbox_and_transport'}
