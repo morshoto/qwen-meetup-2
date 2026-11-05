@@ -126,3 +126,30 @@ class TechnicalCanaryBundleTests(TechnicalCanaryTests):
                     source_root=Path.cwd(),python_executable=sys.executable,forbidden_tasks=self.f.tasks,
                     tokenizer=self.f.tokenizer,render=self.f.render,load_local_dataset=self.loader)
         self.assertFalse((self.root/'technical-canary-14b.launch.quarantine').exists())
+
+class TechnicalBundleVerificationTests(TechnicalCanaryTests):
+    def test_rechecks_entire_bundle_and_rejects_rehashed_command_tampering(self):
+        import hashlib
+        import json
+        import sys
+        from unittest.mock import patch
+        from src.arc.rsi_technical_bundle import prepare_technical_canary_bundle, verify_technical_canary_bundle
+        proposal=self.propose('14b')
+        manifests={key:b'{}' for key in ('model_manifest','runtime_manifest','environment_manifest','source_inventory')}
+        args=dict(root=self.root,proposal=proposal,manifest_bytes=manifests,source_root=Path.cwd(),
+                  python_executable=sys.executable,forbidden_tasks=self.f.tasks,tokenizer=self.f.tokenizer,
+                  render=self.f.render,load_local_dataset=self.loader)
+        ok={'status':'technical_canary_local_identities_consistent','execution_ready':False,'training_allowed':False,
+            'promotion_allowed':False,'independently_verified':False,'model_key':'14b',
+            'evidence_type':'local_files_and_caller_supplied_manifests'}
+        with patch('src.arc.rsi_technical_bundle.verify_technical_canary_identities',return_value=ok):
+            prepare_technical_canary_bundle(**args)
+            path=self.root/'technical-canary-14b.launch.quarantine'/'launch.json'
+            digest=hashlib.sha256(path.read_bytes()).hexdigest()
+            result=verify_technical_canary_bundle(**args,expected_launch_sha256=digest)
+            self.assertFalse(result['execution_ready']);self.assertFalse(result['training_allowed'])
+            self.assertFalse(result['independently_verified'])
+            altered=json.loads(path.read_text());altered['argv'][0]='/unexpected'
+            path.write_text(json.dumps(altered))
+            with self.assertRaises(ValueError):
+                verify_technical_canary_bundle(**args,expected_launch_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
