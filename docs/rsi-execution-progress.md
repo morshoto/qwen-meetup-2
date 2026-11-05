@@ -237,3 +237,12 @@ outputs, and remains ineligible for training. The current batch precheck rejects
 that origin; no local replay or caller-supplied record is promoted to verified
 live-model provenance. The integration was exercised with fixture HTTP and a
 fake sandbox, not with Qwen.
+
+### Invalid evaluation completions
+
+The comparison transport now records truncated or malformed model completions as
+failed samples while allowing the next independent sample to run. Transport,
+identity, budget and infrastructure failures still stop the comparison. Capture
+replay checks that the raw response and ledger justify the invalid outcome,
+including the finish reason. Fixture HTTP exercised both truncated and
+malformed responses; no live model call was made.
