@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Comparison reported-token accounting cycle
+
+Test accounting for prompt, completion and total tokens from captured server
+responses after the matched comparison audit. Bind each ledger usage record to
+its raw response, validate counts and reservations, and report missing or
+partial coverage rather than treating missing values as zero. Keep reported
+tokens distinct from reserved tokens, monetary cost and independent runtime
+attestation.
+
 ### Preflight bundle input replay cycle
 
 Test recomputing the entire preflight proposal from the saved synthetic
