@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.arc.rsi_comparison_freeze import freeze_comparison, summarize_frozen_comparison
+from src.arc.rsi_comparison_freeze import comparison_coverage, freeze_comparison, summarize_frozen_comparison
 
 REG = 'a' * 64
 CANDIDATE = 'b' * 64
@@ -42,6 +42,18 @@ class FrozenComparisonTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.freeze(candidate=changed)
         self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_incomplete_comparison_reports_missing_tasks_without_scoring(self):
+        candidate = dict(self.candidate)
+        del candidate[self.ids[10]]
+        parent = dict(self.base)
+        del parent[self.ids[20]]
+        report = comparison_coverage(self.ids, parent=parent, candidate=candidate)
+        self.assertEqual(report['status'], 'incomplete')
+        self.assertEqual(report['missing_parent'], [self.ids[20]])
+        self.assertEqual(report['missing_candidate'], [self.ids[10]])
+        self.assertFalse(report['improvement_claim_supported'])
+        self.assertNotIn('difference_percentage_points', report)
 
     def test_nonindependent_samples_and_invalid_identity_fail(self):
         seeds = dict(self.seeds)
