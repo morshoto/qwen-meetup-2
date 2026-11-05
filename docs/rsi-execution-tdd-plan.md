@@ -281,3 +281,13 @@ JSONL dataset and an audit record bound to the preparation and dataset hashes.
 A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
+
+### MLX dataset loader audit cycle
+
+Test loading the quarantined artifact through an injected MLX-compatible local
+dataset loader after readback verification. Check every loaded row and masked
+token span against the prepared records, require empty validation and test
+splits, and reject loader or masking discrepancies. Exercise the pinned local
+MLX loader with synthetic data and the local tokenizer without loading model
+weights or invoking training. This is format evidence, not provenance or
+authorization.
