@@ -24,7 +24,7 @@ def build_evidence():
     ledger = {'request_id': 'fixture-1', 'request_body_sha256': hashlib.sha256(request_body).hexdigest(),
               'response_sha256': hashlib.sha256(response_body).hexdigest(), 'model': MODEL,
               'revision': REVISION, 'seed_requested': 12000, 'thinking_mode_effective': 'off',
-              'error': None}
+              'finish_reason': 'stop', 'error': None}
     return request_body, response_body, ledger
 
 
@@ -53,6 +53,13 @@ class TransportAuditTests(unittest.TestCase):
             with self.subTest(prompt=prompt, seed=seed), self.assertRaises(ValueError):
                 audit_transport(request, response, row, expected_prompt=prompt,
                                 expected_code=code, expected_seed=seed)
+
+    def test_ledger_finish_reason_must_match_body(self):
+        request, response, ledger = build_evidence()
+        ledger['finish_reason'] = 'length'
+        with self.assertRaises(ValueError):
+            audit_transport(request, response, ledger, expected_prompt='visible prompt',
+                            expected_code=CODE, expected_seed=12000)
 
     def test_rejects_conflicting_response_or_disabled_guard(self):
         request, response, ledger = build_evidence()
