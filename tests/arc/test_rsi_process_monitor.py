@@ -20,6 +20,23 @@ def child(seconds=30, *, session=True):
 
 
 class OwnedMonitorTests(unittest.TestCase):
+    def test_loss_health_stops_fixture_and_unavailable_fails_closed(self):
+        for health, expected in ((lambda _: {'status': 'nonfinite_loss'}, 'nonfinite_loss'),
+                                 (lambda _: {'status': 'unavailable'}, 'health_monitor_unavailable'),
+                                 (lambda _: {'status': 'unknown'}, 'health_monitor_unavailable')):
+            process = child()
+            try:
+                result = watch_owned_process(process, baseline=state(), sampler=lambda _: state(),
+                    health_sampler=health, timeout_seconds=3, interval_seconds=0.05,
+                    sample_timeout_seconds=0.2, terminate_grace_seconds=0.1)
+                self.assertEqual(result['stop_reason'], expected)
+                self.assertIsNotNone(process.returncode)
+                self.assertFalse(result['training_verified'])
+            finally:
+                if process.poll() is None:
+                    os.killpg(process.pid, 9)
+                    process.wait()
+
     def test_resource_violation_terminates_owned_fixture_process(self):
         process = child()
         try:
