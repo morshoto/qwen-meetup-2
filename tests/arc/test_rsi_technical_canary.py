@@ -102,6 +102,7 @@ class TechnicalCanaryBundleTests(TechnicalCanaryTests):
         bundle=self.root/'technical-canary-32b.launch.quarantine'
         config=json.loads((bundle/'mlx_lora.json').read_text())
         launch=json.loads((bundle/'launch.json').read_text())
+        self.assertEqual(json.loads((bundle/'proposal.json').read_text()),proposal)
         self.assertEqual(config,proposal['config'])
         self.assertEqual(config['iters'],1)
         self.assertEqual(launch['model_key'],'32b')
