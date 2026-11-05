@@ -28,12 +28,32 @@
   "outcome_reporting": "provisional new, duplicate or sampled behavior match, invalid; complete and interrupted records",
   "outstanding": [
     "independent split and task content review and freeze",
-    "register exact public and private probes and sandbox",
+    "independently review and freeze exact probe files and sandbox runtime",
     "freeze full source runtime model and reference pool dependencies",
     "bind and independently audit model specific run and budget",
     "separate execution authorization"
   ],
   "parent_adapter": "none",
+  "provisional_probe_candidates": {
+    "private": {
+      "canonical_probe_sha256": "8fecded49dbbc5af8a242a0764e61951972b3e1f2c4bbb37684b55b272525239",
+      "file_sha256": "87d94138d12b9f91e00e3cde8a386e9048ac5a2162e1fb5b70489891abe8a0d1",
+      "grid_count": 5,
+      "local_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-oracle-probe-candidates-20261106-v1/14b/private.json"
+    },
+    "public": {
+      "canonical_probe_sha256": "460ea330f69d335b3acd1f40a3f7bf7b3388d62282cb61a58a0947cdf80f5396",
+      "file_sha256": "f34c0365d92113fd8bfa0d660037686e15975e2f425cc1122f66a6622e57e34f",
+      "grid_count": 5,
+      "local_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-oracle-probe-candidates-20261106-v1/14b/public.json"
+    }
+  },
+  "provisional_sandbox": {
+    "image_id": "sha256:a3013c6339a68a667aa9a5f26377693a1f4357a7f7a12db6470a8f06732b91f1",
+    "image_runner_sha256": "d5087f5f6bffbd467069aa33c6552055f6ee4e4d689a896e141185b80deb6b32",
+    "image_tag": "arc-sandbox:local",
+    "independently_verified": false
+  },
   "repair_feedback_categories": [
     "duplicate_ast",
     "duplicate_source",
@@ -138,6 +158,8 @@
   "source_sha256": {
     "research/rsi/audits/allocation-review.json": "435db21430293e904f4c0074468a6bcfc953cfb4ad49beeb6bbaebc87468b024",
     "research/rsi/audits/historical-candidates/14b.json": "a7d46234ec80fc1c1997d5bd64ce7bc21d303dc1ee7c196ac45b38c26aeec7a5",
+    "research/rsi/audits/oracle-probe-candidates-20261106-v1.json": "dc3e2f7349b41a4fd32d5106fd21580b59aae5818ef60ba3c53765242414750e",
+    "research/rsi/audits/oracle-sandbox-observation-20261106-v1.json": "8aa2b072dd28bf5915b79e68977527603159ec3fc3e9f782943bc6719868005f",
     "research/rsi/design-registration-v4.json": "86ebb145f2c2b7842163768e38241a9a457af034cecbda8c1827db077905bfd7",
     "research/rsi/exploratory-split-proposal.json": "68ef1fc9c0c081d8f90e08506a4fcbdd795715315e01736da277314c216892de",
     "research/rsi/oracle-generation-proposal-v1.md": "9f6917ef83962b282bc89a58f54458868c5869e3a24221f1a3b6491bf7d843a4",
