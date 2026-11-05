@@ -76,6 +76,40 @@ class OwnedMonitorTests(unittest.TestCase):
                 os.killpg(process.pid, 9)
                 process.wait()
 
+    def test_failed_baseline_stops_without_sampling(self):
+        process = child()
+        try:
+            def unexpected(_):
+                raise AssertionError('sample should not run')
+            result = watch_owned_process(process, baseline=state(free=19), sampler=unexpected,
+                                         timeout_seconds=3, interval_seconds=0.05,
+                                         sample_timeout_seconds=0.2, terminate_grace_seconds=0.1)
+            self.assertEqual(result['stop_reason'], 'memory_pressure_limit')
+            self.assertIsNotNone(process.returncode)
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+
+    def test_escalates_when_owned_child_ignores_termination(self):
+        code = ('import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); '
+                'print("ready", flush=True); time.sleep(30)')
+        process = subprocess.Popen([sys.executable, '-c', code], start_new_session=True,
+                                   stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                   stderr=subprocess.DEVNULL, text=True)
+        try:
+            self.assertEqual(process.stdout.readline().strip(), 'ready')
+            result = watch_owned_process(process, baseline=state(), sampler=lambda _: state(free=19),
+                                         timeout_seconds=3, interval_seconds=0.05,
+                                         sample_timeout_seconds=0.2, terminate_grace_seconds=0.1)
+            self.assertEqual(result['stop_reason'], 'memory_pressure_limit')
+            self.assertEqual(process.returncode, -9)
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+            process.stdout.close()
+
 
 if __name__ == '__main__':
     unittest.main()
