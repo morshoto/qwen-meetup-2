@@ -8,6 +8,7 @@ import numpy as np
 
 from src.arc.rsi_adapter_factors import _read_factors
 from src.arc.rsi_model_identity import verify_adapter_identity
+from src.arc.rsi_adapter_structure import _expected_shapes
 
 
 def compare_reloaded_factors(adapter_dir, *, expected_sha256, model_key, loaded_factors):
@@ -15,9 +16,10 @@ def compare_reloaded_factors(adapter_dir, *, expected_sha256, model_key, loaded_
     saved = _read_factors(root, expected_sha256, model_key)
     if not isinstance(loaded_factors, dict) or set(loaded_factors) != set(saved):
         raise ValueError('loaded adapter tensor names differ')
+    shapes = _expected_shapes(model_key)
     for name, expected in saved.items():
         actual = np.asarray(loaded_factors[name])
-        if actual.dtype != np.dtype('float32') or actual.size != expected.size:
+        if actual.dtype != np.dtype('float32') or list(actual.shape) != shapes[name]:
             raise ValueError('loaded adapter tensor type or size differs')
         if not np.array_equal(actual.reshape(-1), expected):
             raise ValueError('loaded adapter tensor values differ')
