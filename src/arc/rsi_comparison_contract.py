@@ -12,8 +12,11 @@ from src.arc.rsi_comparison_transport import CapturedComparisonTransport, _MODEL
 
 
 class ContractCheckedComparisonTransport:
+    budget_type = ComparisonBudget
+    token_limit = 16000000
+
     def __init__(self, transport, *, budget, registration_sha256, generation, expected_max_prompt_tokens):
-        if (not isinstance(transport, CapturedComparisonTransport) or type(budget) is not ComparisonBudget or
+        if (not isinstance(transport, CapturedComparisonTransport) or type(budget) is not self.budget_type or
                 budget.identity != {'registration_sha256': registration_sha256, 'generation': generation} or
                 type(generation) is not int or generation not in (0, 1) or
                 Path(transport.root).resolve() != Path(budget.root).resolve() or
@@ -37,7 +40,7 @@ class ContractCheckedComparisonTransport:
             if remaining <= 0:
                 raise TimeoutError('comparison contract deadline exceeded')
             value = verify_guarded_contract(self.transport.urls[arm], _MODEL, _REVISION,
-                16000000, 512, min(remaining, self.transport.max_request_seconds), 'off',
+                self.token_limit, 512, min(remaining, self.transport.max_request_seconds), 'off',
                 expected_adapter_sha256=self.transport.adapters[arm],
                 expected_max_prompt_tokens=self.expected_max_prompt_tokens, required_thinking_modes=('off',))
             if (not isinstance(value, dict) or not isinstance(value.get('ledger_id'), str) or
@@ -53,7 +56,7 @@ class ContractCheckedComparisonTransport:
                     raise ValueError('comparison server ledger changed or regressed')
             contracts[arm] = value
         if (contracts['parent']['ledger_id'] == contracts['candidate']['ledger_id'] or
-                sum(contracts[arm]['token_limit'] for arm in contracts) > 16000000 or
+                sum(contracts[arm]['token_limit'] for arm in contracts) > self.token_limit or
                 sum(contracts[arm]['reserved_tokens'] for arm in contracts) > local['reserved_tokens']):
             raise ValueError('comparison server ledgers or combined budgets differ')
         return contracts
@@ -79,5 +82,9 @@ class ContractCheckedComparisonTransport:
             remaining = min(deadline - time.monotonic(), self.budget.remaining())
             if remaining <= 0:
                 raise TimeoutError('comparison dispatch deadline exceeded')
-            return self.transport(prompt, arm=arm, adapter=adapter, task_id=task_id,
+            return self._dispatch(prompt, arm=arm, adapter=adapter, task_id=task_id,
                                   sample=sample, seed=seed, timeout=remaining)
+
+    def _dispatch(self, prompt, *, arm, adapter, task_id, sample, seed, timeout):
+        return self.transport(prompt, arm=arm, adapter=adapter, task_id=task_id,
+                              sample=sample, seed=seed, timeout=timeout)
