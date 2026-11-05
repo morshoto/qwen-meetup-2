@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Preflight generation lineage cycle
+
+Test requiring the replayed synthetic preparation and dataset markers before
+creating a canary preflight proposal. Recheck the generation dataset, bind its
+hash and stage hash, and reject changed markers, mismatched paths or fewer than
+five mapped rows. Exercise the full fixture path from collection replay through
+canary proposal. Local markers remain unverified and cannot clear the independent
+strict-oracle, registration, containment or authorization gates.
+
 ### Preflight specification cycle
 
 Test freezing a non-authorizing preflight proposal after rechecking the canary
