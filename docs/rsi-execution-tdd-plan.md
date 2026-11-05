@@ -260,3 +260,10 @@ generation partition and explicit sandbox-start limits. Reject missing ancestry,
 source-hash conflicts, probe failures and development overlap rather than
 silently omitting references. Caller-supplied source origins and history
 completeness remain unverified; reference records never become training data.
+
+### Exact duplicate feedback cycle
+
+Test bounded repairs after exact source or AST duplication, using only the
+model's own previous source and a generic category. Replay each attempt against
+the frozen reference pool. Keep sampled private-behavior matches terminal so
+private probe-derived feedback is not sent to the model.
