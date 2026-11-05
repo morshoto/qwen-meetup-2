@@ -2,6 +2,7 @@
 import hashlib
 import json
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from src.arc.rsi_exploratory_registration import prepare_exploratory_registration
@@ -18,7 +19,7 @@ class ExploratoryRegistrationTests(unittest.TestCase):
                       'partitions':{'generation':self.generation,'development':self.development}}
         self.raw=json.dumps(self.bounded,sort_keys=True).encode()
         self.proposal=propose_exploratory_split(self.raw,expected_sha256=hashlib.sha256(self.raw).hexdigest())
-        self.proposal['selection_code_sha256']='f'*64
+        self.proposal['selection_code_sha256']=hashlib.sha256(Path('src/arc/rsi_exploratory_split.py').read_bytes()).hexdigest()
         self.base={'generation':0,'slots':generation_slots(self.generation,0),'input_paths':{},
                    'input_sha256':{'split':'a'*64},'status':'draft_not_execution_ready','execution_ready':False}
         self.inputs={'split':{'partitions':{'generation':self.generation,'development':self.development}},
@@ -43,7 +44,7 @@ class ExploratoryRegistrationTests(unittest.TestCase):
         self.proposal['exploratory_task_ids'][0]=self.generation[0]
         with self.assertRaises(ValueError):self.prepare()
         self.proposal=propose_exploratory_split(self.raw,expected_sha256=hashlib.sha256(self.raw).hexdigest())
-        self.proposal['selection_code_sha256']='f'*64
+        self.proposal['selection_code_sha256']=hashlib.sha256(Path('src/arc/rsi_exploratory_split.py').read_bytes()).hexdigest()
         self.inputs['split']['partitions']['development'][0]='other'
         with self.assertRaises(ValueError):self.prepare()
 
