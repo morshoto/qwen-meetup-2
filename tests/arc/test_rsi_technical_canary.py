@@ -81,3 +81,42 @@ class TechnicalCanaryIdentityTests(TechnicalCanaryTests):
                 with self.assertRaises(ValueError): verify_technical_canary_identities(**args)
                 proposal['config']['iters']=1
                 with self.assertRaises(ValueError): verify_technical_canary_identities(**dict(args,manifest_bytes=dict(raw,model_manifest=b'{} ')))
+
+class TechnicalCanaryBundleTests(TechnicalCanaryTests):
+    def test_review_bundle_is_separate_and_nonexecuting(self):
+        import json
+        import sys
+        from unittest.mock import patch
+        from src.arc.rsi_technical_bundle import prepare_technical_canary_bundle
+        proposal = self.propose('32b')
+        args = dict(root=self.root, proposal=proposal, manifest_bytes={}, source_root=Path.cwd(),
+                    python_executable=sys.executable, forbidden_tasks=self.f.tasks,
+                    tokenizer=self.f.tokenizer, render=self.f.render, load_local_dataset=self.loader)
+        ok={'status':'technical_canary_local_identities_consistent','execution_ready':False,
+            'training_allowed':False,'promotion_allowed':False,'independently_verified':False,
+            'model_key':'32b','evidence_type':'local_files_and_caller_supplied_manifests'}
+        with patch('src.arc.rsi_technical_bundle.verify_technical_canary_identities',return_value=ok) as verify:
+            result=prepare_technical_canary_bundle(**args)
+            self.assertEqual(verify.call_count,2)
+        self.assertFalse(result['execution_ready'])
+        bundle=self.root/'technical-canary-32b.launch.quarantine'
+        config=json.loads((bundle/'mlx_lora.json').read_text())
+        launch=json.loads((bundle/'launch.json').read_text())
+        self.assertEqual(config,proposal['config'])
+        self.assertEqual(config['iters'],1)
+        self.assertEqual(launch['model_key'],'32b')
+        self.assertFalse(launch['training_allowed'])
+        self.assertFalse((self.root/'technical-32b.adapter').exists())
+        with patch('src.arc.rsi_technical_bundle.verify_technical_canary_identities',return_value=ok):
+            with self.assertRaises(FileExistsError): prepare_technical_canary_bundle(**args)
+
+    def test_bundle_rejects_failed_identity_review_without_writing(self):
+        import sys
+        from unittest.mock import patch
+        from src.arc.rsi_technical_bundle import prepare_technical_canary_bundle
+        with patch('src.arc.rsi_technical_bundle.verify_technical_canary_identities',return_value={'status':'bad'}):
+            with self.assertRaises(ValueError):
+                prepare_technical_canary_bundle(root=self.root,proposal=self.propose(),manifest_bytes={},
+                    source_root=Path.cwd(),python_executable=sys.executable,forbidden_tasks=self.f.tasks,
+                    tokenizer=self.f.tokenizer,render=self.f.render,load_local_dataset=self.loader)
+        self.assertFalse((self.root/'technical-canary-14b.launch.quarantine').exists())
