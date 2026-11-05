@@ -282,6 +282,13 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Owned training stream cycle
+
+Test a bounded stdout reader connected to the loss watchdog and owned-process
+monitor. Exercise non-finite output, finite fixture exit, malformed reports,
+and a stream that remains open after the leader exits. Record observed loss
+separately from process exit and never claim training or containment verified.
+
 ### Training loss watchdog cycle
 
 Test a bounded, incremental parser for pinned MLX train-loss report lines and
