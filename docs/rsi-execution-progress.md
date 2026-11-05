@@ -739,3 +739,22 @@ column. No write-ahead log was present, and database hashes matched before and
 after the review. This does not associate the hashes with source tasks, rule out
 missing ledgers, or independently establish what a model received. The bounded
 inventory's independent review must account for this limitation.
+
+### Exploratory comparison implementation
+
+The exploratory draft binding now recomputes the 750/50/200 partition proposal,
+checks the v3 design and original dataset identities, binds each manifest hash,
+and verifies that both generations retain the same scheduled tasks. The binding
+is explicitly non-authorizing and does not replace independent exposure review,
+content/ancestry checks, or a registered execution.
+
+A separate local exploratory budget proposes limits of 200 calls, 4 million
+reserved tokens, 2,000 sandbox starts and 9,000 seconds. A 50-task runner uses
+matched prompts and seeds, records per-task outcomes and elapsed time, and
+retains missing token usage as unknown. Fixture tests cover interruption, the
+notebook-compatible result, 200 local HTTP fixture requests, and server contract
+checks with a separate budget. The server declaration is self-reported and the
+result is caller-supplied: model and adapter identity, captured-request replay,
+independent provenance, task-type annotation, and exact live budgets remain to
+be verified and registered. The runner is not permission to execute, and no model
+comparison was performed.
