@@ -50,3 +50,34 @@ class TechnicalCanaryTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.propose(resource_limits=dict(self.limits,maximum_swap_growth_mib=513))
         with self.assertRaises(ValueError): self.propose(adapter_dir=self.root/'preflight-canary.quarantine'/'adapter')
         with self.assertRaises(ValueError): self.propose(expected_dataset_sha256='0'*64)
+
+class TechnicalCanaryIdentityTests(TechnicalCanaryTests):
+    def test_model_specific_local_identity_checks_remain_non_authorizing(self):
+        import hashlib
+        import json
+        from unittest.mock import patch
+        from src.arc.rsi_technical_canary import verify_technical_canary_identities
+        manifests={'model_manifest':{},'runtime_manifest':{'interpreter_realpath':'/python','interpreter_sha256':'1'*64},
+                   'environment_manifest':{'interpreter_realpath':'/python','interpreter_sha256':'1'*64},'source_inventory':{}}
+        raw={key:json.dumps(value).encode() for key,value in manifests.items()}
+        for model in ('14b','32b'):
+            model_dir=self.root/'models'/self.revisions[model]
+            for name in ('tokenizer.json','tokenizer_config.json'): (model_dir/name).write_text(name)
+            ids={key:hashlib.sha256(value).hexdigest() for key,value in raw.items()}
+            ids.update(tokenizer=hashlib.sha256(b'tokenizer.json').hexdigest(),tokenizer_config=hashlib.sha256(b'tokenizer_config.json').hexdigest())
+            proposal=self.propose(model,identity_hashes=ids)
+            args=dict(proposal=proposal,manifest_bytes=raw,source_root=self.root,python_executable='/python',
+                      root=self.root,forbidden_tasks=self.f.tasks,tokenizer=self.f.tokenizer,render=self.f.render,
+                      load_local_dataset=self.loader)
+            with patch('src.arc.rsi_technical_canary.verify_model_manifest') as verify_model, \
+                 patch('src.arc.rsi_technical_canary.verify_runtime_identity'), \
+                 patch('src.arc.rsi_technical_canary.verify_environment'), \
+                 patch('src.arc.rsi_technical_canary.verify_source_inventory'):
+                result=verify_technical_canary_identities(**args)
+                verify_model.assert_called_once_with(model_dir,{},model_key=model)
+                self.assertFalse(result['execution_ready']); self.assertFalse(result['training_allowed'])
+                self.assertFalse(result['independently_verified']); self.assertFalse(result['promotion_allowed'])
+                proposal['config']['iters']=2
+                with self.assertRaises(ValueError): verify_technical_canary_identities(**args)
+                proposal['config']['iters']=1
+                with self.assertRaises(ValueError): verify_technical_canary_identities(**dict(args,manifest_bytes=dict(raw,model_manifest=b'{} ')))
