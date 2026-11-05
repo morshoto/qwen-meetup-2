@@ -85,3 +85,11 @@ Test that exactly 200 matched task outcomes and registered per-task seeds are
 frozen before bootstrapping, that parent and candidate adapter identities are
 bound, and that incomplete, unmatched or altered records cannot yield a paired
 summary. Treat local records and claimed execution settings as unauthenticated.
+
+### Comparison budget and execution cycle
+
+Test durable per-comparison ceilings of 800 model calls, 16 million reserved
+tokens, 8,000 sandbox starts, and 36,000 seconds; exclude setup canaries from
+this budget. Then test a matched two-arm runner with a frozen task and seed
+schedule, shared budget, incomplete-run reporting, and output freeze. Fixtures
+must not be interpreted as authenticated model results.
