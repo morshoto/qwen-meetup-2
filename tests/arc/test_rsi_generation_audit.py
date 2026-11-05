@@ -1,5 +1,6 @@
 import hashlib
 import json
+import shutil
 import tempfile
 import threading
 import unittest
@@ -185,6 +186,12 @@ class GenerationAuditTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             materialize_replayed_synthetic_dataset(**{**dataset_args, 'expected_preparation_sha256': '0' * 64})
         self.assertFalse((self.root / 'generation-sft.quarantine').exists())
+        with patch('src.arc.rsi_synthetic_dataset.audit_generation_drafts', side_effect=[None, ValueError('drift')]):
+            with self.assertRaises(ValueError):
+                materialize_replayed_synthetic_dataset(**dataset_args)
+        self.assertFalse((self.root / 'synthetic.dataset.replay.json').exists())
+        self.assertTrue((self.root / 'generation-sft.quarantine').exists())
+        shutil.rmtree(self.root / 'generation-sft.quarantine')
         dataset = materialize_replayed_synthetic_dataset(**dataset_args)
         self.assertEqual(dataset['row_count'], 9)
         self.assertFalse(dataset['training_allowed'])
