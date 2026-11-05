@@ -148,3 +148,14 @@ the monitor does not prove containment of escaped descendants. Independent
 batch audit, a registered canary, trainer data-format audit, process containment,
 execution registration and explicit training authorization remain open gates.
 No training or preflight was started.
+
+### RSI chat format and mask precheck
+
+A format precheck converts quarantined rows to MLX-style chat JSONL and checks
+that the thinking-off inference prefix matches the masked token prefix, with a
+nonempty completion and no sequence exceeding 2,048 tokens. Tests use supplied
+fixture tokenizer and renderer objects. The existing trainer and SFT audit still
+require their own provenance schema; this precheck does not adapt or bypass
+that contract. Actual tokenizer/runtime identity, loss masking in the pinned
+MLX environment, independent batch audit and training authorization remain
+unverified. No tokenizer model, preflight or training was run.
