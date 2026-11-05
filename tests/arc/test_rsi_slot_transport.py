@@ -1,0 +1,78 @@
+import base64
+import json
+import tempfile
+import threading
+import unittest
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+
+from src.arc.data import Task
+from src.arc.e6_curriculum import _quality_grids
+from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
+from src.arc.rsi_collection_budget import CollectionBudget
+from src.arc.rsi_lineage_audit import probes_sha256
+from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
+from src.arc.rsi_slot_collector import collect_slot
+from src.arc.rsi_slot_transport import CapturedSlotTransport
+
+MODEL = 'mlx-community/Qwen3-14B-4bit'
+
+
+class SlotTransportTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                request = self.rfile.read(int(self.headers['Content-Length']))
+                self.server.requests.append(request)
+                code = [FAKE_PROGRAMS[2], FAKE_PROGRAMS[1]][len(self.server.requests) - 1]
+                raw = json.dumps({'model': MODEL, 'thinking_mode': 'off',
+                    'thinking_control': 'tokenizer_template_canary_passed',
+                    'choices': [{'message': {'content': code}, 'finish_reason': 'stop'}]}).encode()
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+            def log_message(self, *args):
+                pass
+        self.server = HTTPServer(('127.0.0.1', 0), Handler)
+        self.server.requests = []
+        self.worker = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.worker.start()
+        self.addCleanup(self.server.server_close)
+        self.addCleanup(self.worker.join)
+        self.addCleanup(self.server.shutdown)
+        self.transport = CapturedSlotTransport(base_url=f'http://127.0.0.1:{self.server.server_port}/v1',
+            log_path=self.root / 'requests.jsonl', request_capture_path=self.root / 'raw.jsonl', max_request_seconds=2)
+
+    def test_collector_reaches_fixture_server_with_exact_schedule(self):
+        ids = [f'task-{i:02}' for i in range(20)]
+        task = Task(ids[0], (([[1, 2]], [[2, 1]]),), ([[3, 4]],))
+        public, private = _quality_grids(42, 5), _quality_grids(43, 5)
+        budget = CollectionBudget.create(self.root, registration_sha256='a' * 64, generation=0)
+        result = collect_slot(root=self.root, registration_sha256='a' * 64, generation=0, slot=0,
+            task_ids=ids, task=task, expected_manifest_sha256=manifest_sha256(ids),
+            expected_task_sha256=task_sha256(task), public_probes=public, private_probes=private,
+            expected_public_probes_sha256=probes_sha256(public), expected_private_probes_sha256=probes_sha256(private),
+            reference_pool=[], transport=self.transport, sandbox=FakeE6Sandbox(), budget=budget)
+        self.assertEqual(result['status'], 'novel_unverified')
+        wire = [json.loads(raw) for raw in self.server.requests]
+        self.assertEqual([item['seed'] for item in wire], [12000, 12001])
+        self.assertTrue(all(item['thinking_mode'] == 'off' and item['max_tokens'] == 512 for item in wire))
+        self.assertTrue(all(item['deadline_monotonic'] > 0 for item in wire))
+        captures = [json.loads(line) for line in (self.root / 'raw.jsonl').read_text().splitlines()]
+        self.assertEqual([base64.b64decode(item['body_base64']) for item in captures], self.server.requests)
+        self.assertEqual(budget.snapshot()['model_calls'], 2)
+
+    def test_bad_seed_or_deadline_fails_before_dispatch(self):
+        for seed, timeout in [(12030, 1), (11999, 1), (12000, 0), (True, 1)]:
+            with self.assertRaises(ValueError):
+                self.transport('prompt', seed=seed, timeout=timeout)
+        self.assertEqual(self.server.requests, [])
+
+    def test_rejects_remote_endpoint(self):
+        with self.assertRaises(ValueError):
+            CapturedSlotTransport(base_url='https://example.com/v1', log_path=self.root / 'a',
+                                  request_capture_path=self.root / 'b', max_request_seconds=2)
