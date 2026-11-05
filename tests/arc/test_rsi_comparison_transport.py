@@ -170,6 +170,9 @@ class ComparisonTransportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             screen_captured_rsi_chain(first=refs[0], second=refs[1], tasks=tasks,
                 sandbox=FakeE6Sandbox(), verifier=verifier)
+        with self.assertRaises(ValueError):
+            summarize_captured_base_comparison(first=refs[0], second=refs[1], tasks=tasks,
+                sandbox=FakeE6Sandbox(), verifier=verifier)
 
     def test_truncated_and_malformed_completions_are_captured_invalid(self):
         self.server.finish_reason = 'length'
