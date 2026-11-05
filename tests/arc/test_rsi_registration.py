@@ -74,6 +74,38 @@ class DraftRegistrationTests(unittest.TestCase):
         self.assertNotIn('[[[4]]]', json.dumps(result))
         verify_draft_registration(self.root, result)
 
+    def test_v3_design_chain_is_verified_without_authorizing_execution(self):
+        digest = lambda path: hashlib.sha256((self.root / path).read_bytes()).hexdigest()
+        (self.root / 'research/rsi/design-v3.md').write_text('v3 design')
+        v3 = {'kind': 'design_only', 'execution_ready': False, 'competitive_target_percent': 42.4,
+              'supersedes': 'research/rsi/design-registration-v2.json',
+              'exposure_policy': 'bounded_review_unknown_project_exposure',
+              'files': {name: digest(name) for name in ('research/rsi/design-registration-v2.json',
+                                                       'research/rsi/design-v3.md')}}
+        path = self.root / 'research/rsi/design-registration-v3.json'
+        path.write_text(json.dumps(v3))
+        self.paths['design_registration'] = 'research/rsi/design-registration-v3.json'
+        result = prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
+        self.assertFalse(result['execution_ready'])
+        self.assertIn('bounded exposure review not independently completed', result['blockers'])
+        self.assertIn('research/rsi/design-v3.md', result['design_file_sha256'])
+        verify_draft_registration(self.root, result)
+        (self.root / 'research/rsi/design-v3.md').write_text('changed')
+        with self.assertRaisesRegex(ValueError, 'design'):
+            verify_draft_registration(self.root, result)
+
+    def test_v3_rejects_changed_target_or_exposure_policy(self):
+        path = self.root / 'research/rsi/design-registration-v3.json'
+        for field, value in [('competitive_target_percent', 0), ('exposure_policy', 'complete')]:
+            v3 = {'kind': 'design_only', 'execution_ready': False, 'competitive_target_percent': 42.4,
+                  'supersedes': 'research/rsi/design-registration-v2.json',
+                  'exposure_policy': 'bounded_review_unknown_project_exposure', 'files': {}}
+            v3[field] = value
+            path.write_text(json.dumps(v3))
+            self.paths['design_registration'] = 'research/rsi/design-registration-v3.json'
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
+
     def test_tampered_or_missing_inputs_and_source_are_rejected(self):
         result = prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
         (self.root / self.paths['solutions']).write_text('{}')
