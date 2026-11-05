@@ -11,6 +11,7 @@ from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_generation_stage import collect_generation
 from src.arc.rsi_lineage_audit import probes_sha256
+from src.arc.rsi_reference_pool import build_reference_pool
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
 
 
@@ -56,6 +57,20 @@ class GenerationStageTests(unittest.TestCase):
         self.assertEqual(start['private_probe_sha256'], probes_sha256(self.private))
         with self.assertRaises(FileExistsError):
             self.run_stage()
+
+    def test_historical_reference_is_duplicate_only(self):
+        code = FAKE_PROGRAMS[1]
+        entry = {'record_id': 'historical', 'source': code,
+                 'source_sha256': hashlib.sha256(code.strip().encode()).hexdigest(),
+                 'origin_sha256': 'b' * 64, 'ancestor_task_ids': [self.ids[0]]}
+        reference = build_reference_pool(entries=[entry], private_probes=self.private,
+            expected_probe_sha256=probes_sha256(self.private), generation_task_ids=set(self.ids[:10]),
+            development_task_ids=set(self.ids[10:]), sandbox=FakeE6Sandbox(), max_sandbox_starts=10)
+        self.pool = reference['pool']
+        result = self.run_stage()
+        self.assertEqual(result['counts'], {'duplicate_source': 10})
+        self.assertFalse(reference['eligible_for_training'])
+        self.assertFalse(result['training_allowed'])
 
     def test_failure_is_incomplete_and_cannot_replay(self):
         self.transport.side_effect = [FAKE_PROGRAMS[1], FAKE_PROGRAMS[1], TimeoutError('uncertain')]
