@@ -6,6 +6,11 @@ import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
+from src.arc.data import Task, Verifier
+from src.arc.e6_fake import FakeE6Sandbox
+from src.arc.rsi_comparison_audit import audit_comparison_captures
+from src.arc.rsi_comparison_budget import ComparisonBudget
+from src.arc.rsi_comparison_runner import run_comparison
 from src.arc.rsi_comparison_transport import CapturedComparisonTransport
 from src.arc.rsi_transport_audit import audit_transport
 
@@ -53,6 +58,34 @@ class ComparisonTransportTests(unittest.TestCase):
             audit_transport(raw, base64.b64decode(response['raw_http_body_base64']), ledger,
                             expected_prompt='prompt', expected_code=CODE, expected_seed=1024)
         self.assertEqual([json.loads(raw)['seed'] for raw in self.server.requests], [1024, 1024])
+
+    def test_full_comparison_captures_join_and_replay(self):
+        ids = [f'task-{i:03}' for i in range(200)]
+        tasks = {key: Task(key, (([[1], [2]], [[2], [1]]),), ([[3], [4]],)) for key in ids}
+        verifier = Verifier({key: [[[4], [3]]] for key in ids})
+        seeds = {key: [10000 + i * 2, 10001 + i * 2] for i, key in enumerate(ids)}
+        budget = ComparisonBudget.create(self.root, registration_sha256='a' * 64, generation=0)
+        result = run_comparison(root=self.root, registration_sha256='a' * 64, generation=0, task_ids=ids,
+            tasks=tasks, seeds=seeds, parent_adapter='none', candidate_adapter='b' * 64,
+            generate=self.transport, sandbox=FakeE6Sandbox(), verifier=verifier, budget=budget)
+        self.assertEqual(result['status'], 'frozen_unverified')
+        report = audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
+                                           sandbox=FakeE6Sandbox(), verifier=verifier)
+        self.assertEqual(report['checked_requests'], 800)
+        self.assertFalse(report['independently_verified'])
+        capture = self.root / 'parent.capture.jsonl'
+        lines = capture.read_text().splitlines()
+        capture.write_text('\n'.join(reversed(lines)) + '\n')
+        audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
+                                  sandbox=FakeE6Sandbox(), verifier=verifier)
+        capture.write_text('\n'.join(lines[:-1]) + '\n')
+        with self.assertRaises(ValueError):
+            audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
+                                      sandbox=FakeE6Sandbox(), verifier=verifier)
+        capture.write_text('\n'.join(lines + [lines[0]]) + '\n')
+        with self.assertRaises(ValueError):
+            audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
+                                      sandbox=FakeE6Sandbox(), verifier=verifier)
 
     def test_invalid_route_or_seed_fails_before_dispatch(self):
         with self.assertRaises(ValueError):
