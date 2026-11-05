@@ -22,6 +22,15 @@ which escape its session are gone, that samples capture instantaneous peaks, or
 that a model trained successfully. Training integration and independent process,
 resource, artifact and adapter verification remain unfinished.
 
+An incremental loss parser and optional bounded health sampler now stop an
+owned fixture process after a non-finite MLX-style training loss or unavailable
+health evidence. A live Python fixture emitted a `nan` loss line and was
+terminated. The training runner has not been connected to this parser; loss
+reports arrive only when the trainer emits them and do not prevent an earlier
+non-finite update. The sampler and stream are caller supplied, and process
+containment and adapter verification remain open. No model or training process
+was started.
+
 ## Current gates
 
 - The slot lifecycle consumes a claimed slot before fixture execution. A
