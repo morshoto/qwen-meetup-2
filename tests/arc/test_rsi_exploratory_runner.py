@@ -44,6 +44,9 @@ class ExploratoryRunnerTests(unittest.TestCase):
         self.assertTrue(all(c.args[0]==calls[0].args[0] for c in calls))
         self.assertNotIn('[[4, 3]]',calls[0].args[0])
         self.assertEqual(result['summary']['arms']['base']['total_tokens'],1500)
+        marker=json.loads((self.root/'exploratory.completed.json').read_text())
+        self.assertEqual(marker['result_sha256'],result['sha256'])
+        self.assertEqual(marker['budget_after']['model_calls'],200)
         with self.assertRaisesRegex(ValueError, "fresh"): self.run_trial()
     def test_interruption_is_incomplete_and_never_replayed(self):
         self.generate.side_effect=TimeoutError('unavailable')
@@ -51,6 +54,7 @@ class ExploratoryRunnerTests(unittest.TestCase):
         self.assertEqual(result['status'],'exploratory_incomplete')
         self.assertEqual(self.budget.snapshot()['model_calls'],1)
         self.assertFalse(result['claim_eligible'])
+        self.assertFalse((self.root/'exploratory.completed.json').exists())
         with self.assertRaisesRegex(ValueError, "fresh"): self.run_trial()
     def test_changed_manifest_fails_before_dispatch(self):
         self.final[0]=self.ids[0]
