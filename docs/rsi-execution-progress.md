@@ -62,6 +62,14 @@ positive and negative zero as equal. It is tested with synthetic files only.
 Nonzero factors do not prove their matrix product is nonzero, and changed file
 values do not establish an effective model update or improved predictions.
 
+A bounded product probe now examines up to eight nonzero rows and eight nonzero
+columns per LoRA module and can report a sampled nonzero A/B product or
+parent-relative product difference. Synthetic fixtures cover cancellation and
+factor rescaling. No witness means the sampled entries were inconclusive; it
+does not establish equality over the full matrices. A witness describes local
+adapter files and does not prove model reload, execution provenance or a
+prediction difference.
+
 ## Current gates
 
 - The slot lifecycle consumes a claimed slot before fixture execution. A
