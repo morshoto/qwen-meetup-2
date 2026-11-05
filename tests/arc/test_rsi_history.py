@@ -30,6 +30,12 @@ class HistoryAuditTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'required'):
             audit_history(self.root, required_paths=['artifacts/missing/task_manifest.json'])
 
+    def test_includes_task_ids_from_e5_generation_records(self):
+        (self.root / 'artifacts/run/generation.json').write_text('{"task_id":"historical"}')
+        result = audit_history(self.root, required_paths=[])
+        self.assertIn('historical', result['task_ids'])
+        self.assertIn('artifacts/run/generation.json', {row['path'] for row in result['files']})
+
     def test_rejects_malformed_json_or_yaml(self):
         for relative, bad in [('artifacts/run/task_manifest.json', '{'),
                               ('artifacts/run/attempted_tasks.jsonl', '{'),
