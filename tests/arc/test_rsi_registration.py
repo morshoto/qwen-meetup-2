@@ -130,6 +130,14 @@ class DraftRegistrationTests(unittest.TestCase):
             with self.subTest(quantization=quantization), self.assertRaisesRegex(ValueError, 'model'):
                 prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
 
+    def test_rejects_non_string_and_symlinked_input_paths(self):
+        with self.assertRaises(ValueError):
+            prepare_draft_registration(self.root, input_paths=dict(self.paths, challenges=[]), generation=0)
+        link = self.root / 'inputs/challenge-link.json'
+        link.symlink_to(self.root / self.paths['challenges'])
+        with self.assertRaises(ValueError):
+            prepare_draft_registration(self.root, input_paths=dict(self.paths, challenges='inputs/challenge-link.json'), generation=0)
+
 
 if __name__ == '__main__':
     unittest.main()
