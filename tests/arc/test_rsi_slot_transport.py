@@ -10,6 +10,8 @@ from pathlib import Path
 from src.arc.data import Task
 from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
+from src.arc.rsi_candidate import inspect_candidate
+from src.arc.rsi_novelty import screen_novelty
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_lineage_audit import inspect_lineage, probes_sha256
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
@@ -31,7 +33,8 @@ class SlotTransportTests(unittest.TestCase):
             def do_POST(self):
                 request = self.rfile.read(int(self.headers['Content-Length']))
                 self.server.requests.append(request)
-                code = self.server.override_code or [FAKE_PROGRAMS[2], FAKE_PROGRAMS[1]][len(self.server.requests) - 1]
+                seed = json.loads(request)['seed']
+                code = self.server.codes.get(seed) or self.server.override_code or [FAKE_PROGRAMS[2], FAKE_PROGRAMS[1]][len(self.server.requests) - 1]
                 raw = json.dumps({'model': MODEL, 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
                     'choices': [{'message': {'role': 'assistant', 'content': code}, 'finish_reason': self.server.finish_reason}]}).encode()
@@ -45,6 +48,7 @@ class SlotTransportTests(unittest.TestCase):
         self.server.requests = []
         self.server.finish_reason = 'stop'
         self.server.override_code = None
+        self.server.codes = {}
         self.worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.worker.start()
         self.addCleanup(self.server.server_close)
@@ -131,6 +135,39 @@ class SlotTransportTests(unittest.TestCase):
         corrupted[0]['body_base64'] = base64.b64encode(b'bad').decode()
         with self.assertRaises(ValueError):
             audit_collected_slot(**{**kwargs, 'request_records': corrupted})
+
+    def test_exact_duplicate_feedback_is_bounded_and_replayable(self):
+        ids = [f'task-{i:02}' for i in range(20)]
+        task = Task(ids[0], (([[1]], [[1]]),), ([[2, 3]],))
+        public, private = _quality_grids(42, 5), _quality_grids(43, 5)
+        candidate = inspect_candidate(task, FAKE_PROGRAMS[1], public_probes=public,
+                                      private_probes=private, sandbox=FakeE6Sandbox())
+        fingerprint = screen_novelty(FAKE_PROGRAMS[1], candidate['private_behavior_sha256'],
+                                     candidate['private_probe_set_sha256'], [])
+        pool = [{key: fingerprint[key] for key in ('source_sha256', 'ast_sha256', 'behavior_sha256', 'probe_set_sha256')}]
+        self.server.codes = {12000: FAKE_PROGRAMS[1], 12001: FAKE_PROGRAMS[3]}
+        budget = CollectionBudget.create(self.root, registration_sha256='a' * 64, generation=0)
+        result = collect_slot(root=self.root, registration_sha256='a' * 64, generation=0, slot=0,
+            task_ids=ids, task=task, expected_manifest_sha256=manifest_sha256(ids), expected_task_sha256=task_sha256(task),
+            public_probes=public, private_probes=private, expected_public_probes_sha256=probes_sha256(public),
+            expected_private_probes_sha256=probes_sha256(private), reference_pool=pool, transport=self.transport,
+            sandbox=FakeE6Sandbox(), budget=budget)
+        self.assertEqual(result['status'], 'novel_unverified')
+        self.assertEqual(len(self.server.requests), 2)
+        repaired = json.loads(self.server.requests[1])['messages'][1]['content']
+        self.assertIn('duplicate_source', repaired)
+        self.assertNotIn(str(private[0]), repaired)
+        capture = [json.loads(line) for line in (self.root / 'raw.jsonl').read_text().splitlines()]
+        ledger = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
+        responses = [json.loads(line) for line in (self.root / 'llm_responses.jsonl').read_text().splitlines()]
+        kwargs = dict(evidence_bytes=(self.root / 'g0-slot-00.collection.json').read_bytes(),
+            evidence_sha256=result['evidence_sha256'], request_records=capture, response_records=responses,
+            ledger_records=ledger, task_ids=ids, task=task, generation=0, slot=0,
+            expected_manifest_sha256=manifest_sha256(ids), expected_task_sha256=task_sha256(task),
+            public_probes=public, private_probes=private, expected_public_probes_sha256=probes_sha256(public),
+            expected_private_probes_sha256=probes_sha256(private), reference_pool=pool, sandbox=FakeE6Sandbox())
+        self.assertEqual(audit_collected_slot(**kwargs)['status'], 'captured_slot_consistent')
+        self.assertFalse(make_capture_draft(**kwargs, parent_adapter='none')['eligible_for_training'])
 
     def test_truncated_response_stops_and_replays_without_draft(self):
         self.server.finish_reason = 'length'

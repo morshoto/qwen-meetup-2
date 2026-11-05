@@ -44,6 +44,10 @@ class TaskGenerationTests(unittest.TestCase):
             task_repair_prompt(task, 'code', 'hidden expected output [[9]]')
         with self.assertRaises(ValueError):
             task_repair_prompt(task, 'code', 'private_acceptance_rejected')
+        for category in ('duplicate_source', 'duplicate_ast'):
+            self.assertIn(category, task_repair_prompt(task, 'def transform(grid): return grid', category))
+        with self.assertRaises(ValueError):
+            task_repair_prompt(task, 'code', 'sampled_behavior_match')
 
 
 if __name__ == '__main__':
