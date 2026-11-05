@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Captured recursive screening cycle
+
+Test a separate transition screen that requires the full captured comparison
+audit for each generation before applying the local screening rule. Reject
+missing or altered request, response or ledger evidence; preserve the existing
+fixture-only outcome replay as a distinct weaker path. Capture consistency
+does not authenticate the server, loaded adapter or execution provenance.
+
 ### Recursive transition screening cycle
 
 Test replaying each complete frozen comparison before applying the positive
