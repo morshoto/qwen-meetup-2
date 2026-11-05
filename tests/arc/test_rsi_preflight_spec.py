@@ -47,7 +47,13 @@ class PreflightSpecTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             prepare_preflight_spec(**{**self.args, 'preparation_bytes': self.args['preparation_bytes'] + b' '})
         with self.assertRaises(ValueError):
+            prepare_preflight_spec(**{**self.args, 'identity_hashes': {**self.args['identity_hashes'], 'runtime_manifest': 'bad'}})
+        with self.assertRaises(ValueError):
             prepare_preflight_spec(**{**self.args, 'adapter_dir': self.root / 'preflight-canary.quarantine' / 'adapter'})
+        def invalid_loader(path, tokenizer, config):
+            return [], [], []
+        with self.assertRaises(ValueError):
+            prepare_preflight_spec(**{**self.args, 'load_local_dataset': invalid_loader})
         (self.root / 'preflight-canary.quarantine' / 'train.jsonl').write_text('{}\n')
         with self.assertRaises(ValueError):
             prepare_preflight_spec(**self.args)
