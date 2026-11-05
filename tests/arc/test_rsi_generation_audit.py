@@ -69,6 +69,31 @@ class GenerationAuditTests(unittest.TestCase):
         self.pool = []
         self.pool_hash = hashlib.sha256(b'[]').hexdigest()
 
+    def test_reference_setup_binding_is_required_during_replay(self):
+        setup = {'status': 'legacy_behavior_reference_local_unverified', 'model_key': '14b',
+                 'sandbox_starts': 10, 'model_calls': 0, 'training_steps': 0,
+                 'private_outputs_exposed': False, 'eligible_for_training': False,
+                 'independently_verified': False, 'generation_authorized': False, 'pool_sha256': self.pool_hash}
+        raw = json.dumps(setup).encode()
+        digest = hashlib.sha256(raw).hexdigest()
+        budget = CollectionBudget.create(self.root, registration_sha256='a'*64, generation=0,
+            reference_setup_bytes=raw, expected_reference_setup_sha256=digest, model_key='14b')
+        common = dict(root=self.root, registration_sha256='a'*64, generation=0, parent_adapter='none',
+            task_ids=self.ids, tasks=self.tasks, expected_manifest_sha256=manifest_sha256(self.ids),
+            expected_task_hashes=self.hashes, public_probes=self.public, private_probes=self.private,
+            expected_public_probes_sha256=probes_sha256(self.public), expected_private_probes_sha256=probes_sha256(self.private),
+            reference_pool=self.pool, expected_reference_pool_sha256=self.pool_hash)
+        collect_generation(**common, transport=self.transport, sandbox=FakeE6Sandbox(), budget=budget,
+                           expected_reference_setup_sha256=digest)
+        load = lambda name: [json.loads(line) for line in (self.root/name).read_text().splitlines()]
+        args = dict(**common, request_records=load('capture.jsonl'), ledger_records=load('requests.jsonl'),
+                    response_records=load('llm_responses.jsonl'), sandbox=FakeE6Sandbox())
+        for changes in ({}, {'expected_reference_setup_sha256': '0'*64},
+                        {'expected_reference_setup_sha256': digest, 'model_key': '32b'}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError): audit_generation(**args, **changes)
+        self.assertEqual(audit_generation(**args, expected_reference_setup_sha256=digest)['status'],
+                         'generation_replay_consistent')
+
     def test_32b_stage_replay_and_drafts_are_model_isolated(self):
         self.server.model = 'mlx-community/Qwen3-32B-4bit'
         self.transport = CapturedSlotTransport(base_url=f'http://127.0.0.1:{self.server.server_port}/v1',
