@@ -22,6 +22,11 @@ class NoveltyTests(unittest.TestCase):
         result = screen_novelty(CODE, 'c' * 64, PROBE, [ref()])
         self.assertEqual(result['status'], 'novel_unverified')
         self.assertFalse(result['eligible_for_training'])
+        self.assertEqual(result['source_sha256'], hashlib.sha256(CODE.strip().encode()).hexdigest())
+        self.assertEqual(result['ast_sha256'], stable_ast_sha256(CODE))
+        self.assertEqual(result['behavior_sha256'], 'c' * 64)
+        self.assertEqual(result['probe_set_sha256'], PROBE)
+        self.assertEqual(len(result['reference_pool_sha256']), 64)
 
     def test_duplicate_source_ast_and_behavior_are_rejected(self):
         self.assertEqual(screen_novelty(CODE, 'c' * 64, PROBE, [ref(CODE)])['status'], 'duplicate_source')
