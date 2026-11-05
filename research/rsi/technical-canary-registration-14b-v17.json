@@ -1,0 +1,82 @@
+{
+  "candidate_reuse_allowed": false,
+  "config_sha256": "ca5e0502c4795f8287b51f3397d16494002dafdead35aee54da06b41d645bd89",
+  "data_source": "fixed_synthetic_canary",
+  "dataset_sha256": "c7ca0ab04a51cebc44d0b4cf95de24519c3595448efbabd1abef2700bb26d19b",
+  "execution_ready": false,
+  "fork_restriction": "proposed_only_fixture_does_not_prove_containment_or_training_compatibility",
+  "group_membership_fixture_sha256": "2fe36d08171e683bc793b0d735f9e586335f77e61d6180d579801d5f61ec40e9",
+  "group_signal_fixture_sha256": "6499c8ea5507675048210f9cbd97f618cb82ee846c8bd17c07748f0a3a9f4e53",
+  "independently_verified": false,
+  "limitations": [
+    "local paths and manifests can drift and must be reverified before execution",
+    "resource limits do not establish hardware feasibility",
+    "this draft and its hash list do not authorize a launch"
+  ],
+  "local_file_sha256": {
+    "preflight-canary.quarantine/audit.json": "ba7c843d9fd5eb776d4405ff66a97d2428e036895ff1eab62295404b9609dff3",
+    "preflight-canary.quarantine/train.jsonl": "c7ca0ab04a51cebc44d0b4cf95de24519c3595448efbabd1abef2700bb26d19b",
+    "technical-canary-14b.launch.quarantine/environment_manifest.json": "e55846f399d0b0d4b3c748aa381e7038afa574c7a5f4424dbab9bd2b8f6196c2",
+    "technical-canary-14b.launch.quarantine/launch.json": "84001175b1743cc8d7507ba5df2b019eb159fe9f29a998b4d24f0d5fb909e8f8",
+    "technical-canary-14b.launch.quarantine/mlx_lora.json": "ca5e0502c4795f8287b51f3397d16494002dafdead35aee54da06b41d645bd89",
+    "technical-canary-14b.launch.quarantine/model_manifest.json": "e2df5138afed02a3ed3d87013b06f117c576d1b2f79bbcf72d2724565220e39d",
+    "technical-canary-14b.launch.quarantine/proposal.json": "9ee8b7aafb69d8c2a07711030f5318510b94d3de59d0b72906385dee40a49fd6",
+    "technical-canary-14b.launch.quarantine/runtime_manifest.json": "7af1101bc86e9f47c13305650bf7069983d4b3767c0489bf3e0057b11f37ad09",
+    "technical-canary-14b.launch.quarantine/source_inventory.json": "1797c33537821b71534ae9c3457f4bf255044155994cb06c55449e4ad6421945"
+  },
+  "local_root": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-canary-review-20261105-v17/14b",
+  "model_id": "mlx-community/Qwen3-14B-4bit",
+  "model_key": "14b",
+  "model_revision": "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+  "outstanding": [
+    "independent registration and identity review",
+    "containment of escaped descendants",
+    "authenticated resource sampling and loss monitoring",
+    "independent review and execution of save and reload procedure with a separate resource budget",
+    "separately scoped technical canary authorization",
+    "resolve exited process group cleanup evidence on this host"
+  ],
+  "promotion_allowed": false,
+  "proposed_reload_resource_limits": {
+    "maximum_process_rss_gib": 32,
+    "maximum_swap_growth_mib": 512,
+    "minimum_disk_gib": 20,
+    "minimum_free_memory_percent": 20,
+    "sample_interval_seconds": 5,
+    "timeout_seconds": 300
+  },
+  "reload_argv_template": [
+    "/tmp/qwen-p3a-mlx-venv/bin/python",
+    "-u",
+    "-B",
+    "-m",
+    "src.cli.rsi_reload_probe",
+    "--model-key",
+    "14b",
+    "--model-dir",
+    "/Users/shotomorisaki/.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+    "--adapter-dir",
+    "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-canary-review-20261105-v17/14b/nonpromotable.adapter",
+    "--adapter-sha256",
+    "<digest-from-authorized-training>",
+    "--model-manifest",
+    "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-canary-review-20261105-v17/14b/technical-canary-14b.launch.quarantine/model_manifest.json",
+    "--model-manifest-sha256",
+    "e2df5138afed02a3ed3d87013b06f117c576d1b2f79bbcf72d2724565220e39d"
+  ],
+  "reload_review_procedure_sha256": "461924bdad28792febfc72dd291e3217930bb209f0d61c96d503edfbd2f0cad6",
+  "resource_limits": {
+    "maximum_process_rss_gib": 32,
+    "maximum_swap_growth_mib": 512,
+    "minimum_disk_gib": 20,
+    "minimum_free_memory_percent": 20,
+    "sample_interval_seconds": 5,
+    "timeout_seconds": 300
+  },
+  "run_purpose": "single synthetic training step and independent adapter reload",
+  "status": "draft_technical_canary_registration_unverified",
+  "supersedes": "technical-canary-registration-14b-v16.json",
+  "tiny_fixture_report_sha256": "3e012c86e3e3834f34288c25dc5e4639efa80d686879ff4454f0526b50e76d39",
+  "training_allowed": false,
+  "training_started": false
+}
