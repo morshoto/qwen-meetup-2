@@ -112,9 +112,10 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
     samples = []
     stop_reason = None
     try:
-        if (not isinstance(baseline, dict) or
-                training_resource_decision(baseline, [baseline]) is not None or
-                abs(start - baseline.get('monotonic_seconds', float('inf'))) > 5):
+        baseline_reason = training_resource_decision(baseline, [baseline])
+        if baseline_reason is not None:
+            stop_reason = baseline_reason
+        elif abs(start - baseline.get('monotonic_seconds', float('inf'))) > 5:
             stop_reason = 'monitor_evidence_invalid'
         while stop_reason is None:
             remaining = timeout_seconds - (time.monotonic() - start)
