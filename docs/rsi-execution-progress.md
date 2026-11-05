@@ -268,6 +268,13 @@ canary is human-authored infrastructure data, separate from generated research
 records; it is unregistered and ineligible for training. No model weights,
 preflight or trainer were run.
 
+Canary readback now recomputes the rows and mask and checks the owner-only
+dataset, audit and directory contents. The installed MLX-LM 0.30.7 local
+dataset loader also read the five synthetic rows with matching masks and empty
+validation and test splits in a 2026-11-05 fixture using the same 1,000-task
+inventory. This is local loader evidence, not canary registration, full
+exposure clearance or training feasibility.
+
 ### RSI chat format and mask precheck
 
 A format precheck converts quarantined rows to MLX-style chat JSONL and checks
