@@ -51,6 +51,8 @@ class CollectionBudget:
                     reference['model_calls'] != 0 or type(reference.get('training_steps')) is not int or
                     reference['training_steps'] != 0 or any(reference.get(k) is not False for k in
                     ('private_outputs_exposed', 'eligible_for_training', 'independently_verified', 'generation_authorized')) or
+                    type(reference.get('elapsed_seconds')) not in (int, float) or
+                    not math.isfinite(reference['elapsed_seconds']) or not 0 <= reference['elapsed_seconds'] <= 60 or
                     not isinstance(reference.get('pool_sha256'), str) or not re.fullmatch(r'[0-9a-f]{64}', reference['pool_sha256'])):
                 raise ValueError('reference setup accounting differs')
         identity = _identity(registration_sha256, generation, 0)
@@ -63,7 +65,8 @@ class CollectionBudget:
                      'model_calls': 0, 'reserved_tokens': 0, 'sandbox_runs': 0}
             if reference is not None:
                 state.update(sandbox_runs=reference['sandbox_starts'], reference_setup_sha256=expected_reference_setup_sha256,
-                             reference_model_key=model_key, reference_pool_sha256=reference['pool_sha256'])
+                             reference_model_key=model_key, reference_pool_sha256=reference['pool_sha256'],
+                             reference_elapsed_seconds=reference['elapsed_seconds'])
             _create(directory, budget.name, state)
         return budget
 
@@ -92,12 +95,14 @@ class CollectionBudget:
         state = _read(directory, self.name)
         keys = {*self.identity, 'started_wall', 'last_wall', 'started_monotonic',
                 'last_monotonic', 'model_calls', 'reserved_tokens', 'sandbox_runs'}
-        reference_keys = {'reference_setup_sha256', 'reference_model_key', 'reference_pool_sha256'}
+        reference_keys = {'reference_setup_sha256', 'reference_model_key', 'reference_pool_sha256', 'reference_elapsed_seconds'}
         if set(state) not in (keys, keys | reference_keys) or any(state[k] != v or type(state[k]) is not type(v) for k, v in self.identity.items()):
             raise ValueError('budget identity differs from registration')
-        if reference_keys <= set(state) and (state['reference_model_key'] not in ('14b','32b') or
+        if reference_keys <= set(state) and (self.identity['generation'] != 0 or state['reference_model_key'] not in ('14b','32b') or
                 any(not isinstance(state[k], str) or not re.fullmatch(r'[0-9a-f]{64}', state[k])
                     for k in ('reference_setup_sha256','reference_pool_sha256')) or
+                type(state['reference_elapsed_seconds']) not in (int, float) or
+                not math.isfinite(state['reference_elapsed_seconds']) or not 0 <= state['reference_elapsed_seconds'] <= 60 or
                 type(state['sandbox_runs']) is not int or state['sandbox_runs'] < 10):
             raise ValueError('invalid reference setup budget state')
         for key, limit in (('model_calls', self.max_model_calls), ('reserved_tokens', self.max_reserved_tokens),
@@ -119,7 +124,8 @@ class CollectionBudget:
         if (not math.isfinite(wall) or not math.isfinite(monotonic) or
                 wall < state['last_wall'] or monotonic < state['last_monotonic']):
             raise TimeoutError('collection budget expired or clock moved backwards')
-        remaining = self.max_wall_seconds - max(wall - state['started_wall'], monotonic - state['started_monotonic'])
+        remaining = self.max_wall_seconds - state.get('reference_elapsed_seconds', 0) - max(
+            wall - state['started_wall'], monotonic - state['started_monotonic'])
         if remaining <= 0:
             raise TimeoutError('collection budget expired or clock moved backwards')
         return remaining

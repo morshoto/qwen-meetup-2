@@ -99,7 +99,7 @@ class GenerationStageTests(unittest.TestCase):
         pool_sha=hashlib.sha256(json.dumps(self.pool,sort_keys=True,separators=(',',':')).encode()).hexdigest()
         setup={'status':'legacy_behavior_reference_local_unverified','model_key':'14b','sandbox_starts':10,
                'model_calls':0,'training_steps':0,'private_outputs_exposed':False,'eligible_for_training':False,
-               'independently_verified':False,'generation_authorized':False,'pool_sha256':pool_sha}
+               'independently_verified':False,'generation_authorized':False,'pool_sha256':pool_sha,'elapsed_seconds':2.5}
         raw=json.dumps(setup,sort_keys=True).encode();digest=hashlib.sha256(raw).hexdigest()
         self.budget=CollectionBudget.create(self.root,registration_sha256='a'*64,generation=0,
             reference_setup_bytes=raw,expected_reference_setup_sha256=digest,model_key='14b')

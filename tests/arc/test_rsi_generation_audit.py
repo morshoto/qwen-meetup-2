@@ -73,7 +73,8 @@ class GenerationAuditTests(unittest.TestCase):
         setup = {'status': 'legacy_behavior_reference_local_unverified', 'model_key': '14b',
                  'sandbox_starts': 10, 'model_calls': 0, 'training_steps': 0,
                  'private_outputs_exposed': False, 'eligible_for_training': False,
-                 'independently_verified': False, 'generation_authorized': False, 'pool_sha256': self.pool_hash}
+                 'independently_verified': False, 'generation_authorized': False, 'pool_sha256': self.pool_hash,
+                 'elapsed_seconds': 2.5}
         raw = json.dumps(setup).encode()
         digest = hashlib.sha256(raw).hexdigest()
         budget = CollectionBudget.create(self.root, registration_sha256='a'*64, generation=0,
