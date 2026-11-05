@@ -68,11 +68,13 @@ class DraftRegistrationTests(unittest.TestCase):
             prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
         with self.assertRaises(ValueError):
             prepare_draft_registration(self.root, input_paths=dict(self.paths, challenges='../outside.json'), generation=0)
+        split['partitions']['development'][0] = 't0800'
+        split_path.write_text(json.dumps(split))
         model = self.root / self.paths['model_manifest']
         value = json.loads(model.read_text())
         value['revision'] = 'wrong'
         model.write_text(json.dumps(value))
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'model'):
             prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
 
 
