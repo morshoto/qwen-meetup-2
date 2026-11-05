@@ -26,3 +26,21 @@ def parse_group_listing(listing, group_id):
     return {'status':'process_group_listing_unverified', 'members':members,
             'live_member_pids':[row['pid'] for row in members if not row['state'].startswith('Z')],
             'group_cleanup_verified':False, 'escaped_processes_excluded':False}
+
+
+def observe_exited_group(process):
+    """Observe a retained child group's listing; this never proves cleanup."""
+    import subprocess
+    from src.arc.rsi_process_monitor import _exited_unreaped
+    if not isinstance(process, subprocess.Popen) or process.returncode is not None:
+        raise ValueError('owned unreaped process required')
+    try:
+        if _exited_unreaped(process) is None:
+            raise ValueError('group leader has not exited')
+        listing = subprocess.check_output(['/bin/ps', '-axo', 'pid=,pgid=,state='], text=True, timeout=3)
+        result = parse_group_listing(listing, process.pid)
+        if _exited_unreaped(process) is None:
+            raise ValueError('unreaped leader observation changed')
+    except (OSError, ChildProcessError, subprocess.SubprocessError) as exc:
+        raise ValueError('process group listing unavailable') from exc
+    return result
