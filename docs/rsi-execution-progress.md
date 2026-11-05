@@ -216,12 +216,13 @@ improvement or ARC-AGI-2 score.
 
 A local proposal can freeze the provisionally selected adapter, captured
 comparison digests, diagnostic task hashes, harness and settings hashes, an
-explicit budget, and the v2 42.4% semi-private target. It checks task-ID
-separation against caller-supplied generation and development lists; the budget
+explicit budget, and the v2 42.4% semi-private target. It checks task-ID and
+exact prompt-content separation against caller-supplied generation and
+development tasks; the budget
 is constrained by the proposed comparison ceilings. A two-generation fixture
 exercised the proposal and rejected overlap and an excessive budget. This is
 an unwitnessed proposal, not an immutable execution registration, proof of
-complete exposure history, a once-only reservation or authorization. No public
+complete exposure history or nonidentical related tasks, a once-only reservation or authorization. No public
 diagnostic or independent submission was run.
 
 ### Quarantined training preparation
