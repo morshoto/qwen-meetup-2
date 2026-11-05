@@ -38,6 +38,10 @@ class TechnicalCanaryTests(unittest.TestCase):
             self.assertFalse(item['training_allowed']); self.assertFalse(item['candidate_reuse_allowed'])
             self.assertEqual(item['data_source'],'fixed_synthetic_canary')
         self.assertNotEqual(a['config']['adapter_path'],b['config']['adapter_path'])
+    def test_rejects_malformed_identity_and_seed(self):
+        for changes in ({'model_key':[]}, {'identity_hashes':{}}, {'seed':True}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError): self.propose(**changes)
+
     def test_rejects_wrong_model_or_existing_adapter(self):
         with self.assertRaises(ValueError): self.propose('14b',model_dir=self.root/'models'/self.revisions['32b'])
         (self.root/'technical-14b.adapter').mkdir()
