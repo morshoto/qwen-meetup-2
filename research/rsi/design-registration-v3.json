@@ -1,0 +1,19 @@
+{
+  "competitive_target_percent": 42.4,
+  "execution_blockers": [
+    "bounded historical exposure review and split manifest not independently frozen",
+    "model runtime sandbox and transitive dependencies not independently authenticated",
+    "live model calls training and independent scoring require separate authorization"
+  ],
+  "execution_ready": false,
+  "exposure_policy": "bounded_review_unknown_project_exposure",
+  "files": {
+    "research/rsi/design-registration-v2.json": "5da3a83a7d8f2f7d3b851159607990138aed54cd1e8463d8faf692416f061bd0",
+    "research/rsi/design-v3.md": "2bb5e062cea96a1a29fa668f35f53cfdbac5d07cd4e6204a5da930a1bd245278"
+  },
+  "kind": "design_only",
+  "recorded_at_local": "2026-11-05T21:39:28+09:00",
+  "source_commit": "edc3d23b47d27b2961e16ae3f19c5dfe37d6b560",
+  "supersedes": "research/rsi/design-registration-v2.json",
+  "timestamp_note": "Locally recorded time, not an independently witnessed timestamp."
+}
