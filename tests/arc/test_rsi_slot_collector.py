@@ -7,6 +7,8 @@ from unittest.mock import Mock
 from src.arc.data import Task
 from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
+from src.arc.rsi_candidate import inspect_candidate
+from src.arc.rsi_novelty import screen_novelty
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_lineage_audit import probes_sha256
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
@@ -79,6 +81,39 @@ class SlotCollectorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.collect(transport=Mock(side_effect=[{'code': FAKE_PROGRAMS[2], 'request_id': request_id},
                                                      {'code': FAKE_PROGRAMS[1], 'request_id': request_id}]))
+
+    def test_ast_duplicate_receives_generic_repair(self):
+        task = Task(self.ids[0], (([[1]], [[1]]),), ([[2, 3]],))
+        candidate = inspect_candidate(task, FAKE_PROGRAMS[1], public_probes=self.public,
+                                      private_probes=self.private, sandbox=FakeE6Sandbox())
+        prior = screen_novelty(FAKE_PROGRAMS[1], candidate['private_behavior_sha256'],
+                               candidate['private_probe_set_sha256'], [])
+        pool = [{key: prior[key] for key in ('source_sha256', 'ast_sha256', 'behavior_sha256', 'probe_set_sha256')}]
+        alternate = 'def transform(grid):\n return [row[::-1] for row in grid]'
+        class Sandbox:
+            def run(self, code, grid):
+                return FakeE6Sandbox().run(FAKE_PROGRAMS[1] if code == alternate else code, grid)
+        transport = Mock(side_effect=[alternate, FAKE_PROGRAMS[3]])
+        result = self.collect(task=task, expected_task_sha256=task_sha256(task), reference_pool=pool,
+                              sandbox=Sandbox(), transport=transport)
+        self.assertEqual(result['status'], 'novel_unverified')
+        self.assertIn('duplicate_ast', transport.call_args_list[1].args[0])
+        self.assertNotIn(str(self.private[0]), transport.call_args_list[1].args[0])
+
+    def test_private_behavior_match_is_terminal_without_feedback(self):
+        candidate = inspect_candidate(self.task, FAKE_PROGRAMS[1], public_probes=self.public,
+                                      private_probes=self.private, sandbox=FakeE6Sandbox())
+        prior = screen_novelty(FAKE_PROGRAMS[1], candidate['private_behavior_sha256'],
+                               candidate['private_probe_set_sha256'], [])
+        pool = [{key: prior[key] for key in ('source_sha256', 'ast_sha256', 'behavior_sha256', 'probe_set_sha256')}]
+        alternate = 'def transform(grid):\n return [list(reversed(row)) for row in grid]'
+        class Sandbox:
+            def run(self, code, grid):
+                return FakeE6Sandbox().run(FAKE_PROGRAMS[1] if code == alternate else code, grid)
+        transport = Mock(return_value=alternate)
+        result = self.collect(reference_pool=pool, sandbox=Sandbox(), transport=transport)
+        self.assertEqual(result['status'], 'sampled_behavior_match')
+        self.assertEqual(transport.call_count, 1)
 
     def test_wrong_task_stops_before_claim_or_dispatch(self):
         with self.assertRaises(ValueError):
