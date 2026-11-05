@@ -25,7 +25,8 @@ class DraftRegistrationTests(unittest.TestCase):
             'challenges': challenges, 'solutions': solutions,
             'split': {'status': 'provisional_not_preregistered', 'independence_established': False,
                       'partitions': {'generation': ids[:800], 'development': ids[800:]}},
-            'public_probes': [[[i]] for i in range(5)], 'private_probes': [[[i]] for i in range(5, 10)],
+            'public_probes': [[[i, i], [i, i]] for i in range(5)],
+            'private_probes': [[[i, i], [i, i]] for i in range(5, 10)],
             'reference_pool': [],
             'model_manifest': {'model_id': 'mlx-community/Qwen3-14B-4bit',
                 'revision': 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4',
@@ -76,6 +77,20 @@ class DraftRegistrationTests(unittest.TestCase):
         model.write_text(json.dumps(value))
         with self.assertRaisesRegex(ValueError, 'model'):
             prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
+
+    def test_rejects_probe_overlap_with_scheduled_source_inputs(self):
+        public = self.root / self.paths['public_probes']
+        probes = json.loads(public.read_text())
+        probes[0] = [[1]]
+        public.write_text(json.dumps(probes))
+        with self.assertRaisesRegex(ValueError, 'source.*probe'):
+            prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
+
+    def test_source_change_after_registration_is_rejected(self):
+        result = prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
+        (self.root / 'src/main.py').write_text('changed')
+        with self.assertRaisesRegex(ValueError, 'differs'):
+            verify_draft_registration(self.root, result)
 
 
 if __name__ == '__main__':
