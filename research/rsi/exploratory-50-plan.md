@@ -41,3 +41,8 @@ not attest model identity, task provenance, the timing measurement or token
 usage. This 50-task check cannot establish RSI improvement or benchmark
 competitiveness; retain the 200-task and independent scoring gates for those
 claims.
+
+A local check of the proposed tasks found 50 distinct prompt-content hashes and
+no exact prompt-content overlap with the proposed 200-task set or the first 20
+scheduled generation tasks. This is not an independently sealed manifest and
+does not establish semantic independence or exclude later training ancestry.
