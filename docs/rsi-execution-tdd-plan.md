@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Synthetic preparation completion cycle
+
+Test that a replayed preparation receives an exclusive completion marker only
+after both replays succeed and that the marker binds the written preparation
+and source stage digests. A failed post-write replay leaves no completion marker
+and must not be confused with a completed preparation. The marker remains a
+local consistency record and does not authorize training.
+
 ### Synthetic generation replay cycle
 
 Test an independent readback of the saved generation draft artifact against
