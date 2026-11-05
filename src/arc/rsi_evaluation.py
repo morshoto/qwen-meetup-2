@@ -17,10 +17,13 @@ def evaluate_task(task, *, generate, sandbox):
     if not isinstance(task, Task) or not task.train or not task.test_inputs:
         raise ValueError('task requires visible demonstrations and test inputs')
     prompt = solve_prompt(task)
-    predictions, statuses = [], []
+    predictions, statuses, sources = [], [], []
     for sample in range(2):
         code = generate(prompt, sample=sample)
-        if not isinstance(code, str) or not code.strip() or _static_failure(code):
+        if not isinstance(code, str) or len(code.encode('utf-8')) > 65536:
+            code = None
+        sources.append(code)
+        if code is None or not code.strip() or _static_failure(code):
             statuses.append('static_rejected')
             continue
         starts = 0
@@ -57,7 +60,7 @@ def evaluate_task(task, *, generate, sandbox):
         statuses.append('accepted')
         predictions.append(outputs)
     return {'status': 'complete', 'task_id': task.id, 'sample_statuses': statuses,
-            'predictions': predictions, 'evidence_type': 'caller_supplied_execution'}
+            'predictions': predictions, 'sample_sources': sources, 'evidence_type': 'caller_supplied_execution'}
 
 
 def score_task(task, result, verifier):
