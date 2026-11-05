@@ -353,3 +353,13 @@ reference execution failure. Fixture tests connect its output to generation
 screening. The source origins and ancestry are caller claims, retained history
 is not proven complete, and the builder does not admit historical records into
 training. No historical source was executed during this observation.
+
+### Exact duplicate feedback
+
+Collection now allows a bounded repair after an exact source or AST duplicate,
+using only the candidate's own source and a generic duplicate category. A
+sampled behavior match remains terminal, so private-probe-derived feedback is
+not sent to the model. Replay recomputes duplicate decisions against the same
+reference pool for each attempt. Generation reports now count intermediate
+attempt outcomes as well as final slot outcomes; uncertain interrupted attempts
+remain visible through budget usage. These checks used fixtures only.
