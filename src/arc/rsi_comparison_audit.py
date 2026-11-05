@@ -8,6 +8,7 @@ from src.arc.data import Task
 from src.arc.rsi_comparison_freeze import _hash, _validate
 from src.arc.rsi_evaluation import evaluate_task, score_task
 from src.arc.rsi_slot_lifecycle import _directory, _exists
+from src.arc.rsi_slot_audit import task_sha256
 
 
 def _read(directory, name):
@@ -55,7 +56,8 @@ def replay_comparison(root, *, expected_sha256, tasks, sandbox, verifier):
             raise ValueError('comparison start differs from frozen record')
         ids = frozen['task_ids']
         if (not isinstance(tasks, dict) or set(tasks) != set(ids) or
-                any(not isinstance(tasks[key], Task) or tasks[key].id != key for key in ids)):
+                any(not isinstance(tasks[key], Task) or tasks[key].id != key or
+                    task_sha256(tasks[key]) != frozen['task_hashes'][key] for key in ids)):
             raise ValueError('comparison tasks differ')
         for index, task_id in enumerate(ids):
             for arm in ('parent', 'candidate'):

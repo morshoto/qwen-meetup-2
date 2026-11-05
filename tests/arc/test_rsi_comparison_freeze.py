@@ -19,7 +19,7 @@ class FrozenComparisonTests(unittest.TestCase):
         self.candidate = {task: {'solved': i < 50, 'seeds': self.seeds[task]} for i, task in enumerate(self.ids)}
 
     def freeze(self, **overrides):
-        kwargs = dict(root=self.root, registration_sha256=REG, task_ids=self.ids, seeds=self.seeds,
+        kwargs = dict(root=self.root, registration_sha256=REG, task_ids=self.ids, task_hashes={key: 'c' * 64 for key in self.ids}, seeds=self.seeds,
                       parent_adapter='none', candidate_adapter=CANDIDATE, parent=self.base, candidate=self.candidate)
         kwargs.update(overrides)
         return freeze_comparison(**kwargs)

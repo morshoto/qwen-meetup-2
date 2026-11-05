@@ -13,6 +13,7 @@ from src.arc.rsi_comparison_budget import ComparisonBudget
 from src.arc.rsi_comparison_freeze import _SETTINGS, _validate, comparison_coverage, freeze_comparison
 from src.arc.rsi_evaluation import evaluate_task, score_task
 from src.arc.rsi_slot_lifecycle import _create, _directory
+from src.arc.rsi_slot_audit import task_sha256
 
 
 def run_comparison(*, root, registration_sha256, generation, task_ids, tasks, seeds,
@@ -21,9 +22,12 @@ def run_comparison(*, root, registration_sha256, generation, task_ids, tasks, se
             budget.identity != {'registration_sha256': registration_sha256, 'generation': generation} or
             Path(budget.root).resolve() != Path(root).resolve()):
         raise ValueError('comparison budget identity differs')
+    if not isinstance(tasks, dict) or any(not isinstance(tasks.get(key), Task) for key in task_ids):
+        raise ValueError('task manifest differs')
+    task_hashes = {key: task_sha256(tasks[key]) for key in task_ids}
     placeholders = {task: {'solved': False, 'seeds': seeds.get(task)} for task in task_ids}
     _validate({'registration_sha256': registration_sha256, 'settings': dict(_SETTINGS),
-               'task_ids': task_ids, 'seeds': seeds, 'parent_adapter': parent_adapter,
+               'task_ids': task_ids, 'task_hashes': task_hashes, 'seeds': seeds, 'parent_adapter': parent_adapter,
                'candidate_adapter': candidate_adapter, 'parent': placeholders, 'candidate': placeholders,
                'evidence_type': 'caller_supplied_outcomes'})
     if (not isinstance(tasks, dict) or set(tasks) != set(task_ids) or
@@ -55,7 +59,7 @@ def run_comparison(*, root, registration_sha256, generation, task_ids, tasks, se
                             {'task_id': task_id, 'result': result, 'score': score})
                 outcomes[arm][task_id] = value
         return freeze_comparison(root=root, registration_sha256=registration_sha256, task_ids=task_ids,
-                                 seeds=seeds, parent_adapter=parent_adapter, candidate_adapter=candidate_adapter,
+                                 task_hashes=task_hashes, seeds=seeds, parent_adapter=parent_adapter, candidate_adapter=candidate_adapter,
                                  parent=outcomes['parent'], candidate=outcomes['candidate'])
     except Exception as exc:
         coverage = comparison_coverage(task_ids, parent=outcomes['parent'], candidate=outcomes['candidate'])

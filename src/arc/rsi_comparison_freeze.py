@@ -21,7 +21,7 @@ def _hash(value):
 
 def _validate(record):
     if (not isinstance(record, dict) or set(record) != {'registration_sha256', 'settings', 'task_ids',
-            'seeds', 'parent_adapter', 'candidate_adapter', 'parent', 'candidate', 'evidence_type'} or
+            'seeds', 'task_hashes', 'parent_adapter', 'candidate_adapter', 'parent', 'candidate', 'evidence_type'} or
             not _hash(record['registration_sha256']) or record['settings'] != _SETTINGS or
             record['evidence_type'] != 'caller_supplied_outcomes' or
             not _hash(record['candidate_adapter']) or
@@ -33,6 +33,9 @@ def _validate(record):
             any(not isinstance(task, str) or not task for task in ids) or len(set(ids)) != 200 or
             not isinstance(seeds, dict) or set(seeds) != set(ids)):
         raise ValueError('comparison requires 200 distinct matched tasks')
+    task_hashes = record['task_hashes']
+    if not isinstance(task_hashes, dict) or set(task_hashes) != set(ids) or not all(_hash(v) for v in task_hashes.values()):
+        raise ValueError('invalid comparison task hashes')
     all_seeds = []
     for task in ids:
         pair = seeds[task]
@@ -66,10 +69,10 @@ def comparison_coverage(task_ids, *, parent, candidate):
             'improvement_claim_supported': False, 'independently_verified': False}
 
 
-def freeze_comparison(*, root, registration_sha256, task_ids, seeds, parent_adapter,
+def freeze_comparison(*, root, registration_sha256, task_ids, task_hashes, seeds, parent_adapter,
                       candidate_adapter, parent, candidate):
     record = {'registration_sha256': registration_sha256, 'settings': dict(_SETTINGS),
-              'task_ids': task_ids, 'seeds': seeds, 'parent_adapter': parent_adapter,
+              'task_ids': task_ids, 'task_hashes': task_hashes, 'seeds': seeds, 'parent_adapter': parent_adapter,
               'candidate_adapter': candidate_adapter, 'parent': parent, 'candidate': candidate,
               'evidence_type': 'caller_supplied_outcomes'}
     _validate(record)
