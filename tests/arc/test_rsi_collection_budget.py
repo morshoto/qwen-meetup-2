@@ -64,6 +64,14 @@ class CollectionBudgetTests(unittest.TestCase):
             with self.assertRaises(TimeoutError):
                 self.budget.reserve_sandbox()
 
+    def test_remaining_budget_is_bounded_by_both_clocks(self):
+        state = self.budget.snapshot()
+        with patch('src.arc.rsi_collection_budget.time.time', return_value=state['started_wall'] + 100), patch('src.arc.rsi_collection_budget.time.monotonic', return_value=state['started_monotonic'] + 200):
+            self.assertEqual(self.budget.remaining(), 3400)
+        with patch('src.arc.rsi_collection_budget.time.time', return_value=state['started_wall'] + 3600), patch('src.arc.rsi_collection_budget.time.monotonic', return_value=state['started_monotonic'] + 200):
+            with self.assertRaises(TimeoutError):
+                self.budget.remaining()
+
     def test_rejects_invalid_inputs(self):
         for amount in (True, 0, -1, 1.5):
             with self.assertRaises(ValueError):
