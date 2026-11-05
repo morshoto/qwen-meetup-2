@@ -78,3 +78,10 @@ static rejection, visible-example failures and invalid grid outputs count as
 failed attempts, and that infrastructure failures and the ten-start per-sample
 cap stop scoring. Test per-test-input guesses and task scoring via the isolated
 solution verifier. Keep supplied model and sandbox identity unauthenticated.
+
+### Frozen paired comparison cycle
+
+Test that exactly 200 matched task outcomes and registered per-task seeds are
+frozen before bootstrapping, that parent and candidate adapter identities are
+bound, and that incomplete, unmatched or altered records cannot yield a paired
+summary. Treat local records and claimed execution settings as unauthenticated.
