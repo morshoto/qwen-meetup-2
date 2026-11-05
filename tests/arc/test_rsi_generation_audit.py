@@ -111,6 +111,24 @@ class GenerationAuditTests(unittest.TestCase):
         args = dict(root=self.root, stage_bytes=raw, expected_stage_sha256=report['sha256'],
                     tasks=self.tasks, seed=42)
         with self.assertRaises(ValueError):
+            prepare_synthetic_training(**{**args, 'expected_stage_sha256': '0' * 64})
+        too_few = json.loads(raw)
+        for key in ('drafts', 'synthetic_examples', 'proposed_sft_rows'):
+            too_few[key] = too_few[key][:4]
+        too_few['draft_count'] = 4
+        too_few_raw = json.dumps(too_few).encode()
+        insufficient = prepare_synthetic_training(**{**args, 'stage_bytes': too_few_raw,
+            'expected_stage_sha256': hashlib.sha256(too_few_raw).hexdigest()})
+        self.assertEqual(insufficient['status'], 'insufficient_mapped_records')
+        self.assertFalse(insufficient['training_allowed'])
+        duplicated = json.loads(raw)
+        for key in ('drafts', 'synthetic_examples', 'proposed_sft_rows'):
+            duplicated[key][1] = duplicated[key][0]
+        duplicated_raw = json.dumps(duplicated).encode()
+        with self.assertRaises(ValueError):
+            prepare_synthetic_training(**{**args, 'stage_bytes': duplicated_raw,
+                'expected_stage_sha256': hashlib.sha256(duplicated_raw).hexdigest()})
+        with self.assertRaises(ValueError):
             prepare_synthetic_training(**{**args, 'stage_bytes': altered_raw,
                 'expected_stage_sha256': hashlib.sha256(altered_raw).hexdigest()})
         self.assertFalse((self.root / 'synthetic.training.preparation.json').exists())
