@@ -184,3 +184,10 @@ Test that truncated or malformed collection completions consume a single slot,
 remain ineligible, and cannot become repair input or a draft. Replay the captured
 bytes to verify the invalid outcome; infrastructure failures remain uncertain
 and stop collection.
+
+### Collection generation cycle
+
+Test ten scheduled slots with a single stage budget and a reference pool that
+incorporates earlier provisionally novel slots. Bind the task, probe, parent and
+reference identities before starting. Stop on infrastructure failure, preserve
+completed slot outcomes, and never authorize training from local results.
