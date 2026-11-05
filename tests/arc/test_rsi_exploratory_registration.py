@@ -58,6 +58,12 @@ class ExploratoryRegistrationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'content'):
             self.prepare()
 
+    def test_rejects_hidden_labels_in_challenge_content(self):
+        key=self.proposal['exploratory_task_ids'][0]
+        self.inputs['challenges'][key]['test'][0]['output']=[[1]]
+        with self.assertRaisesRegex(ValueError,'hidden'):
+            self.prepare()
+
     def test_rejects_changed_scheduled_slots(self):
         self.base['slots']=generation_slots(self.generation,1)
         with self.assertRaises(ValueError):self.prepare()
