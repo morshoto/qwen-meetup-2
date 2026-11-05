@@ -6,14 +6,25 @@ precheck cannot authorize training, and supports visible-example repairs only.
 import hashlib
 
 from src.arc.rsi_candidate import inspect_candidate
+from src.arc.data import validate_grid
+from src.arc.e6_curriculum import canonical
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
 from src.arc.rsi_task_generation import generation_slots, task_prompt, task_repair_prompt
 from src.arc.rsi_transport_audit import audit_transport
 
 
+def probes_sha256(probes: list) -> str:
+    if not isinstance(probes, list) or len(probes) < 5:
+        raise ValueError('probe set must contain at least five grids')
+    checked = [validate_grid(grid) for grid in probes]
+    return hashlib.sha256(canonical(checked).encode()).hexdigest()
+
+
 def inspect_lineage(task_ids: list[str], task, *, generation: int, slot: int, attempts: list[dict],
                     expected_manifest_sha256: str, expected_task_sha256: str,
-                    public_probes: list, private_probes: list, sandbox: object) -> dict:
+                    public_probes: list, private_probes: list,
+                    expected_public_probes_sha256: str, expected_private_probes_sha256: str,
+                    sandbox: object) -> dict:
     if not isinstance(attempts, list) or not 1 <= len(attempts) <= 3:
         raise ValueError('lineage must contain one to three attempts')
     slots = generation_slots(task_ids, generation)
@@ -23,6 +34,9 @@ def inspect_lineage(task_ids: list[str], task, *, generation: int, slot: int, at
     if (manifest_sha256(task_ids) != expected_manifest_sha256 or
             task_sha256(task) != expected_task_sha256 or task.id != selected['task_id']):
         raise ValueError('task or schedule differs from registration')
+    if (probes_sha256(public_probes) != expected_public_probes_sha256 or
+            probes_sha256(private_probes) != expected_private_probes_sha256):
+        raise ValueError('probe set differs from registration')
     seen_requests, seen_sources = set(), set()
     statuses = []
     prompt = task_prompt(task)
