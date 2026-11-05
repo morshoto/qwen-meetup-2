@@ -13,6 +13,7 @@ from src.arc.rsi_comparison_audit import audit_comparison_captures
 from src.arc.rsi_comparison_budget import ComparisonBudget
 from src.arc.rsi_comparison_runner import run_comparison
 from src.arc.rsi_comparison_transport import CapturedComparisonTransport
+from src.arc.rsi_exploratory_transport import CapturedExploratoryTransport
 from src.arc.rsi_transport_audit import audit_transport
 from src.arc.rsi_transition_screen import screen_captured_rsi_chain
 from src.arc.rsi_base_comparison import _paired_frozen_summary, summarize_captured_base_comparison
@@ -60,6 +61,25 @@ class ComparisonTransportTests(unittest.TestCase):
         self.url = f'http://127.0.0.1:{self.server.server_port}/v1'
         self.transport = CapturedComparisonTransport(root=self.root, parent_url=self.url, candidate_url=self.url,
             parent_adapter='none', candidate_adapter='b' * 64, max_request_seconds=2)
+
+    def test_exploratory_routing_and_server_usage(self):
+        wrapped = CapturedExploratoryTransport(self.transport)
+        self.server.usage = {'prompt_tokens': 10, 'completion_tokens': 5, 'total_tokens': 15}
+        result = wrapped('prompt', arm='base', adapter='none', task_id='task', sample=0, seed=1024, timeout=1)
+        self.assertEqual(result['usage'], {'prompt_tokens': 10, 'completion_tokens': 5})
+        self.assertEqual(result['code'], CODE)
+        self.server.usage = {'prompt_tokens': 10}
+        result = wrapped('prompt', arm='trained', adapter='b' * 64, task_id='task', sample=0, seed=1024, timeout=1)
+        self.assertIsNone(result['usage'])
+        self.assertTrue((self.root / 'parent.capture.jsonl').is_file())
+        self.assertTrue((self.root / 'candidate.capture.jsonl').is_file())
+
+    def test_exploratory_truncated_response_preserves_failure(self):
+        wrapped = CapturedExploratoryTransport(self.transport)
+        self.server.truncate_first = True
+        result = wrapped('prompt', arm='base', adapter='none', task_id='task', sample=0, seed=1024, timeout=1)
+        self.assertEqual(result['failure'], 'invalid_model_output')
+        self.assertIsNone(result['usage'])
 
     def test_each_arm_has_matched_settings_and_captured_bytes(self):
         for arm, adapter in [('parent', 'none'), ('candidate', 'b' * 64)]:
