@@ -758,3 +758,12 @@ result is caller-supplied: model and adapter identity, captured-request replay,
 independent provenance, task-type annotation, and exact live budgets remain to
 be verified and registered. The runner is not permission to execute, and no model
 comparison was performed.
+
+The draft binding now also rejects exact prompt-content overlap among all three
+partitions. The exploratory capture auditor replays task programs with a
+supplied sandbox and verifier, joins all 200 request IDs to their captured
+request and response bytes, and checks local budget and reported usage. A local
+HTTP fixture passed replay; altered task rows and usage were rejected. The
+auditor does not independently verify process origin, model identity, elapsed
+time, or task labels. The bounded exposure review and source ancestry audit
+remain outstanding.
