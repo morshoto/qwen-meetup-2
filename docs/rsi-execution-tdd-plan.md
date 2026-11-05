@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Local canary tokenizer binding cycle
+
+Test loading the canary through the pinned local MLX-LM tokenizer and dataset
+loader, checking tokenizer file digests before and after the audit and
+rejecting a wrong revision or runtime. Exercise the real local tokenizer with
+synthetic rows and supplied visible tasks; do not load model weights, run
+inference or claim independent runtime attestation.
+
 ### Preflight local identity verification cycle
 
 Test comparing the frozen preflight proposal's identity hashes with supplied
