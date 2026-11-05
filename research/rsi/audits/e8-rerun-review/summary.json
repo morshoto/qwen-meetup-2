@@ -1,0 +1,31 @@
+{
+  "protocol_sha256": "92d2dd93fa5ff0cf9d29bd431c1e1b5a678b5e7823c83b9746a9240860681f97",
+  "stages": {
+    "8b": {
+      "generation_requests_verified": 24,
+      "sandbox_dispatches": 94,
+      "model_id": "mlx-community/Qwen3-8B-4bit",
+      "revision": "545dc4251c05440727734bcd94334791f6ab0192",
+      "canary_request_count": 2,
+      "summary_recomputed": true
+    },
+    "14b": {
+      "generation_requests_verified": 10,
+      "sandbox_dispatches": 120,
+      "model_id": "mlx-community/Qwen3-14B-4bit",
+      "revision": "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+      "canary_request_count": 2,
+      "summary_recomputed": true
+    },
+    "32b": {
+      "generation_requests_verified": 10,
+      "sandbox_dispatches": 200,
+      "model_id": "mlx-community/Qwen3-32B-4bit",
+      "revision": "bcaaf7f538adf166c1080a2befdb4f6019f66639",
+      "canary_request_count": 2,
+      "summary_recomputed": true
+    }
+  },
+  "seal_valid": true,
+  "note": "audits recorded request evidence; does not prove semantic equivalence"
+}
