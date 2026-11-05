@@ -53,6 +53,19 @@ def _validate(record):
                 raise ValueError('comparison outcomes or seeds differ')
 
 
+def comparison_coverage(task_ids, *, parent, candidate):
+    if (not isinstance(task_ids, list) or len(task_ids) != 200 or
+            any(not isinstance(task, str) or not task for task in task_ids) or len(set(task_ids)) != 200 or
+            not isinstance(parent, dict) or not isinstance(candidate, dict) or
+            not set(parent) <= set(task_ids) or not set(candidate) <= set(task_ids)):
+        raise ValueError('invalid comparison task coverage')
+    missing_parent = sorted(set(task_ids) - set(parent))
+    missing_candidate = sorted(set(task_ids) - set(candidate))
+    return {'status': 'incomplete' if missing_parent or missing_candidate else 'coverage_complete_unverified',
+            'missing_parent': missing_parent, 'missing_candidate': missing_candidate,
+            'improvement_claim_supported': False, 'independently_verified': False}
+
+
 def freeze_comparison(*, root, registration_sha256, task_ids, seeds, parent_adapter,
                       candidate_adapter, parent, candidate):
     record = {'registration_sha256': registration_sha256, 'settings': dict(_SETTINGS),
