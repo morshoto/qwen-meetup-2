@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Recursive transition screening cycle
+
+Test replaying each complete frozen comparison before applying the positive
+paired-point-estimate development screening rule. Enforce generation order,
+base and immediate-parent adapter identity, and matching development task
+content across transitions. A failed screen ends the loop, and no more than
+two transitions are considered. Fixture outcomes remain provisional and must
+not support a live execution, independent improvement or benchmark claim.
+
 ### Bounded adapter product probe cycle
 
 Test bounded deterministic probes of LoRA A/B matrix products in the candidate
