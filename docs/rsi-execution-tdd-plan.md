@@ -55,3 +55,10 @@ Test the conditioned collector against a local fixture HTTP server, checking
 wire seeds, thinking mode, token reservation, deadlines, captures, and failures
 before dispatch for invalid settings. Bind the collector to the capturing backend
 without enabling or claiming an authenticated live run.
+
+### Capture-to-slot binding cycle
+
+Test that each completed captured attempt records its unique transport request
+ID in the slot evidence, and that malformed or repeated IDs fail closed. Use
+these identifiers for later replay across interleaved logs; they are not proof
+of server identity or an independent seal.
