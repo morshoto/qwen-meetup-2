@@ -134,3 +134,12 @@ replace the requested independent review.
 The separate local preparation drafts are [14B](legacy-reference-preparation-14b.json) and [32B](legacy-reference-preparation-32b.json). The [preserved script](audits/legacy-reference-preparation-20261106.py) records the actual local procedure. The detailed fingerprint files remain owner-only under `artifacts/rsi-legacy-reference-preparation-20261106-v1/`; the tracked indexes contain their hashes. No model calls or training steps were used.
 
 Each preparation used ten sandbox starts. Before any generation run, independently audit these records and ensure those starts are charged against the proposed 300-start cap if the references are used. The existing generation budget must not silently reset or extend that cap. These local preparations do not freeze the provisional probes, authorize collection, or make either historical candidate eligible for training.
+
+The reference-aware budget also subtracts the elapsed time recorded in the
+corresponding index from the proposed 3,600-second limit. Its checks are local
+consistency checks, not proof that the recorded time or sandbox executions are
+authentic. A generic budget can still be created without a reference index;
+before any live run, the registered launch procedure must require the
+reference-aware initialization and independently verify its binding to the
+chosen model and pool. No registered live launcher has yet established that
+requirement.
