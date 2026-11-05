@@ -185,6 +185,18 @@ content, missing records and changed scores were rejected. The replay inputs,
 model emissions and local digest remain unauthenticated, so this is not an
 independent provenance audit or evidence of a model improvement.
 
+### Recursive transition screening
+
+An offline screening helper replays up to two frozen comparisons, requires the
+first parent to be the base and the second parent to be the first selected
+adapter, and checks matching development task content. It applies the proposed
+positive point-estimate rule and stops after a nonpositive screen. Fixture
+comparisons cover positive, nonpositive, wrong-parent and altered-record cases.
+The selected adapter is provisional: these caller-supplied comparisons and
+sandbox results are not independently authenticated and cannot start another
+generation or establish improvement. The stronger confidence-interval criterion
+remains separate from this development screening rule.
+
 ### Quarantined training preparation
 
 Training preparation now checks the structural five-record threshold, canonical
