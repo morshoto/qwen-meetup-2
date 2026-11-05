@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Canary dataset readback cycle
+
+Test re-deriving the fixed canary rows and mask from the supplied task
+inventory, then reading the owner-only dataset and audit back by directory
+descriptor. Reject altered rows, changed inventories, unexpected files,
+non-private modes and mismatched digests. This remains local format evidence
+and does not register or authorize a training preflight.
+
 ### Separate synthetic preflight dataset cycle
 
 Test a fixed, synthetic five-task canary dataset with a code completion and
