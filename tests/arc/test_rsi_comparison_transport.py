@@ -108,6 +108,13 @@ class ComparisonTransportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             audit_exploratory_captures(self.root,expected_sha256=result['sha256'],tasks=tasks,
                                        sandbox=FakeE6Sandbox(),verifier=verifier)
+        row_path.write_text(original)
+        ledger=self.root/'parent.responses'/'requests.jsonl'
+        lines=ledger.read_text().splitlines(); event=json.loads(lines[0]); event['usage']['prompt_tokens']+=1
+        lines[0]=json.dumps(event); ledger.write_text('\n'.join(lines)+'\n')
+        with self.assertRaises(ValueError):
+            audit_exploratory_captures(self.root,expected_sha256=result['sha256'],tasks=tasks,
+                                       sandbox=FakeE6Sandbox(),verifier=verifier)
 
     def test_exploratory_truncated_response_preserves_failure(self):
         wrapped = CapturedExploratoryTransport(self.transport)
