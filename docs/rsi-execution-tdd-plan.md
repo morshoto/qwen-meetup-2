@@ -726,3 +726,10 @@ Oracle records. Bind independent per-model configuration, resource limits,
 model/runtime/tokenizer claims and isolated output paths. Fix one training step,
 disable promotion and candidate reuse, and keep training authorization false.
 Reject invalid identities, data overlap, unsafe paths or resource limits.
+
+### Separate 32B model identity review
+
+Test a read-only model-manifest snapshot for the pinned 32B revision using the
+same complete-file, quantization, chat-template and safe-blob checks as 14B.
+Keep the existing 14B default compatible, reject cross-model revision/path
+confusion, and preserve unverified execution and independent-canary gates.
