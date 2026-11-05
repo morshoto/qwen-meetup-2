@@ -1,0 +1,18 @@
+{
+  "execution_blockers": [
+    "historical exposure inventory is not proven complete",
+    "task-conditioned generation and training monitors are not implemented or audited",
+    "execution dependencies, final data manifests, seeds and stage budgets must be frozen",
+    "live model calls, training and independent scoring require separate authorization"
+  ],
+  "execution_ready": false,
+  "files": {
+    "configs/rsi-research-protocol.json": "e202175a043dd4bb3630259f0dd934bdc3db883bfdcbd4b52cf8fa4094020d6d",
+    "docs/rsi-research-protocol.md": "74077657246eb9ee3a5a9958bb8b54c2602f9349996a366e20da5ee4e9847e8f",
+    "research/rsi/provisional-split.json": "5a3f55299ac1988a40680d1510cffe62650bb537462d94c6b024534c707102e6"
+  },
+  "kind": "design_only",
+  "recorded_at_local": "2026-11-05T16:00:29+09:00",
+  "source_commit": "a12de7ef0062e04c116fadafd86b420e84562638",
+  "timestamp_note": "Locally recorded time, not an independently witnessed timestamp."
+}
