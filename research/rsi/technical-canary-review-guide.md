@@ -52,6 +52,12 @@ runtime, synthetic dataset and its overlap checks, exact one-step config,
 separate output paths, offline settings, and training and reload resource
 limits. Recheck identities immediately before any proposed execution.
 
+The [local host capacity snapshot](audits/host-capacity-snapshot-20261106.json)
+records physical memory, disk space, swap and model weight file sizes without
+loading weights. It is a point-in-time observation, not a peak-memory estimate
+or evidence that either model will fit. Obtain fresh resource observations for
+each proposed run.
+
 ## Unresolved before a run can be claimed as verified
 
 - The local `sandbox-exec` fixture prevents ordinary fork and spawn, and a tiny
