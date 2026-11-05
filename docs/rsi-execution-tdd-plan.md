@@ -170,3 +170,10 @@ Test that a captured slot must pass replay before it can produce a quarantined
 SFT draft, and that the draft binds the final captured request, response hash,
 source, task and novelty result. Mark origin as unverified; the existing batch
 gate must continue to reject the draft until independent provenance is proven.
+
+### Invalid evaluation response cycle
+
+Test that a captured truncated or malformed model completion consumes one
+sample and counts as an invalid attempt, while malformed transport, budget and
+identity failures make the comparison incomplete. Bind invalid outcomes to
+captured response bytes during replay rather than treating them as valid code.
