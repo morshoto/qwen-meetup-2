@@ -21,7 +21,7 @@ class TransitionScreenTests(unittest.TestCase):
 
     def comparison(self, folder, generation, parent, candidate, positive):
         root = self.root / folder
-        root.mkdir()
+        root.mkdir(mode=0o700)
         budget = ComparisonBudget.create(root, registration_sha256='a' * 64, generation=generation)
         def generate(prompt, *, arm, **kwargs):
             return FAKE_PROGRAMS[0] if positive and arm == 'parent' else FAKE_PROGRAMS[1]
