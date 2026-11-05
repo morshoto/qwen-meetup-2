@@ -124,10 +124,11 @@ class DraftRegistrationTests(unittest.TestCase):
     def test_rejects_unregistered_quantization(self):
         model = self.root / self.paths['model_manifest']
         value = json.loads(model.read_text())
-        value['quantization']['group_size'] = 128
-        model.write_text(json.dumps(value))
-        with self.assertRaisesRegex(ValueError, 'model'):
-            prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
+        for quantization in ({'bits': 4, 'group_size': 128}, {'bits': 4.0, 'group_size': 64}):
+            value['quantization'] = quantization
+            model.write_text(json.dumps(value))
+            with self.subTest(quantization=quantization), self.assertRaisesRegex(ValueError, 'model'):
+                prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
 
 
 if __name__ == '__main__':
