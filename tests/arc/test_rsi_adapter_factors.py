@@ -31,6 +31,19 @@ class AdapterFactorTests(unittest.TestCase):
             parent_dir=self.parent if parent else None,
             expected_parent_sha256=adapter_sha256(self.parent) if parent else None)
 
+    def test_32b_factors_use_32b_shapes_without_claiming_reload(self):
+        self.fixture.test_32b_structure_uses_its_actual_layer_and_projection_dimensions()
+        self.write_value(self.candidate, 'q_proj.lora_a', 1.0)
+        self.write_value(self.candidate, 'q_proj.lora_b', 2.0)
+        digest = adapter_sha256(self.candidate)
+        result = compare_adapter_factors(self.candidate, expected_candidate_sha256=digest, model_key='32b')
+        self.assertEqual(result['status'], 'adapter_factors_changed_unverified')
+        probe = probe_adapter_products(self.candidate, expected_candidate_sha256=digest, model_key='32b')
+        self.assertEqual(probe['candidate_product'], 'nonzero_witness')
+        self.assertFalse(probe['reload_verified'])
+        with self.assertRaises(ValueError):
+            compare_adapter_factors(self.candidate, expected_candidate_sha256=digest, model_key='14b')
+
     def test_requires_nonzero_pair_in_same_module(self):
         self.assertEqual(self.compare()['status'], 'adapter_factors_rejected')
         self.write_value(self.candidate, 'q_proj.lora_a', 1.0)
