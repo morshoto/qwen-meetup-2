@@ -74,7 +74,7 @@ class TechnicalCanaryIdentityTests(TechnicalCanaryTests):
                  patch('src.arc.rsi_technical_canary.verify_environment'), \
                  patch('src.arc.rsi_technical_canary.verify_source_inventory'):
                 result=verify_technical_canary_identities(**args)
-                verify_model.assert_called_once_with(model_dir,{},model_key=model)
+                verify_model.assert_called_once_with(model_dir.resolve(),{},model_key=model)
                 self.assertFalse(result['execution_ready']); self.assertFalse(result['training_allowed'])
                 self.assertFalse(result['independently_verified']); self.assertFalse(result['promotion_allowed'])
                 proposal['config']['iters']=2
