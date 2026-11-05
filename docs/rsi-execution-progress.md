@@ -197,6 +197,13 @@ sandbox results are not independently authenticated and cannot start another
 generation or establish improvement. The stronger confidence-interval criterion
 remains separate from this development screening rule.
 
+The captured screening path additionally joins and checks every recorded
+request, response and ledger entry for each comparison before screening. A
+two-generation local HTTP fixture exercised both positive screens and rejected
+a missing second-generation capture. The server declarations and logs remain
+locally supplied; they do not authenticate which weights or adapter a server
+actually loaded. No live comparison was performed.
+
 ### Quarantined training preparation
 
 Training preparation now checks the structural five-record threshold, canonical
