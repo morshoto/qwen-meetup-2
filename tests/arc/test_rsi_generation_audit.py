@@ -5,7 +5,7 @@ import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from src.arc.data import Task
 from src.arc.e6_curriculum import _quality_grids
@@ -147,9 +147,21 @@ class GenerationAuditTests(unittest.TestCase):
             prepare_synthetic_training(**{**args, 'stage_bytes': altered_raw,
                 'expected_stage_sha256': hashlib.sha256(altered_raw).hexdigest()})
         self.assertFalse((self.root / 'synthetic.training.preparation.json').exists())
+        marker_path = self.root / 'synthetic.training.replay.json'
+        plan_path = self.root / 'synthetic.training.preparation.json'
+        with patch('src.arc.rsi_generation_drafts.audit_generation_drafts', side_effect=[None, ValueError('drift')]):
+            with self.assertRaises(ValueError):
+                prepare_replayed_synthetic_training(**kwargs, expected_stage_sha256=report['sha256'], seed=42)
+        self.assertTrue(plan_path.exists())
+        self.assertFalse(marker_path.exists())
+        plan_path.unlink()
         prepared = prepare_replayed_synthetic_training(**kwargs, expected_stage_sha256=report['sha256'], seed=42)
         self.assertFalse(prepared['training_allowed'])
         self.assertEqual(prepared['evidence_type'], 'caller_supplied_capture_and_sandbox')
+        marker = json.loads(marker_path.read_text())
+        self.assertEqual(marker['stage_sha256'], report['sha256'])
+        self.assertEqual(marker['preparation_sha256'], hashlib.sha256(plan_path.read_bytes()).hexdigest())
+        self.assertFalse(marker['training_allowed'])
         plan = json.loads((self.root / 'synthetic.training.preparation.json').read_text())
         self.assertEqual(plan['stage_sha256'], report['sha256'])
         self.assertEqual(len(plan['generation_training']['records']), 9)
