@@ -229,3 +229,10 @@ scheduled slots, reports their deltas, and reconciles captured call and token
 reservations against those deltas. Missing or conflicting accounting must fail
 the replay; sandbox counts remain local journal evidence, not authenticated
 execution traces.
+
+### Comparison accounting cycle
+
+Test that complete comparisons freeze their shared budget counters, preserve
+interrupted reservations, and reconcile all captured model-call and token
+reservations against the frozen deltas. Sandbox counts remain local journal
+evidence; missing or inconsistent accounting must prevent a capture replay.
