@@ -1,0 +1,21 @@
+{
+  "status": "design_not_run",
+  "human_arc_heuristics": false,
+  "execution_authorized": false,
+  "minimum_strict_oracles": 5,
+  "max_generations": 2,
+  "evaluation": {
+    "competitive_target_percent": 26.0,
+    "benchmark": "ARC-AGI-2 semi-private",
+    "independent_score_required": true,
+    "matched_untrained_base_required": true,
+    "attempts_per_test_input": 2,
+    "public_eval_used_for_development": false
+  },
+  "budgets": {
+    "authorized_live_calls": 0,
+    "authorized_training_steps": 0,
+    "authorized_external_spend_usd": 0,
+    "separate_run_caps_required": true
+  }
+}
