@@ -37,6 +37,21 @@ class TransportAuditTests(unittest.TestCase):
         self.assertFalse(result['eligible_for_training'])
         self.assertEqual(result['request_id'], 'fixture-1')
 
+    def test_32b_requires_matching_request_response_and_revision(self):
+        request, response, ledger = build_evidence()
+        model = 'mlx-community/Qwen3-32B-4bit'
+        revision = 'bcaaf7f538adf166c1080a2befdb4f6019f66639'
+        req, resp = json.loads(request), json.loads(response)
+        req['model'] = model
+        resp['model'] = model
+        request, response = json.dumps(req).encode(), json.dumps(resp).encode()
+        ledger.update(model=model, revision=revision, request_body_sha256=hashlib.sha256(request).hexdigest(),
+                      response_sha256=hashlib.sha256(response).hexdigest())
+        args = dict(expected_prompt='visible prompt', expected_code=CODE, expected_seed=12000)
+        self.assertEqual(audit_transport(request, response, ledger, model_key='32b', **args)['status'], 'transport_consistent')
+        with self.assertRaises(ValueError): audit_transport(request, response, ledger, model_key='14b', **args)
+        with self.assertRaises(ValueError): audit_transport(request, response, dict(ledger,revision=REVISION), model_key='32b', **args)
+
     def test_detects_raw_body_tampering_and_missing_evidence(self):
         request, response, ledger = build_evidence()
         for req, resp in [(request + b' ', response), (request, response + b' '), (b'', response)]:

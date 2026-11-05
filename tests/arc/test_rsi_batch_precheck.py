@@ -41,6 +41,15 @@ class BatchPrecheckTests(unittest.TestCase):
         self.assertEqual(result['status'], 'pending_independent_audit')
         self.assertFalse(result['training_allowed'])
 
+    def test_32b_batch_rejects_mixed_model_records(self):
+        item = row(0)
+        item['provenance'].update(model_id='mlx-community/Qwen3-32B-4bit',
+                                  model_revision='bcaaf7f538adf166c1080a2befdb4f6019f66639')
+        args = dict(generation=0, parent_adapter='none', allowed_tasks={'t0'})
+        self.assertEqual(precheck_batch([item], model_key='32b', **args)['status'], 'insufficient_records')
+        with self.assertRaises(ValueError): precheck_batch([item], model_key='14b', **args)
+        with self.assertRaises(ValueError): precheck_batch([row(0)], model_key='32b', **args)
+
     def test_fake_wrong_generation_and_source_substitution_are_rejected(self):
         for mutation in ('fake', 'generation', 'boolean_generation', 'source'):
             item = row(0)

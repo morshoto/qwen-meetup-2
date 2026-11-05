@@ -35,6 +35,14 @@ class SftDraftTests(unittest.TestCase):
         self.assertNotIn('[[4,3]]', json.dumps(draft, separators=(',', ':')))
         self.assertNotIn('private_probes', json.dumps(draft))
 
+    def test_32b_draft_requires_exact_model_identity(self):
+        provenance = dict(self.provenance, model_id='mlx-community/Qwen3-32B-4bit',
+                          model_revision='bcaaf7f538adf166c1080a2befdb4f6019f66639')
+        args = (self.task, self.code, self.candidate, self.novelty, provenance)
+        draft = make_sft_draft(*args, generation=0, parent_adapter='none', model_key='32b')
+        self.assertFalse(draft['eligible_for_training'])
+        with self.assertRaises(ValueError): make_sft_draft(*args, generation=0, parent_adapter='none', model_key='14b')
+
     def test_rejects_source_substitution_or_duplicate_novelty(self):
         with self.assertRaisesRegex(ValueError, 'source'):
             make_sft_draft(self.task, FAKE_PROGRAMS[2], self.candidate, self.novelty,
