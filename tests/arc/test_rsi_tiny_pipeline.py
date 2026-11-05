@@ -40,7 +40,7 @@ class TinyPipelineTests(unittest.TestCase):
             backend.pre_tokenizer = Whitespace()
             tokenizer = PreTrainedTokenizerFast(tokenizer_object=backend, unk_token='[UNK]',
                                                 pad_token='[PAD]', eos_token='[EOS]')
-            tokenizer.chat_template = "{% for message in messages %}{{ message['role'] + ': ' + message['content'] + ' ' }}{% endfor %}{% if add_generation_prompt %}assistant: {% endif %}"
+            tokenizer.chat_template = "{% if enable_thinking %}{% endif %}{% for message in messages %}{{ message['role'] + ': ' + message['content'] + ' ' }}{% endfor %}{% if add_generation_prompt %}assistant: {% endif %}"
             tokenizer.save_pretrained(model_dir)
             data = root/'synthetic'
             data.mkdir()
