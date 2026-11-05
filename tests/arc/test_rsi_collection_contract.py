@@ -145,6 +145,23 @@ class CollectionContractTests(unittest.TestCase):
             dispatch.assert_not_called()
 
     @patch('src.arc.rsi_collection_contract.verify_guarded_contract')
+    def test_second_generation_requires_parent_adapter_and_seed(self, verify):
+        def contract(url, model, revision, total_tokens, max_new_tokens, timeout, thinking, **kwargs):
+            self.assertEqual(kwargs['expected_adapter_sha256'], 'b' * 64)
+            return dict(self.contract)
+        verify.side_effect = contract
+        budget = CollectionBudget.create(self.root, registration_sha256='a' * 64, generation=1)
+        wrapped = ContractCheckedSlotTransport(self.transport, budget=budget, registration_sha256='a' * 64,
+            generation=1, parent_adapter='b' * 64, expected_max_prompt_tokens=4096,
+            expected_ledger_id='1' * 32, expected_initial_reserved_tokens=0)
+        budget.reserve_model(self.reservation, kind='generation')
+        with patch.object(CapturedSlotTransport, '__call__', return_value={'code': 'code', 'request_id': 'b' * 32}) as dispatch:
+            with self.assertRaises(ValueError):
+                wrapped('prompt', seed=12000, timeout=1)
+            wrapped('prompt', seed=12100, timeout=1)
+            dispatch.assert_called_once()
+
+    @patch('src.arc.rsi_collection_contract.verify_guarded_contract')
     def test_initial_identity_and_generation_are_checked(self, verify):
         verify.side_effect = self.check_contract
         self.contract['reserved_tokens'] = 1
