@@ -92,6 +92,31 @@ class GenerationStageTests(unittest.TestCase):
             self.run_stage()
         self.assertEqual(self.transport.call_count, 3)
 
+    def test_prepared_reference_budget_is_bound_before_dispatch(self):
+        tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup);self.root=Path(tmp.name)
+        self.pool=[{'source_sha256':'a'*64,'ast_sha256':'b'*64,'behavior_sha256':'c'*64,
+                    'probe_set_sha256':probes_sha256(self.private)}]
+        pool_sha=hashlib.sha256(json.dumps(self.pool,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        setup={'status':'legacy_behavior_reference_local_unverified','model_key':'14b','sandbox_starts':10,
+               'model_calls':0,'training_steps':0,'private_outputs_exposed':False,'eligible_for_training':False,
+               'independently_verified':False,'generation_authorized':False,'pool_sha256':pool_sha}
+        raw=json.dumps(setup,sort_keys=True).encode();digest=hashlib.sha256(raw).hexdigest()
+        self.budget=CollectionBudget.create(self.root,registration_sha256='a'*64,generation=0,
+            reference_setup_bytes=raw,expected_reference_setup_sha256=digest,model_key='14b')
+        for changes in ({}, {'expected_reference_setup_sha256':'0'*64},
+                        {'expected_reference_setup_sha256':digest,'model_key':'32b'},
+                        {'expected_reference_setup_sha256':digest,'expected_reference_pool_sha256':'0'*64}):
+            with self.subTest(changes=changes),self.assertRaises(ValueError): self.run_stage(**changes)
+        self.transport.assert_not_called()
+        result=self.run_stage(expected_reference_setup_sha256=digest,model_key='14b')
+        self.assertEqual(result['status'],'generation_complete_unverified')
+        start=json.loads((self.root/'g0.stage.started.json').read_text())
+        self.assertEqual(start['budget_before']['sandbox_runs'],10)
+        self.assertEqual(start['reference_setup_sha256'],digest)
+        self.assertEqual(start['reference_model_key'],'14b')
+        self.assertLessEqual(result['budget_after']['sandbox_runs'],300)
+        self.assertFalse(result['training_allowed'])
+
     def test_mismatched_inputs_fail_before_dispatch(self):
         for changes in ({'expected_reference_pool_sha256': 'f' * 64},
                         {'expected_task_hashes': {}}, {'parent_adapter': 'f' * 64}):
