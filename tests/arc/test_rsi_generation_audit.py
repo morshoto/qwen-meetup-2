@@ -12,7 +12,8 @@ from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_generation_audit import audit_generation
-from src.arc.rsi_generation_drafts import prepare_generation_drafts
+from src.arc.rsi_generation_drafts import audit_generation_drafts, prepare_generation_drafts
+from src.arc.rsi_synthetic_mapping import map_synthetic_row
 from src.arc.rsi_batch_precheck import precheck_batch
 from src.arc.rsi_generation_stage import collect_generation
 from src.arc.rsi_lineage_audit import probes_sha256
@@ -105,6 +106,20 @@ class GenerationAuditTests(unittest.TestCase):
             self.assertEqual(row['mapping'], 'generated_demos_holdout_first_visible_v1')
             self.assertFalse(row['training_allowed'])
         raw = (self.root / 'g0.stage.drafts.json').read_bytes()
+        replay = audit_generation_drafts(**kwargs, expected_sha256=report['sha256'])
+        self.assertEqual(replay['status'], 'generation_drafts_replay_consistent')
+        self.assertFalse(replay['training_allowed'])
+        changed = json.loads(raw)
+        changed['synthetic_examples'][0]['examples'][0]['output'] = [[9]]
+        task_id = changed['drafts'][0]['parent_task_id']
+        changed['proposed_sft_rows'][0] = map_synthetic_row(task=self.tasks[task_id],
+            draft=changed['drafts'][0], generated=changed['synthetic_examples'][0])
+        changed_raw = (json.dumps(changed, sort_keys=True, separators=(',', ':')) + '\n').encode()
+        path = self.root / 'g0.stage.drafts.json'
+        path.write_bytes(changed_raw)
+        with self.assertRaises(ValueError):
+            audit_generation_drafts(**kwargs, expected_sha256=hashlib.sha256(changed_raw).hexdigest())
+        path.write_bytes(raw)
         altered = json.loads(raw)
         altered['proposed_sft_rows'][0]['messages'][1]['content'] += ' altered'
         altered_raw = json.dumps(altered).encode()
