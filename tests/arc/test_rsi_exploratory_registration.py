@@ -15,13 +15,13 @@ class ExploratoryRegistrationTests(unittest.TestCase):
         self.generation=[f'g{i:03d}' for i in range(800)]
         self.development=[f'd{i:03d}' for i in range(200)]
         self.bounded={'status':'bounded_exposure_proposed_unverified','execution_ready':False,
-                      'known_exposed_task_ids':self.generation[20:100],
+                      'known_exposed_task_ids':self.generation[20:100], 'task_source_sha256':'b'*64,
                       'partitions':{'generation':self.generation,'development':self.development}}
         self.raw=json.dumps(self.bounded,sort_keys=True).encode()
         self.proposal=propose_exploratory_split(self.raw,expected_sha256=hashlib.sha256(self.raw).hexdigest())
         self.proposal['selection_code_sha256']=hashlib.sha256(Path('src/arc/rsi_exploratory_split.py').read_bytes()).hexdigest()
         self.base={'generation':0,'slots':generation_slots(self.generation,0),'input_paths':{},
-                   'input_sha256':{'split':'a'*64},'status':'draft_not_execution_ready','execution_ready':False}
+                   'input_sha256':{'split':'a'*64,'challenges':'b'*64},'status':'draft_not_execution_ready','execution_ready':False}
         self.inputs={'split':{'partitions':{'generation':self.generation,'development':self.development}},
                      'design_registration':{'supersedes':'research/rsi/design-registration-v2.json',
                                              'exposure_policy':'bounded_review_unknown_project_exposure'}}
