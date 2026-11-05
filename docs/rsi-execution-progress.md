@@ -287,6 +287,18 @@ hashes. A fixture exercises the path from generation replay through the
 proposal. These markers are locally writable and do not establish the five
 independently audited strict same-model Oracles required by the protocol.
 
+The preflight identity checker now compares proposal-bound manifest bytes with
+the local model, interpreter, virtual environment, source inventory and
+tokenizer files. Its first fixture check found the previously recorded virtual
+environment inventory had changed from 6,249 to 6,251 files. A recently
+written `safetensors` bytecode file was observed; earlier local Python fixture
+imports may have created bytecode, but the aggregate inventory cannot identify
+every change. The earlier observation remains preserved. A [fresh local
+inventory](../research/rsi/local-environment-observation-refresh.json) and a
+fixture proposal then passed the local identity checks. The proposal used
+synthetic data and caller-supplied manifests; this is not independent process
+attestation, complete dependency closure or execution authorization.
+
 ### RSI chat format and mask precheck
 
 A format precheck converts quarantined rows to MLX-style chat JSONL and checks
