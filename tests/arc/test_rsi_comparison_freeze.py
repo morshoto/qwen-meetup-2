@@ -20,7 +20,9 @@ class FrozenComparisonTests(unittest.TestCase):
 
     def freeze(self, **overrides):
         kwargs = dict(root=self.root, registration_sha256=REG, task_ids=self.ids, task_hashes={key: 'c' * 64 for key in self.ids}, seeds=self.seeds,
-                      parent_adapter='none', candidate_adapter=CANDIDATE, parent=self.base, candidate=self.candidate)
+                      parent_adapter='none', candidate_adapter=CANDIDATE, parent=self.base, candidate=self.candidate,
+                      budget_before={'model_calls': 0, 'reserved_tokens': 0, 'sandbox_runs': 0},
+                      budget_after={'model_calls': 800, 'reserved_tokens': 2000000, 'sandbox_runs': 1000})
         kwargs.update(overrides)
         return freeze_comparison(**kwargs)
 

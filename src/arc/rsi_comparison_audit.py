@@ -6,7 +6,7 @@ import re
 import stat
 
 from src.arc.data import Task
-from src.arc.rsi_comparison_freeze import _hash, _validate
+from src.arc.rsi_comparison_freeze import _budget_delta, _hash, _validate
 from src.arc.rsi_evaluation import InvalidModelOutput, evaluate_task, score_task
 from src.arc.rsi_slot_lifecycle import _directory, _exists
 from src.arc.rsi_slot_audit import task_sha256
@@ -51,7 +51,8 @@ def replay_comparison(root, *, expected_sha256, tasks, sandbox, verifier):
         if hashlib.sha256(raw).hexdigest() != expected_sha256:
             raise ValueError('frozen comparison digest differs')
         _validate(frozen)
-        if (set(started) != {'registration_sha256', 'generation'} or
+        if (set(started) != {'registration_sha256', 'generation', 'budget_before'} or
+                started['budget_before'] != frozen['budget_before'] or
                 started['registration_sha256'] != frozen['registration_sha256'] or
                 type(started['generation']) is not int or started['generation'] not in (0, 1)):
             raise ValueError('comparison start differs from frozen record')
@@ -90,6 +91,7 @@ def replay_comparison(root, *, expected_sha256, tasks, sandbox, verifier):
                 if score != record['score'] or score['solved'] != frozen[arm][task_id]['solved']:
                     raise ValueError('task score differs from frozen comparison')
     return {'status': 'comparison_replay_consistent', 'task_count': len(ids),
+            'budget_usage': _budget_delta(frozen['budget_before'], frozen['budget_after']),
             'independently_verified': False, 'improvement_claim_supported': False,
             'evidence_type': 'caller_supplied_sandbox_and_verifier'}
 
@@ -133,6 +135,7 @@ def audit_comparison_captures(root, *, expected_sha256, tasks, sandbox, verifier
                 response_records = _read_jsonl(arm_dir, 'llm_responses.jsonl')
             captures[arm] = tuple(map(_index, (request_records, ledger_records, response_records)))
         seen = {'parent': set(), 'candidate': set()}
+        reserved_tokens = 0
         for index, task_id in enumerate(frozen['task_ids']):
             for arm in ('parent', 'candidate'):
                 _, record = _read(directory, f'comparison-{index:03d}-{arm}.json')
@@ -146,6 +149,14 @@ def audit_comparison_captures(root, *, expected_sha256, tasks, sandbox, verifier
                     request, event, response = requests[request_id], ledger[request_id], responses[request_id]
                     request_body = _decode(request.get('body_base64'))
                     response_body = _decode(response.get('raw_http_body_base64'))
+                    parsed = json.loads(request_body)
+                    messages = parsed.get('messages') if isinstance(parsed, dict) else None
+                    if not isinstance(messages, list):
+                        raise ValueError('comparison request messages unavailable')
+                    reservation = 512 + len(json.dumps(messages, ensure_ascii=False).encode('utf-8')) + 1024
+                    if event.get('token_reservation') != reservation:
+                        raise ValueError('comparison token reservation differs')
+                    reserved_tokens += reservation
                     if (request.get('body_sha256') != hashlib.sha256(request_body).hexdigest() or
                             response.get('http_status') != 200 or event.get('kind') != 'e5_self_solve'):
                         raise ValueError('comparison capture metadata differs')
@@ -156,5 +167,7 @@ def audit_comparison_captures(root, *, expected_sha256, tasks, sandbox, verifier
         for arm in ('parent', 'candidate'):
             if any(set(group) != seen[arm] for group in captures[arm]) or len(seen[arm]) != 400:
                 raise ValueError('comparison capture coverage differs')
+    if replay['budget_usage']['model_calls'] != 800 or replay['budget_usage']['reserved_tokens'] != reserved_tokens:
+        raise ValueError('comparison budget usage differs from captures')
     return {**replay, 'status': 'comparison_capture_consistent', 'checked_requests': 800,
             'evidence_type': 'caller_supplied_captures_sandbox_and_verifier'}

@@ -19,15 +19,38 @@ def _hash(value):
     return isinstance(value, str) and _HASH.fullmatch(value) is not None
 
 
+_BUDGET_LIMITS = {'model_calls': 800, 'reserved_tokens': 16000000, 'sandbox_runs': 8000}
+
+
+def _counters(state):
+    return {key: state[key] for key in _BUDGET_LIMITS}
+
+
+def _budget_delta(before, after):
+    for item in (before, after):
+        if (not isinstance(item, dict) or set(item) != set(_BUDGET_LIMITS) or
+                any(type(item[key]) is not int or not 0 <= item[key] <= limit
+                    for key, limit in _BUDGET_LIMITS.items())):
+            raise ValueError('invalid comparison budget counters')
+    delta = {key: after[key] - before[key] for key in _BUDGET_LIMITS}
+    if any(value < 0 for value in delta.values()):
+        raise ValueError('comparison budget counters regressed')
+    return delta
+
+
 def _validate(record):
     if (not isinstance(record, dict) or set(record) != {'registration_sha256', 'settings', 'task_ids',
-            'seeds', 'task_hashes', 'parent_adapter', 'candidate_adapter', 'parent', 'candidate', 'evidence_type'} or
+            'seeds', 'task_hashes', 'parent_adapter', 'candidate_adapter', 'parent', 'candidate',
+            'budget_before', 'budget_after', 'evidence_type'} or
             not _hash(record['registration_sha256']) or record['settings'] != _SETTINGS or
             record['evidence_type'] != 'caller_supplied_outcomes' or
             not _hash(record['candidate_adapter']) or
             (record['parent_adapter'] != 'none' and not _hash(record['parent_adapter'])) or
             record['parent_adapter'] == record['candidate_adapter']):
         raise ValueError('invalid comparison identity or settings')
+    usage = _budget_delta(record['budget_before'], record['budget_after'])
+    if usage['model_calls'] != 800 or usage['reserved_tokens'] <= 0:
+        raise ValueError('completed comparison budget does not cover 800 calls')
     ids, seeds = record['task_ids'], record['seeds']
     if (not isinstance(ids, list) or len(ids) != 200 or
             any(not isinstance(task, str) or not task for task in ids) or len(set(ids)) != 200 or
@@ -70,10 +93,11 @@ def comparison_coverage(task_ids, *, parent, candidate):
 
 
 def freeze_comparison(*, root, registration_sha256, task_ids, task_hashes, seeds, parent_adapter,
-                      candidate_adapter, parent, candidate):
+                      candidate_adapter, parent, candidate, budget_before, budget_after):
     record = {'registration_sha256': registration_sha256, 'settings': dict(_SETTINGS),
               'task_ids': task_ids, 'task_hashes': task_hashes, 'seeds': seeds, 'parent_adapter': parent_adapter,
               'candidate_adapter': candidate_adapter, 'parent': parent, 'candidate': candidate,
+              'budget_before': budget_before, 'budget_after': budget_after,
               'evidence_type': 'caller_supplied_outcomes'}
     _validate(record)
     raw = (json.dumps(record, sort_keys=True, separators=(',', ':')) + '\n').encode()
@@ -114,6 +138,7 @@ def summarize_frozen_comparison(root, *, expected_sha256):
     summary = paired_summary({task: record['parent'][task]['solved'] for task in record['task_ids']},
                              {task: record['candidate'][task]['solved'] for task in record['task_ids']})
     criterion = summary.pop('improvement_criterion_met')
-    return {**summary, 'descriptive_bootstrap_criterion_met': criterion,
+    return {**summary, 'budget_usage': _budget_delta(record['budget_before'], record['budget_after']),
+            'descriptive_bootstrap_criterion_met': criterion,
             'improvement_claim_supported': False, 'independently_verified': False,
             'frozen_sha256': expected_sha256}
