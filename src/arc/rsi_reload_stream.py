@@ -99,7 +99,8 @@ def review_reload_observation(*, baseline, observation, model_key, adapter_sha25
                 'matched_tensor_count': 28, 'adapter_sha256': adapter_sha256,
                 'reload_verified': False, 'training_allowed': False, 'promotion_allowed': False,
                 'evidence_type': 'caller_supplied_runtime_and_local_files'}
-    if output != expected or type(output.get('matched_tensor_count')) is not int:
+    if (output != expected or type(output.get('matched_tensor_count')) is not int or
+            any(output.get(key) is not False for key in ('reload_verified', 'training_allowed', 'promotion_allowed'))):
         return reject('probe_output_differs')
     return {'status': 'reload_observation_consistent_unverified', 'reload_verified': False,
             'training_allowed': False, 'promotion_allowed': False,
