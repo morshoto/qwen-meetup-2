@@ -36,3 +36,15 @@ resource, artifact and adapter verification remain unfinished.
   monitor integration and matched evaluation are not yet complete.
 - Live model calls, training, external compute and independent scoring require
   their separately scoped authorizations and frozen budgets. None were run here.
+
+### Scheduled call reservations
+
+Owner-only, exclusive markers now consume each generation/slot/attempt before
+fixture processing. The schedule permits at most 30 generation requests per
+generation; a marker survives interruption and cannot be reused. The fixture
+journal exercises this reservation but performs no model calls. These markers
+are not an authenticated ledger: they do not account for calibration calls,
+reserved tokens, sandbox starts or wall time, and a writer with access to the
+run directory can alter them. Coordinated completion and dispatch, a shared
+stage budget, independent provenance audit, and live authorization remain
+required before any live collector can rely on them.
