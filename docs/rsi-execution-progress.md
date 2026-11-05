@@ -172,3 +172,13 @@ files, so it demonstrates local format behavior and drift checking during the
 call, not independently authenticated tokenizer provenance. The rows are
 fabricated test inputs; no inference, preflight or training occurred. The
 existing MLX trainer's source-specific provenance contract remains unresolved.
+
+### Captured comparison transport
+
+The comparison runner can now retain unique request IDs alongside each sample.
+A local guarded HTTP adapter routes parent and candidate calls to separate
+capture logs with matched model settings and requested seeds. Fixture HTTP
+responses passed the existing request/response byte precheck for both arms;
+invalid routes and duplicate IDs stop execution. This does not verify the
+server's loaded weights or adapter, bind all comparison captures into the
+replay audit, or establish independent provenance. No live requests were made.
