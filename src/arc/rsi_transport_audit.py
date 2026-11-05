@@ -79,6 +79,8 @@ def audit_transport(request_body: bytes, response_body: bytes, ledger: dict, *,
             not isinstance(message.get('content'), str) or choices[0].get('finish_reason') not in ('stop', 'length')):
         raise ValueError('captured response is incomplete')
     finish = choices[0]['finish_reason']
+    if ledger.get('finish_reason') != finish:
+        raise ValueError('transport finish reason differs from response')
     try:
         extracted = final_answer(message['content'])
         malformed = False
