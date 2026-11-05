@@ -12,9 +12,12 @@ def _signature(info):
 
 
 def _scan(root):
-    entries = {}
-    for directory, dirs, files in os.walk(root, followlinks=False):
+    entries, directories = {}, {}
+    def onerror(error):
+        raise error
+    for directory, dirs, files in os.walk(root, followlinks=False, onerror=onerror):
         parent = Path(directory)
+        directories[parent.relative_to(root).as_posix()] = _signature(parent.stat())
         for name in dirs:
             path = parent / name
             if path.is_symlink():
@@ -28,7 +31,7 @@ def _scan(root):
             entries[relative] = (_signature(info), os.readlink(path) if stat.S_ISLNK(info.st_mode) else None)
             if len(entries) > 20000:
                 raise ValueError('environment file limit exceeded')
-    return entries
+    return entries, directories
 
 
 def _hash(path):
@@ -51,10 +54,12 @@ def inventory(environment_root, interpreter):
     executable = Path(interpreter).resolve(strict=True)
     if not root.is_dir() or not executable.is_file():
         raise ValueError('environment or interpreter unavailable')
-    entries = _scan(root)
+    entries, directories = _scan(root)
     if not entries:
         raise ValueError('environment is empty')
-    rows, total = [], 0
+    rows = [{'path': name, 'mode': stat.S_IMODE(signature[2]), 'kind': 'directory'}
+            for name, signature in sorted(directories.items())]
+    total = 0
     for name, (signature, link) in sorted(entries.items()):
         path = root / name
         target = path.resolve(strict=True)
@@ -64,14 +69,15 @@ def inventory(environment_root, interpreter):
         total += size
         if total > 4 * 1024 ** 3:
             raise ValueError('environment size limit exceeded')
-        rows.append({'path': name, 'mode': stat.S_IMODE(signature[2]), 'link': link,
+        rows.append({'path': name, 'mode': stat.S_IMODE(signature[2]), 'kind': 'file', 'link': link,
                      'target_sha256': digest, 'size': size})
-    if _scan(root) != entries:
+    if _scan(root) != (entries, directories):
         raise ValueError('environment changed while hashing')
     encoded = json.dumps(rows, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
     return {'environment_root': str(root), 'interpreter_realpath': str(executable),
             'interpreter_sha256': _hash(executable)[0], 'inventory_sha256': hashlib.sha256(encoded).hexdigest(),
-            'file_count': len(rows), 'total_bytes': total, 'scope': 'venv_files_only'}
+            'file_count': len(entries), 'directory_count': len(directories),
+            'total_bytes': total, 'scope': 'venv_files_only'}
 
 
 if __name__ == '__main__':

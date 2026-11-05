@@ -30,11 +30,12 @@ def snapshot_environment(python_executable):
     except (TypeError, ValueError) as exc:
         raise ValueError('environment probe output invalid') from exc
     if (not isinstance(data, dict) or set(data) != {'environment_root', 'interpreter_realpath',
-            'interpreter_sha256', 'inventory_sha256', 'file_count', 'total_bytes', 'scope'} or
+            'interpreter_sha256', 'inventory_sha256', 'file_count', 'directory_count', 'total_bytes', 'scope'} or
             data['environment_root'] != str(env_root) or data['interpreter_realpath'] != str(target) or
             data['interpreter_sha256'] != before or data['scope'] != 'venv_files_only' or
             not isinstance(data['inventory_sha256'], str) or not _HASH.fullmatch(data['inventory_sha256']) or
             type(data['file_count']) is not int or not 0 < data['file_count'] <= 20000 or
+            type(data['directory_count']) is not int or data['directory_count'] < 1 or
             type(data['total_bytes']) is not int or not 0 <= data['total_bytes'] <= 4 * 1024 ** 3):
         raise ValueError('environment identity differs from interpreter')
     if python.resolve(strict=True) != target or _hash_file(target) != before:
