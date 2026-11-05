@@ -5,6 +5,8 @@ permission to dispatch. Calls must reserve here before any transport or sandbox
 start, including canaries; a reservation is never refunded after interruption.
 """
 import fcntl
+import hashlib
+import re
 import math
 import os
 import secrets
@@ -29,7 +31,28 @@ class CollectionBudget:
         self.lock_name = f"g{identity['generation']}.budget.lock"
 
     @classmethod
-    def create(cls, root, *, registration_sha256, generation):
+    def create(cls, root, *, registration_sha256, generation, reference_setup_bytes=None,
+               expected_reference_setup_sha256=None, model_key=None):
+        reference = None
+        supplied = (reference_setup_bytes, expected_reference_setup_sha256, model_key)
+        if any(item is not None for item in supplied):
+            from src.arc.rsi_transport_audit import _json_object
+            if (generation != 0 or not isinstance(reference_setup_bytes, bytes) or
+                    not 1 <= len(reference_setup_bytes) <= 65536 or
+                    not isinstance(expected_reference_setup_sha256, str) or
+                    not re.fullmatch(r'[0-9a-f]{64}', expected_reference_setup_sha256) or
+                    hashlib.sha256(reference_setup_bytes).hexdigest() != expected_reference_setup_sha256 or
+                    model_key not in ('14b', '32b')):
+                raise ValueError('invalid reference setup budget identity')
+            reference = _json_object(reference_setup_bytes)
+            if (reference.get('status') != 'legacy_behavior_reference_local_unverified' or
+                    reference.get('model_key') != model_key or type(reference.get('sandbox_starts')) is not int or
+                    reference['sandbox_starts'] != 10 or type(reference.get('model_calls')) is not int or
+                    reference['model_calls'] != 0 or type(reference.get('training_steps')) is not int or
+                    reference['training_steps'] != 0 or any(reference.get(k) is not False for k in
+                    ('private_outputs_exposed', 'eligible_for_training', 'independently_verified', 'generation_authorized')) or
+                    not isinstance(reference.get('pool_sha256'), str) or not re.fullmatch(r'[0-9a-f]{64}', reference['pool_sha256'])):
+                raise ValueError('reference setup accounting differs')
         identity = _identity(registration_sha256, generation, 0)
         identity.pop('slot')
         budget = cls(root, identity)
@@ -38,6 +61,9 @@ class CollectionBudget:
             state = {**identity, 'started_wall': wall, 'last_wall': wall,
                      'started_monotonic': monotonic, 'last_monotonic': monotonic,
                      'model_calls': 0, 'reserved_tokens': 0, 'sandbox_runs': 0}
+            if reference is not None:
+                state.update(sandbox_runs=reference['sandbox_starts'], reference_setup_sha256=expected_reference_setup_sha256,
+                             reference_model_key=model_key, reference_pool_sha256=reference['pool_sha256'])
             _create(directory, budget.name, state)
         return budget
 
@@ -66,8 +92,14 @@ class CollectionBudget:
         state = _read(directory, self.name)
         keys = {*self.identity, 'started_wall', 'last_wall', 'started_monotonic',
                 'last_monotonic', 'model_calls', 'reserved_tokens', 'sandbox_runs'}
-        if set(state) != keys or any(state[k] != v or type(state[k]) is not type(v) for k, v in self.identity.items()):
+        reference_keys = {'reference_setup_sha256', 'reference_model_key', 'reference_pool_sha256'}
+        if set(state) not in (keys, keys | reference_keys) or any(state[k] != v or type(state[k]) is not type(v) for k, v in self.identity.items()):
             raise ValueError('budget identity differs from registration')
+        if reference_keys <= set(state) and (state['reference_model_key'] not in ('14b','32b') or
+                any(not isinstance(state[k], str) or not re.fullmatch(r'[0-9a-f]{64}', state[k])
+                    for k in ('reference_setup_sha256','reference_pool_sha256')) or
+                type(state['sandbox_runs']) is not int or state['sandbox_runs'] < 10):
+            raise ValueError('invalid reference setup budget state')
         for key, limit in (('model_calls', self.max_model_calls), ('reserved_tokens', self.max_reserved_tokens),
                            ('sandbox_runs', self.max_sandbox_runs)):
             if type(state[key]) is not int or not 0 <= state[key] <= limit:
