@@ -8,7 +8,7 @@ The [protocol](rsi-research-protocol.md) and [v2 benchmark amendment](../researc
 - An [exact-prompt review](../research/rsi/exact-prompt-exposure-review.json) found no current-format development prompts in retained JSON and JSONL string values. Other formats and missing history remain unexamined.
 - A [historical prompt hash review](../research/rsi/historical-prompt-hash-review.json) found no reconstructed direct or analysis hashes for development tasks in retained JSON/JSONL values. It does not cover every historical format.
 - The [legacy task-text scan](../research/rsi/historical-task-text-review.json) had no development matches and no positive match across the full source dataset, limiting its value for historical code requests.
-- Local fixture and synthetic checks exercise parts of collection, training preparation, monitoring and comparison. The [execution progress](rsi-execution-progress.md) records their scope and limitations. The latest full offline suite at commit `fbc841b` reported 513 passing tests; these are not live experiment results.
+- Local fixture and synthetic checks exercise parts of collection, training preparation, monitoring and comparison. The [execution progress](rsi-execution-progress.md) records their scope and limitations. The latest full offline suite at commit `bf424fe` reported 520 passing tests; these are not live experiment results.
 - No new Qwen collection, model training, matched comparison, or independent ARC-AGI-2 evaluation was performed for this issue. Strict eligible Oracle count, model improvement, ARC-AGI-2 score and experiment compute cost are therefore not measured. No competitiveness claim can be made.
 
 ## Gates before continuation
