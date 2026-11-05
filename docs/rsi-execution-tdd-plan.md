@@ -213,3 +213,11 @@ version, reviewed generation source, Python executable digest and selected
 package versions. Bind the observation to the draft runtime manifest and detect
 drift. A local probe does not prove complete dependency closure, process
 identity, live execution authorization or training safety.
+
+### Runtime environment inventory cycle
+
+Test a read-only inventory of every local virtual-environment file, including
+unrecorded files and bytecode, with stable file reads and symlink boundaries.
+Bind the inventory to the interpreter and compare it against a draft runtime
+manifest. Keep base Python libraries, operating-system libraries and process
+attestation as separate unresolved dependencies.
