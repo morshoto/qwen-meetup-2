@@ -10,7 +10,7 @@ from src.arc.rsi_process_monitor import _exited_unreaped, watch_owned_process
 
 
 def watch_training_stream(process, *, baseline, sampler, timeout_seconds, interval_seconds=1.0,
-                          sample_timeout_seconds=1.0, terminate_grace_seconds=1.0):
+                          sample_timeout_seconds=1.0, terminate_grace_seconds=1.0, resource_limits=None):
     if (not isinstance(process, subprocess.Popen) or process.returncode is not None or
             process.stdout is None or isinstance(process.stdout, io.TextIOBase) or process.stderr is not None):
         raise ValueError('owned process requires a binary stdout pipe and drained stderr')
@@ -52,7 +52,7 @@ def watch_training_stream(process, *, baseline, sampler, timeout_seconds, interv
         result = watch_owned_process(process, baseline=baseline, sampler=sampler,
             timeout_seconds=timeout_seconds, interval_seconds=interval_seconds,
             sample_timeout_seconds=sample_timeout_seconds, terminate_grace_seconds=terminate_grace_seconds,
-            health_sampler=lambda _: watch.snapshot())
+            health_sampler=lambda _: watch.snapshot(), resource_limits=resource_limits)
     finally:
         stop.set()
         reader.join(timeout=1)
