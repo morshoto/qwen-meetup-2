@@ -113,6 +113,8 @@ class OwnedMonitorTests(unittest.TestCase):
                                          sample_timeout_seconds=0.2, terminate_grace_seconds=0.1)
             self.assertEqual(result['stop_reason'], 'process_exited')
             self.assertEqual(result['exit_code'], 0)
+            self.assertGreaterEqual(result['elapsed_seconds'], 0)
+            self.assertLess(result['elapsed_seconds'], 3)
             self.assertFalse(result['training_verified'])
         finally:
             if process.poll() is None:
