@@ -15,6 +15,7 @@ class EvaluationTests(unittest.TestCase):
     def test_independent_samples_use_identical_label_free_prompt(self):
         result = evaluate_task(self.task, generate=self.generate, sandbox=FakeE6Sandbox())
         self.assertEqual(result['sample_statuses'], ['visible_demonstration_mismatch', 'accepted'])
+        self.assertEqual(result['sample_sources'], [FAKE_PROGRAMS[2], FAKE_PROGRAMS[1]])
         self.assertEqual(self.generate.call_count, 2)
         self.assertEqual(self.generate.call_args_list[0].args[0], self.generate.call_args_list[1].args[0])
         self.assertEqual([c.kwargs['sample'] for c in self.generate.call_args_list], [0, 1])
