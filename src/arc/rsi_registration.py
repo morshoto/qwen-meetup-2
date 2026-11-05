@@ -22,6 +22,8 @@ _MODEL = 'mlx-community/Qwen3-14B-4bit'
 _REVISION = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
 _V1 = 'research/rsi/design-registration-v1.json'
 _V2_DOCUMENT = 'research/rsi/design-v2.md'
+_V2 = 'research/rsi/design-registration-v2.json'
+_V3_DOCUMENT = 'research/rsi/design-v3.md'
 _V1_FILES = {'configs/rsi-research-protocol.json', 'docs/rsi-research-protocol.md',
              'research/rsi/provisional-split.json'}
 
@@ -118,6 +120,22 @@ def _verify_design_chain(root: Path, design: dict, split_hash: str) -> dict[str,
                 raise ValueError('invalid design fingerprint')
             if hashlib.sha256(file_bytes(name)).hexdigest() != mapping[name]:
                 raise ValueError('design file hash differs: ' + name)
+    amended_files = {}
+    if design.get('supersedes') == _V2:
+        if (design.get('exposure_policy') != 'bounded_review_unknown_project_exposure' or
+                design.get('kind') != 'design_only' or design.get('execution_ready') is not False or
+                type(design.get('competitive_target_percent')) not in (int, float) or
+                design.get('competitive_target_percent') != 42.4):
+            raise ValueError('invalid exposure amendment')
+        check_files(design.get('files'), {_V2, _V3_DOCUMENT})
+        amended_files = dict(design['files'])
+        try:
+            design = json.loads(file_bytes(_V2))
+        except (ValueError, UnicodeDecodeError) as exc:
+            raise ValueError('invalid prior design registration') from exc
+        if (not isinstance(design, dict) or design.get('kind') != 'design_only' or
+                design.get('execution_ready') is not False or design.get('competitive_target_percent') != 42.4):
+            raise ValueError('invalid prior design registration')
     reference = design.get('reference')
     if (design.get('supersedes') != _V1 or not isinstance(reference, dict) or
             reference.get('model') != 'Qwen3.8-27B' or
@@ -141,7 +159,7 @@ def _verify_design_chain(root: Path, design: dict, split_hash: str) -> dict[str,
     check_files(v1.get('files'), _V1_FILES)
     if v1['files']['research/rsi/provisional-split.json'] != split_hash:
         raise ValueError('input split differs from design registration')
-    return {**design['files'], **v1['files']}
+    return {**amended_files, **design['files'], **v1['files']}
 
 
 def prepare_draft_registration(root: str | Path, *, input_paths: dict, generation: int) -> dict:
@@ -185,12 +203,14 @@ def prepare_draft_registration(root: str | Path, *, input_paths: dict, generatio
     _, after_hashes = _read_inputs(root, input_paths)
     if hashes != after_hashes or design_hashes != _verify_design_chain(root, design, hashes['split']):
         raise ValueError('registration inputs changed during capture')
+    exposure_blocker = ('bounded exposure review not independently completed'
+                        if design.get('supersedes') == _V2 else 'split independence not established')
     return {'status': 'draft_not_execution_ready', 'execution_ready': False,
             'generation': generation, 'input_paths': dict(input_paths), 'input_sha256': hashes,
             'design_file_sha256': design_hashes,
             'local_sources': inventory, 'public_probe_sha256': public_hash,
             'private_probe_sha256': private_hash, 'slots': slots,
-            'blockers': ['split independence not established', 'model runtime and sandbox not independently authenticated',
+            'blockers': [exposure_blocker, 'model runtime and sandbox not independently authenticated',
                          'external dependency closure not established', 'live execution not authorized']}
 
 
