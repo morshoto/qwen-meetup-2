@@ -46,6 +46,11 @@ class ComparisonRunnerTests(unittest.TestCase):
                                    sandbox=FakeE6Sandbox(), verifier=self.verifier)
         self.assertEqual(replay['status'], 'comparison_replay_consistent')
         self.assertFalse(replay['independently_verified'])
+        changed_tasks = dict(self.tasks)
+        changed_tasks[self.ids[0]] = Task(self.ids[0], (([[5, 6]], [[6, 5]]),), ([[3, 4]],))
+        with self.assertRaises(ValueError):
+            replay_comparison(self.root, expected_sha256=result['sha256'], tasks=changed_tasks,
+                              sandbox=FakeE6Sandbox(), verifier=self.verifier)
         record_path = self.root / 'comparison-000-parent.json'
         original = record_path.read_text()
         changed = json.loads(original)
