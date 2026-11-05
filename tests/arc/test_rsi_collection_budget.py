@@ -85,7 +85,8 @@ class ReferenceSetupBudgetTests(unittest.TestCase):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name)
         self.record={'status':'legacy_behavior_reference_local_unverified','model_key':'14b','sandbox_starts':10,
                      'model_calls':0,'training_steps':0,'private_outputs_exposed':False,'eligible_for_training':False,
-                     'independently_verified':False,'generation_authorized':False,'pool_sha256':'b'*64}
+                     'independently_verified':False,'generation_authorized':False,'pool_sha256':'b'*64,
+                     'elapsed_seconds': 2.5}
         self.raw=json.dumps(self.record,sort_keys=True).encode();self.digest=hashlib.sha256(self.raw).hexdigest()
     def test_reference_starts_reduce_available_generation_budget(self):
         budget=CollectionBudget.create(self.root,registration_sha256=REG,generation=0,
@@ -105,9 +106,23 @@ class ReferenceSetupBudgetTests(unittest.TestCase):
             with self.subTest(change=change),self.assertRaises(ValueError):
                 CollectionBudget.create(self.root,registration_sha256=REG,generation=0,**args)
         for change in ({'sandbox_starts':9},{'eligible_for_training':True},{'model_calls':1},
-                       {'private_outputs_exposed':True},{'independently_verified':True}):
+                       {'private_outputs_exposed':True},{'independently_verified':True},
+                       {'elapsed_seconds':True},{'elapsed_seconds':-1},{'elapsed_seconds':61},
+                       {'elapsed_seconds':float('nan')}):
             raw=json.dumps(dict(self.record,**change),sort_keys=True).encode()
             with self.subTest(change=change),self.assertRaises(ValueError):
                 CollectionBudget.create(self.root,registration_sha256=REG,generation=0,
                     reference_setup_bytes=raw,expected_reference_setup_sha256=hashlib.sha256(raw).hexdigest(),model_key='14b')
         self.assertFalse((self.root/'g0.budget.json').exists())
+
+    def test_reference_elapsed_time_reduces_remaining_wall_budget(self):
+        budget=CollectionBudget.create(self.root,registration_sha256=REG,generation=0,
+            reference_setup_bytes=self.raw,expected_reference_setup_sha256=self.digest,model_key='14b')
+        state=budget.snapshot()
+        self.assertEqual(state['reference_elapsed_seconds'],2.5)
+        with patch('src.arc.rsi_collection_budget.time.time', return_value=state['started_wall']+100), \
+             patch('src.arc.rsi_collection_budget.time.monotonic', return_value=state['started_monotonic']+200):
+            self.assertEqual(budget.remaining(),3397.5)
+        with patch('src.arc.rsi_collection_budget.time.time', return_value=state['started_wall']+3597.5), \
+             patch('src.arc.rsi_collection_budget.time.monotonic', return_value=state['started_monotonic']+3597.5):
+            with self.assertRaises(TimeoutError): budget.reserve_sandbox()
