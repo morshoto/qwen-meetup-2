@@ -51,6 +51,28 @@ class AdapterStructureTests(unittest.TestCase):
         self.assertFalse(result['reload_verified'])
         self.assertFalse(result['training_allowed'])
 
+    def test_32b_structure_uses_its_actual_layer_and_projection_dimensions(self):
+        dimensions = {'self_attn.q_proj': (5120, 8192), 'self_attn.k_proj': (5120, 1024),
+                      'self_attn.v_proj': (5120, 1024), 'self_attn.o_proj': (8192, 5120),
+                      'mlp.gate_proj': (5120, 25600), 'mlp.up_proj': (5120, 25600),
+                      'mlp.down_proj': (25600, 5120)}
+        self.header, offset = {}, 0
+        for layer in (62, 63):
+            for name, (inp, out) in dimensions.items():
+                for suffix, shape in (('lora_a', [inp, 8]), ('lora_b', [8, out])):
+                    length = shape[0] * shape[1] * 4
+                    self.header[f'model.layers.{layer}.{name}.{suffix}'] = {
+                        'dtype': 'F32', 'shape': shape, 'data_offsets': [offset, offset + length]}
+                    offset += length
+        self.size = offset
+        self.write_fixture()
+        digest = adapter_sha256(self.root)
+        result = inspect_adapter_structure(self.root, expected_sha256=digest, model_key='32b')
+        self.assertEqual(result['tensor_count'], 28)
+        self.assertFalse(result['reload_verified'])
+        with self.assertRaises(ValueError): inspect_adapter_structure(self.root, expected_sha256=digest, model_key='14b')
+        with self.assertRaises(ValueError): inspect_adapter_structure(self.root, expected_sha256=digest, model_key='unknown')
+
     def test_missing_shape_overlap_and_wrong_config_are_rejected(self):
         mutations = ('missing', 'shape', 'offset', 'config', 'boolean_dropout', 'truncated')
         for mutation in mutations:
