@@ -5,7 +5,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from src.arc.data import Task, Verifier
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
@@ -77,6 +77,16 @@ class ExploratoryRunnerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             read_incomplete_exploratory(root=self.root,registration=self.reg,registration_sha256='0'*64,
                 task_ids=self.ids,confirmatory_task_ids=self.final,candidate_adapter='b'*64)
+
+    def test_full_rows_from_interrupted_run_remain_incomplete(self):
+        with patch('src.arc.rsi_exploratory_runner.summarize_exploratory',side_effect=ValueError('fixture')):
+            result=self.run_trial()
+        self.assertEqual(result['completed'],{'base':50,'trained':50})
+        view=read_incomplete_exploratory(root=self.root,registration=self.reg,registration_sha256=self.reg_sha,
+            task_ids=self.ids,confirmatory_task_ids=self.final,candidate_adapter='b'*64)
+        self.assertTrue(view['row_coverage_complete'])
+        self.assertFalse(view['summary']['complete'])
+        self.assertFalse(view['claim_eligible'])
 
     def test_changed_manifest_fails_before_dispatch(self):
         self.final[0]=self.ids[0]
