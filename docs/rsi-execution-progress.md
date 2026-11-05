@@ -24,6 +24,10 @@ resource, artifact and adapter verification remain unfinished.
 
 ## Current gates
 
+- The slot lifecycle consumes a claimed slot before fixture execution. A
+  missing completion remains uncertain and cannot be replayed automatically.
+  The fixture journal checks recorded byte hashes but is not an authenticated
+  run seal and cannot establish training eligibility.
 - The task split remains provisional and its retained-history inventory cannot
   prove the absence of missing prompt exposure or model pretraining exposure.
 - Draft registration, replay, transport consistency and SFT prechecks do not
