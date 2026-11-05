@@ -11,12 +11,13 @@ class SourceInventoryTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
-        for directory in ('src', 'sandbox', 'configs'):
+        for directory in ('src', 'sandbox', 'configs', 'scripts'):
             (self.root / directory).mkdir()
         (self.root / 'src/main.py').write_text('import dynamic_module\n')
         (self.root / 'src/dynamic_module.py').write_text('VALUE = 1\n')
         (self.root / 'sandbox/runner.py').write_text('pass\n')
         (self.root / 'configs/run.yml').write_text('seed: 1\n')
+        (self.root / 'scripts/launch.sh').write_text('#!/bin/sh\nexit 0\n')
         (self.root / 'pyproject.toml').write_text('[project]\nname = "example"\n')
         (self.root / 'uv.lock').write_text('version = 1\n')
 
@@ -25,6 +26,7 @@ class SourceInventoryTests(unittest.TestCase):
         self.assertIn('src/dynamic_module.py', result['files'])
         self.assertIn('sandbox/runner.py', result['files'])
         self.assertIn('configs/run.yml', result['files'])
+        self.assertIn('scripts/launch.sh', result['files'])
         self.assertFalse(result['execution_ready'])
         verify_source_inventory(self.root, result)
 
