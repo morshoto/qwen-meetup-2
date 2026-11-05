@@ -566,3 +566,10 @@ inputs and check their SHA-256 digests against retained JSON string values.
 Record matched files and format-specific counts; a matching digest is evidence
 of a retained reference, not independent proof of model dispatch or complete
 historical coverage. Preserve the provisional split gate.
+
+### Historical code prompt text cycle
+
+Test reconstruction of the legacy code agent's complete task-text block and
+scan retained strings for it inside longer prompts. Record only bounded matches;
+hash-only code requests and unretained or different prompt formats remain
+unresolved.
