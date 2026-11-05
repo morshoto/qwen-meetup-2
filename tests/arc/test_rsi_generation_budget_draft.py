@@ -38,7 +38,12 @@ class DraftGenerationBudgetTests(unittest.TestCase):
                      dict(original, execution_ready=True), dict(original, training_allowed=True),
                      dict(original, limits={**original['limits'], 'sandbox_starts': 301}),
                      dict(original, provisional_behavior_reference={**original['provisional_behavior_reference'],
-                                                                   'pool_sha256': '0'*64})]
+                                                                   'pool_sha256': '0'*64}),
+                     dict(original, provisional_behavior_reference={**original['provisional_behavior_reference'],
+                                                                   'local_result_sha256': '0'*64}),
+                     dict(original, provisional_probe_candidates={**original['provisional_probe_candidates'],
+                          'private': {**original['provisional_probe_candidates']['private'],
+                                      'canonical_probe_sha256': '0'*64}})]
         cases = [(registration, other_reference, hashlib.sha256(registration).hexdigest()),
                  (registration, reference, '0'*64)]
         for item in mutations:
