@@ -4,6 +4,12 @@
   "execution_authorized": false,
   "minimum_strict_oracles": 5,
   "max_generations": 2,
+  "development_split": {
+    "known_prior_exposure_registry": "configs/p3c.exploration.exclusions.v1.json",
+    "task_count": 200,
+    "requires_complete_history_audit": true,
+    "independence_established": false
+  },
   "evaluation": {
     "competitive_target_percent": 26.0,
     "benchmark": "ARC-AGI-2 semi-private",

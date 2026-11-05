@@ -73,16 +73,22 @@ only and leave the competitive claim unverified.
    transitive execution dependencies. Generation 0 is the untrained base.
    Independently audit any legacy same-model records before including them;
    exclude the E9 initial 14B run and unpinned E7 records.
-2. Split the public ARC-AGI-2 training set by task before generating anything:
-   sort task IDs and assign the first 800 to generation and the remaining 200
-   to development, recording hashes of both manifests. Do not use public
+2. Split the public ARC-AGI-2 training set by task before generating anything.
+   The earlier proposal of the last 200 sorted IDs for development overlaps 50
+   IDs in the checked-in P3-C prior-use registry; do not use that split. Audit
+   all later E2/E3 and other retained task-use records as well as the registry,
+   then choose the last 200 sorted IDs outside the resulting complete exposure
+   set for development; assign the remaining 800 to generation and record hashes
+   of both manifests. Stop if the exposure audit is incomplete or leaves fewer
+   than 200 eligible tasks. The registry alone is not a complete exposure audit.
+   Do not use public
    evaluation or hidden evaluation tasks for generation, tuning, or selection.
    Check source dataset hashes and keep generated descendants with their parent
    task in the same partition. Before including historical records, audit their
    complete ancestry against the development manifest; exclude any record whose
-   parent overlaps it or whose ancestry cannot be established. If historical
-   experiment decisions used development tasks, disclose that exposure and do
-   not call this development split independent. Model pretraining exposure is
+   parent overlaps it or whose ancestry cannot be established. Independence of
+   the proposed development split remains unestablished until the history audit
+   and manifest freeze are complete. Model pretraining exposure is
    unknown and must be disclosed; this split cannot prove absence of contamination.
 3. On generation tasks, Qwen writes and repairs candidate programs. Execute in
    the existing network-isolated sandbox with bounded resources. A generic
