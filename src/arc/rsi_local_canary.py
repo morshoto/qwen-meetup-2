@@ -4,6 +4,8 @@ from pathlib import Path
 from src.arc.rsi_canary_dataset import audit_canary_loader
 from src.arc.rsi_local_tokenizer import _REVISION, _load_components, _sha
 
+_REVISIONS = {'14b': _REVISION, '32b': 'bcaaf7f538adf166c1080a2befdb4f6019f66639'}
+
 
 def _load_canary_components(model):
     tokenizer, render, version = _load_components(model)
@@ -12,9 +14,12 @@ def _load_canary_components(model):
 
 
 def audit_local_canary(*, root, forbidden_tasks, model_dir, expected_tokenizer_sha256,
-                       expected_config_sha256, expected_dataset_sha256):
+                       expected_config_sha256, expected_dataset_sha256, model_key='14b'):
+    if not isinstance(model_key, str) or model_key not in _REVISIONS:
+        raise ValueError('unsupported canary model')
+    revision = _REVISIONS[model_key]
     model = Path(model_dir).expanduser().resolve()
-    if not model.is_dir() or model.name != _REVISION:
+    if not model.is_dir() or model.name != revision:
         raise ValueError('model path must be the proposed revision directory')
     files = (model / 'tokenizer.json', model / 'tokenizer_config.json')
     before = tuple(_sha(path) for path in files)
@@ -30,4 +35,4 @@ def audit_local_canary(*, root, forbidden_tasks, model_dir, expected_tokenizer_s
     return {'status': 'local_canary_loader_consistent', 'training_allowed': False,
             'row_count': checked['row_count'], 'dataset_jsonl_sha256': expected_dataset_sha256,
             'tokenizer_sha256': before[0], 'tokenizer_config_sha256': before[1], 'mlx_lm_version': version,
-            'model_revision': _REVISION, 'evidence_type': 'local_tokenizer_loader_and_supplied_inventory'}
+            'model_revision': revision, 'evidence_type': 'local_tokenizer_loader_and_supplied_inventory'}
