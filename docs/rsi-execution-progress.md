@@ -276,3 +276,16 @@ separately from training eligibility. Every draft remains marked
 `unverified_capture`, and the existing batch precheck rejects it for training.
 The observed count is not the required independently audited strict-new count.
 No Qwen calls or training occurred.
+
+### Local runtime identity observation
+
+A read-only probe on 2026-11-05 recorded the local arm64 Python interpreter,
+selected package versions, MLX-LM 0.30.7 module hash and reviewed
+`generate_step` source hash in the [runtime observation](../research/rsi/local-runtime-observation.json).
+A fixture draft registration using that observation, the provisional split and
+synthetic probe and sandbox inputs returned `draft_runtime_consistent` with
+runtime-manifest hash
+`70f75b584986837b1e21afac6cf9e696fc601f68440ffe1d9f0be7bf1f03ed87`
+and `execution_ready: false`. This samples local runtime identity; it does not
+hash every transitive dependency, attest a server process, establish dataset
+independence, or authorize inference or training.
