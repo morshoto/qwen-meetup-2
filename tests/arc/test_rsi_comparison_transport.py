@@ -163,10 +163,13 @@ class ComparisonTransportTests(unittest.TestCase):
         proposal_root.mkdir(mode=0o700)
         proposal_args = dict(root=proposal_root, first=refs[0], second=refs[1], tasks=tasks,
             sandbox=FakeE6Sandbox(), verifier=verifier, diagnostic_task_hashes={'evaluation-fixture': 'd' * 64},
+            generation_task_ids=[f'generation-{i:03}' for i in range(800)],
             harness_sha256='e' * 64, settings_sha256='f' * 64,
             budget={'model_calls': 100, 'reserved_tokens': 1000000, 'sandbox_runs': 1000, 'wall_seconds': 3600})
         with self.assertRaises(ValueError):
             prepare_final_diagnostic_proposal(**{**proposal_args, 'diagnostic_task_hashes': {ids[0]: 'd' * 64}})
+        with self.assertRaises(ValueError):
+            prepare_final_diagnostic_proposal(**{**proposal_args, 'diagnostic_task_hashes': {'generation-000': 'd' * 64}})
         with self.assertRaises(ValueError):
             prepare_final_diagnostic_proposal(**{**proposal_args, 'budget': {**proposal_args['budget'], 'model_calls': 801}})
         self.assertEqual(list(proposal_root.iterdir()), [])
