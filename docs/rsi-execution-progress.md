@@ -569,6 +569,16 @@ Fixture replay rejected altered reservation data. Sandbox counts remain local
 journal values, and neither the budget nor captured records independently
 prove process identity or actual compute cost.
 
+### Comparison reported tokens
+
+A captured comparison can now report server-supplied prompt, completion and
+total token counts separately for each arm, after checking each ledger usage
+against the captured response and its reservation. Missing or partial reports
+include coverage counts and do not produce a complete token total. Fixtures
+cover complete reports, absent reports and altered ledger values. These counts
+are server-reported rather than independently metered, and monetary cost
+remains unknown; reserved token ceilings are reported separately.
+
 ### Guarded collection server declaration
 
 A collection transport wrapper checks the declared model, generation parent
