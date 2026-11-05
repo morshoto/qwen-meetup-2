@@ -192,3 +192,14 @@ comparison passed with reordered capture records; missing, duplicate and altered
 records failed. The captured records and sandbox are still locally writable and
 caller supplied, and server weight, adapter and runtime identity are not
 independently established. No live comparison was performed.
+
+### Guarded comparison server declarations
+
+A wrapper now checks both loopback server declarations before each comparison
+request using the existing guarded contract parser. It requires the expected
+model, adapter claim, thinking canary, reviewed driver, fresh distinct ledgers,
+and a combined server token ceiling no greater than the comparison budget. It
+rejects changed or regressing ledger declarations. Local fixture servers tested
+the actual parser and rejection of a changed adapter claim. These declarations
+are self-reported and are not evidence of the server process, loaded weights or
+adapter; the wrapper does not grant live execution authorization.
