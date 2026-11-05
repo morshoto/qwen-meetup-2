@@ -13,6 +13,7 @@ from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_generation_audit import audit_generation
+from src.arc.rsi_generation_usage import audit_generation_usage
 from src.arc.rsi_generation_drafts import audit_generation_drafts, prepare_generation_drafts
 from src.arc.rsi_synthetic_mapping import map_synthetic_row
 from src.arc.rsi_batch_precheck import precheck_batch
@@ -41,9 +42,12 @@ class GenerationAuditTests(unittest.TestCase):
             def do_POST(self):
                 request = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
                 code = self.server.codes.get(request['seed'], FAKE_PROGRAMS[1])
-                raw = json.dumps({'model': 'mlx-community/Qwen3-14B-4bit', 'thinking_mode': 'off',
+                body = {'model': 'mlx-community/Qwen3-14B-4bit', 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
-                    'choices': [{'message': {'role': 'assistant', 'content': code}, 'finish_reason': 'stop'}]}).encode()
+                    'choices': [{'message': {'role': 'assistant', 'content': code}, 'finish_reason': 'stop'}]}
+                if self.server.usage is not None:
+                    body['usage'] = self.server.usage
+                raw = json.dumps(body).encode()
                 self.send_response(200)
                 self.send_header('Content-Length', str(len(raw)))
                 self.end_headers()
@@ -52,6 +56,7 @@ class GenerationAuditTests(unittest.TestCase):
                 pass
         self.server = HTTPServer(('127.0.0.1', 0), Handler)
         self.server.codes = {}
+        self.server.usage = None
         worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         worker.start()
         self.addCleanup(self.server.server_close)
@@ -63,6 +68,7 @@ class GenerationAuditTests(unittest.TestCase):
         self.pool_hash = hashlib.sha256(b'[]').hexdigest()
 
     def test_nine_distinct_fixture_drafts_remain_quarantined(self):
+        self.server.usage = {'prompt_tokens': 10, 'completion_tokens': 5, 'total_tokens': 15}
         codes = {}
         for index, key in enumerate(self.ids[:10]):
             shift = (index % 9) + 1
@@ -88,6 +94,15 @@ class GenerationAuditTests(unittest.TestCase):
         ledger = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
         response = [json.loads(line) for line in (self.root / 'llm_responses.jsonl').read_text().splitlines()]
         kwargs = dict(**common, request_records=capture, ledger_records=ledger, response_records=response, sandbox=Sandbox())
+        usage = audit_generation_usage(**kwargs)
+        self.assertEqual(usage['reported']['request_count'], len(ledger))
+        self.assertEqual(usage['reported']['total_tokens_if_complete'], 15 * len(ledger))
+        self.assertEqual(usage['reserved_tokens'], result['budget_usage']['reserved_tokens'])
+        self.assertIsNone(usage['monetary_cost'])
+        altered_ledger = [dict(event) for event in ledger]
+        altered_ledger[0]['usage'] = dict(altered_ledger[0]['usage'], prompt_tokens=11)
+        with self.assertRaises(ValueError):
+            audit_generation_usage(**{**kwargs, 'ledger_records': altered_ledger})
         with self.assertRaises(ValueError):
             prepare_generation_drafts(**{**kwargs, 'request_records': capture[:-1]})
         self.assertFalse((self.root / 'g0.stage.drafts.json').exists())
@@ -239,6 +254,9 @@ class GenerationAuditTests(unittest.TestCase):
         audit_args = dict(**common, request_records=list(reversed(capture)), ledger_records=ledger,
                           response_records=response, sandbox=FakeE6Sandbox())
         audit = audit_generation(**audit_args)
+        usage = audit_generation_usage(**audit_args)
+        self.assertEqual(usage['reported']['total_tokens_missing_requests'], 19)
+        self.assertIsNone(usage['reported']['total_tokens_if_complete'])
         self.assertEqual(audit['status'], 'generation_replay_consistent')
         self.assertEqual(audit['checked_slots'], 10)
         self.assertEqual(audit['attempt_counts'], {'novel_unverified': 1, 'duplicate_source': 9, 'repeated_code': 9})
