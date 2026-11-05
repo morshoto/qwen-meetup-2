@@ -605,3 +605,14 @@ binding each review to the same dataset, split and retained artifact inventory,
 and comparing replayed match sets with all three saved reviews. Reject missing,
 changed or overlapping evidence; the result remains a local consistency check,
 not independent review or evidence that missing records do not exist.
+
+### Fifty-task exploratory notebook
+
+The user requested an exploratory comparison of the future Qwen3-14B RSI
+adapter with its untrained base on 50 tasks kept separate from the subsequent
+200-task evaluation. Test matched identity and settings, disjoint task IDs,
+correct counts, task type summaries, explicit failure reasons, elapsed time,
+and token usage with missing values represented as unknown. Build a notebook
+that reads recorded results and clearly distinguishes incomplete or fixture
+inputs. It must not launch a model, train, or turn this exploratory check into
+an RSI improvement or competitiveness claim.
