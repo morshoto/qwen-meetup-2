@@ -108,3 +108,12 @@ quarantined sources, the parent adapter, and fixed QLoRA settings. A separate
 one-step preflight plan must not consume the generation batch or authorize any
 training. Missing independent audit, execution registration, process-containment
 proof and explicit authorization must remain visible blockers.
+
+### RSI SFT format and mask cycle
+
+Test conversion of quarantined records to the MLX chat-row shape and verify
+that the thinking-off inference prefix exactly matches the masked token prefix,
+leaving nonempty completion tokens within the sequence limit. Reject altered
+batch hashes, task prompts, source bindings and token offsets. The supplied
+tokenizer and renderer remain unauthenticated until separately checked against
+the registered runtime and model.
