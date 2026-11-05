@@ -62,6 +62,13 @@ class CandidateTests(unittest.TestCase):
         self.assertNotIn('secret', repr(result))
         self.assertFalse(result['eligible_for_training'])
 
+    def test_identity_only_program_is_rejected_before_private_probes(self):
+        task = Task('parent', (([[1, 2]], [[1, 2]]),), ([[3, 4]],))
+        result = inspect_candidate(task, FAKE_PROGRAMS[0], public_probes=self.public,
+                                   private_probes=self.private, sandbox=self.sandbox)
+        self.assertEqual(result['status'], 'identity_only_rejected')
+        self.assertFalse(any(grid in self.private for grid in self.sandbox.inputs))
+
 
 if __name__ == '__main__':
     unittest.main()
