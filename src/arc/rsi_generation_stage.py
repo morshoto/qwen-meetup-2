@@ -47,7 +47,8 @@ def _budget_delta(before, after):
 def collect_generation(*, root, registration_sha256, generation, parent_adapter, task_ids, tasks,
                        expected_manifest_sha256, expected_task_hashes, public_probes, private_probes,
                        expected_public_probes_sha256, expected_private_probes_sha256, reference_pool,
-                       expected_reference_pool_sha256, transport, sandbox, budget):
+                       expected_reference_pool_sha256, transport, sandbox, budget,
+                       model_key='14b', expected_reference_setup_sha256=None):
     slots = generation_slots(task_ids, generation)
     selected = [item['task_id'] for item in slots]
     if ((generation == 0 and parent_adapter != 'none') or
@@ -83,12 +84,23 @@ def collect_generation(*, root, registration_sha256, generation, parent_adapter,
         raise ValueError('reference pool differs')
     screen_novelty('def transform(grid): return grid', '0' * 64, expected_private_probes_sha256, reference_pool)
     pool = [dict(item) for item in reference_pool]
-    budget_before = _counters(budget.snapshot())
+    state = budget.snapshot()
+    if model_key not in ('14b', '32b'):
+        raise ValueError('invalid model identity')
+    reference_digest = state.get('reference_setup_sha256')
+    if (reference_digest != expected_reference_setup_sha256 or
+            (reference_digest is not None and
+             (state.get('reference_model_key') != model_key or
+              state.get('reference_pool_sha256') != expected_reference_pool_sha256))):
+        raise ValueError('reference setup budget identity differs')
+    budget_before = _counters(state)
     start = {'registration_sha256': registration_sha256, 'generation': generation,
              'parent_adapter': parent_adapter, 'manifest_sha256': expected_manifest_sha256,
              'task_hashes': expected_task_hashes, 'public_probe_sha256': expected_public_probes_sha256,
              'private_probe_sha256': expected_private_probes_sha256,
              'initial_reference_pool_sha256': expected_reference_pool_sha256, 'budget_before': budget_before}
+    if reference_digest is not None:
+        start.update(reference_setup_sha256=reference_digest, reference_model_key=model_key)
     with _directory(root) as directory:
         _create(directory, f'g{generation}.stage.started.json', start)
     completed, counts, attempt_counts = [], Counter(), Counter()
