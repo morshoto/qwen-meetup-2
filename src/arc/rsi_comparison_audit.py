@@ -151,7 +151,8 @@ def audit_comparison_captures(root, *, expected_sha256, tasks, sandbox, verifier
                         raise ValueError('comparison capture metadata differs')
                     audit_transport(request_body, response_body, event, expected_prompt=solve_prompt(tasks[task_id]),
                                     expected_code=result['sample_sources'][sample],
-                                    expected_seed=frozen['seeds'][task_id][sample])
+                                    expected_seed=frozen['seeds'][task_id][sample],
+                                    expected_invalid=result['sample_statuses'][sample] == 'invalid_model_output')
         for arm in ('parent', 'candidate'):
             if any(set(group) != seen[arm] for group in captures[arm]) or len(seen[arm]) != 400:
                 raise ValueError('comparison capture coverage differs')

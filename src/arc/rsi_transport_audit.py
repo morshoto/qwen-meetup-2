@@ -34,18 +34,24 @@ def _json_object(raw: bytes) -> dict:
 
 
 def audit_transport(request_body: bytes, response_body: bytes, ledger: dict, *,
-                    expected_prompt: str, expected_code: str, expected_seed: int) -> dict:
+                    expected_prompt: str, expected_code: str | None, expected_seed: int,
+                    expected_invalid: bool = False) -> dict:
     if (not isinstance(request_body, bytes) or not 1 <= len(request_body) <= 1024 * 1024 or
             not isinstance(response_body, bytes) or not 1 <= len(response_body) <= 4 * 1024 * 1024 or
             not isinstance(ledger, dict) or not isinstance(expected_prompt, str) or not expected_prompt or
-            not isinstance(expected_code, str) or not expected_code.strip() or type(expected_seed) is not int):
+            type(expected_invalid) is not bool or
+            (expected_invalid and expected_code is not None) or
+            (not expected_invalid and (not isinstance(expected_code, str) or not expected_code.strip())) or
+            type(expected_seed) is not int):
         raise ValueError('missing or invalid transport evidence')
     req_hash = hashlib.sha256(request_body).hexdigest()
     resp_hash = hashlib.sha256(response_body).hexdigest()
     if (ledger.get('request_body_sha256') != req_hash or ledger.get('response_sha256') != resp_hash or
             ledger.get('model') != _MODEL or ledger.get('revision') != _REVISION or
             ledger.get('seed_requested') != expected_seed or ledger.get('thinking_mode_effective') != 'off' or
-            ledger.get('error') is not None or not isinstance(ledger.get('request_id'), str) or
+            (ledger.get('error') is not None and
+             (not expected_invalid or ledger.get('error') != {'kind': 'malformed_thinking'})) or
+            not isinstance(ledger.get('request_id'), str) or
             not ledger['request_id']):
         raise ValueError('transport ledger does not match captured evidence')
     request = _json_object(request_body)
@@ -70,14 +76,21 @@ def audit_transport(request_body: bytes, response_body: bytes, ledger: dict, *,
         raise ValueError('captured response must contain one choice')
     message = choices[0].get('message')
     if (not isinstance(message, dict) or message.get('role') != 'assistant' or
-            not isinstance(message.get('content'), str) or choices[0].get('finish_reason') != 'stop'):
+            not isinstance(message.get('content'), str) or choices[0].get('finish_reason') not in ('stop', 'length')):
         raise ValueError('captured response is incomplete')
+    finish = choices[0]['finish_reason']
     try:
         extracted = final_answer(message['content'])
-    except BackendError as exc:
-        raise ValueError('captured response has invalid final content') from exc
-    if extracted.strip() != expected_code.strip():
+        malformed = False
+    except BackendError:
+        extracted, malformed = None, True
+    if expected_invalid:
+        if not (finish == 'length' or malformed):
+            raise ValueError('captured response is not an invalid model completion')
+        if malformed != (ledger.get('error') == {'kind': 'malformed_thinking'}):
+            raise ValueError('invalid completion differs from transport error')
+    elif (finish != 'stop' or malformed or extracted.strip() != expected_code.strip()):
         raise ValueError('captured response differs from candidate source')
-    return {'status': 'transport_consistent', 'request_id': ledger['request_id'],
+    return {'status': 'transport_invalid_model_output' if expected_invalid else 'transport_consistent', 'request_id': ledger['request_id'],
             'request_body_sha256': req_hash, 'response_sha256': resp_hash,
             'eligible_for_training': False}
