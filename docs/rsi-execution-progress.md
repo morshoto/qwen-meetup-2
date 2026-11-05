@@ -246,3 +246,12 @@ identity, budget and infrastructure failures still stop the comparison. Capture
 replay checks that the raw response and ledger justify the invalid outcome,
 including the finish reason. Fixture HTTP exercised both truncated and
 malformed responses; no live model call was made.
+
+### Invalid collection completions
+
+Truncated and malformed collection completions now consume the slot as
+`invalid_model_output`; they are not accepted as oracle code or used as repair
+feedback. Capture replay checks that the raw response and finish reason support
+the terminal outcome, and draft conversion rejects it. Fixture HTTP exercised
+these cases; infrastructure failures still leave the slot uncertain. No live
+model calls were made.
