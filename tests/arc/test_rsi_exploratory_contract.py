@@ -6,6 +6,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.arc.prompting import system_prompt_for_kind
+from src.arc.data import Task, Verifier
+from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
+from src.arc.rsi_exploratory_runner import run_exploratory
+from src.arc.rsi_slot_audit import task_sha256, manifest_sha256
 from src.arc.rsi_comparison_transport import CapturedComparisonTransport
 from src.arc.rsi_exploratory_budget import ExploratoryBudget
 from src.arc.rsi_exploratory_contract import ContractCheckedExploratoryTransport
@@ -35,6 +39,25 @@ class ExploratoryContractTests(unittest.TestCase):
             self.budget.reserve_model(self.reservation,kind='evaluation')
             guard('prompt',arm='base',adapter='none',task_id='t',sample=0,seed=1,timeout=1)
             self.assertEqual(dispatch.call_count,1)
+    @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
+    def test_runner_reserves_before_guarded_dispatch(self,verify):
+        verify.side_effect=self.reply; guard=self.make()
+        ids=[f't{i:03d}' for i in range(50)]; final=[f'c{i:03d}' for i in range(200)]
+        tasks={k:Task(k,(([[1,2]],[[2,1]]),),([[3,4]],)) for k in ids}
+        reg={'status':'exploratory_registration_draft_unverified','execution_ready':False,
+             'exploratory_manifest_sha256':manifest_sha256(ids),'development_manifest_sha256':manifest_sha256(final)}
+        replies=[{'code':FAKE_PROGRAMS[1],'request_id':'1'*32,'usage':None},
+                 {'code':FAKE_PROGRAMS[1],'request_id':'2'*32,'usage':None},TimeoutError('fixture stop')]
+        with patch.object(CapturedExploratoryTransport,'__call__',side_effect=replies) as dispatch:
+            result=run_exploratory(root=self.root,registration_sha256='a'*64,generation=0,registration=reg,
+                task_ids=ids,confirmatory_task_ids=final,tasks=tasks,task_hashes={k:task_sha256(v) for k,v in tasks.items()},
+                seeds={k:[100+2*i,101+2*i] for i,k in enumerate(ids)},task_types={k:None for k in ids},
+                candidate_adapter='b'*64,generate=guard,sandbox=FakeE6Sandbox(),
+                verifier=Verifier({k:[[[4,3]]] for k in ids}),budget=self.budget)
+        self.assertEqual(result['status'],'exploratory_incomplete')
+        self.assertEqual(self.budget.snapshot()['model_calls'],3)
+        self.assertEqual(dispatch.call_count,3)
+
     @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
     def test_rejects_changed_ledgers_or_server_overspend(self,verify):
         verify.side_effect=self.reply; guard=self.make(); self.budget.reserve_model(self.reservation,kind='evaluation')
