@@ -671,3 +671,13 @@ also found no matches, so there was no positive control showing that this text
 format is present in the retained files. Many request logs store hashes; this
 check cannot detect hash-only code prompts. Missing records, different formats
 and pretraining exposure remain unresolved.
+
+### Historical candidate reservations
+
+A [candidate journal review](../research/rsi/candidate-journal-review.json)
+parsed 700 reservations in 39 retained budget journals, including interrupted
+candidates and fixture journals. They refer to 287 distinct source task IDs;
+none overlap the provisional development split, and all 287 were already in
+the extended metadata review. A reservation does not establish model dispatch.
+Missing journals, other record formats and pretraining remain outside this audit,
+so the split is still provisional.
