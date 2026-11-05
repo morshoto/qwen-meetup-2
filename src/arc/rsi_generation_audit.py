@@ -4,6 +4,7 @@ import json
 from collections import Counter
 
 from src.arc.rsi_collected_slot_audit import _decode, _index, audit_collected_slot
+from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_comparison_audit import _read
 from src.arc.rsi_generation_stage import _budget_delta, _pool_sha
 from src.arc.rsi_slot_lifecycle import _directory, _exists, observe_slot
@@ -14,7 +15,8 @@ from src.arc.rsi_transport_audit import _json_object
 def audit_generation(*, root, registration_sha256, generation, parent_adapter, task_ids, tasks,
                      expected_manifest_sha256, expected_task_hashes, public_probes, private_probes,
                      expected_public_probes_sha256, expected_private_probes_sha256, reference_pool,
-                     expected_reference_pool_sha256, request_records, response_records, ledger_records, sandbox, model_key='14b'):
+                     expected_reference_pool_sha256, request_records, response_records, ledger_records, sandbox, model_key='14b',
+                     expected_reference_setup_sha256=None):
     slots = generation_slots(task_ids, generation)
     if not isinstance(reference_pool, list) or _pool_sha(reference_pool) != expected_reference_pool_sha256:
         raise ValueError('generation reference pool differs')
@@ -25,6 +27,14 @@ def audit_generation(*, root, registration_sha256, generation, parent_adapter, t
         'task_hashes': expected_task_hashes, 'public_probe_sha256': expected_public_probes_sha256,
         'private_probe_sha256': expected_private_probes_sha256,
         'initial_reference_pool_sha256': expected_reference_pool_sha256}
+    state = CollectionBudget.open(root, registration_sha256=registration_sha256, generation=generation).snapshot()
+    digest = state.get('reference_setup_sha256')
+    if (model_key not in ('14b', '32b') or digest != expected_reference_setup_sha256 or
+            (digest is not None and (state.get('reference_model_key') != model_key or
+             state.get('reference_pool_sha256') != expected_reference_pool_sha256))):
+        raise ValueError('reference setup replay identity differs')
+    if digest is not None:
+        expected_start.update(reference_setup_sha256=digest, reference_model_key=model_key)
     counts, attempt_counts, checked, seen = Counter(), Counter(), [], set()
     with _directory(root) as directory:
         if _exists(directory, f'g{generation}.stage.incomplete.json'):
@@ -32,6 +42,9 @@ def audit_generation(*, root, registration_sha256, generation, parent_adapter, t
         _, start = _read(directory, f'g{generation}.stage.started.json')
         _, report = _read(directory, f'g{generation}.stage.completed.json')
         expected_start['budget_before'] = start.get('budget_before')
+        if digest is not None and (not isinstance(start.get('budget_before'), dict) or
+                                   start['budget_before'].get('sandbox_runs', -1) < 10):
+            raise ValueError('reference setup reservations missing')
         usage = _budget_delta(start.get('budget_before'), report.get('budget_after'))
         if start != expected_start or not isinstance(report.get('slots'), list) or len(report['slots']) != 10:
             raise ValueError('generation stage identity or coverage differs')
