@@ -1,0 +1,21 @@
+{
+  "canary_policy": "independent_synthetic_only_no_promotion",
+  "competitive_target_percent": 42.4,
+  "evaluation_policy": "separate_exploratory_50_then_development_200",
+  "execution_blockers": [
+    "independent bounded exposure review and final manifests incomplete",
+    "canary data model runtime and resource limits require separate registration and authorization",
+    "each RSI adapter requires five independently audited new same-model Oracles"
+  ],
+  "execution_ready": false,
+  "files": {
+    "research/rsi/design-registration-v3.json": "0928dfccdd67b940dcecae661aa8ef714c5e07e288bc706dcce9836a348535ee",
+    "research/rsi/design-v4.md": "3cec476759bde192499a8cd4992f39e363cdf67b62d3f53be3d2158c7ab91d2d"
+  },
+  "kind": "design_only",
+  "oracle_policy": "new_only_pending_historical_decision",
+  "recorded_at_local": "2026-11-05T22:59:17+09:00",
+  "source_commit": "1cf1455905175f154b1cb4609e4d7393b3ab7e11",
+  "supersedes": "research/rsi/design-registration-v3.json",
+  "timestamp_note": "Locally recorded time, not an independently witnessed timestamp."
+}
