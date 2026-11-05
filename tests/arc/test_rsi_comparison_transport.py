@@ -84,10 +84,11 @@ class ComparisonTransportTests(unittest.TestCase):
         tasks = {key: Task(key, (([[1], [2]], [[2], [1]]),), ([[3], [4]],)) for key in ids}
         verifier = Verifier({key: [[[4], [3]]] for key in ids})
         seeds = {key: [10000+2*i,10001+2*i] for i,key in enumerate(ids)}
-        budget = ExploratoryBudget.create(self.root, registration_sha256='a'*64, generation=0)
         registration = {'status':'exploratory_registration_draft_unverified', 'execution_ready':False,
                         'exploratory_manifest_sha256':manifest_sha256(ids), 'development_manifest_sha256':manifest_sha256(final)}
-        result = run_exploratory(root=self.root,registration_sha256='a'*64,generation=0,registration=registration,
+        reg_sha = hashlib.sha256(json.dumps(registration,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
+        budget = ExploratoryBudget.create(self.root, registration_sha256=reg_sha, generation=0)
+        result = run_exploratory(root=self.root,registration_sha256=reg_sha,generation=0,registration=registration,
             task_ids=ids,confirmatory_task_ids=final,tasks=tasks,task_hashes={k:task_sha256(v) for k,v in tasks.items()},
             seeds=seeds,task_types={k:None for k in ids},candidate_adapter='b'*64,
             generate=CapturedExploratoryTransport(self.transport),sandbox=FakeE6Sandbox(),verifier=verifier,budget=budget)

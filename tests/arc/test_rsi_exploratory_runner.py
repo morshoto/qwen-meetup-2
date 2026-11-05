@@ -1,5 +1,7 @@
 """Exercise the exploratory runner only with caller-supplied fixtures."""
 import itertools
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -20,14 +22,15 @@ class ExploratoryRunnerTests(unittest.TestCase):
         self.verifier=Verifier({k:[[[4,3]]] for k in self.ids})
         self.seeds={k:[2*i+100,2*i+101] for i,k in enumerate(self.ids)}
         self.types={k:None for k in self.ids}; self.counter=itertools.count()
-        self.budget=ExploratoryBudget.create(self.root,registration_sha256='a'*64,generation=0)
         self.reg={'status':'exploratory_registration_draft_unverified','execution_ready':False,
                   'exploratory_manifest_sha256':manifest_sha256(self.ids),
                   'development_manifest_sha256':manifest_sha256(self.final)}
+        self.reg_sha=hashlib.sha256(json.dumps(self.reg,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
+        self.budget=ExploratoryBudget.create(self.root,registration_sha256=self.reg_sha,generation=0)
         self.generate=Mock(side_effect=lambda *a,**kw:{'code':FAKE_PROGRAMS[1],
             'request_id':f'{next(self.counter):032x}','usage':{'prompt_tokens':10,'completion_tokens':5}})
     def run_trial(self):
-        return run_exploratory(root=self.root,registration_sha256='a'*64,generation=0,registration=self.reg,
+        return run_exploratory(root=self.root,registration_sha256=self.reg_sha,generation=0,registration=self.reg,
             task_ids=self.ids,confirmatory_task_ids=self.final,tasks=self.tasks,
             task_hashes={k:task_sha256(v) for k,v in self.tasks.items()},seeds=self.seeds,task_types=self.types,
             candidate_adapter='b'*64,generate=self.generate,sandbox=FakeE6Sandbox(),verifier=self.verifier,budget=self.budget)
