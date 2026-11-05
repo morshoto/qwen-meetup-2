@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import json
 import tempfile
 import threading
@@ -97,6 +98,18 @@ class SlotTransportTests(unittest.TestCase):
             audit_collected_slot(**{**kwargs, 'request_records': captures + [captures[0]]})
         with self.assertRaises(ValueError):
             audit_collected_slot(**{**kwargs, 'response_records': responses[:1]})
+        altered = dict(evidence)
+        altered['status'] = 'sampled_behavior_match'
+        changed = json.dumps(altered).encode()
+        with self.assertRaises(ValueError):
+            audit_collected_slot(**{**kwargs, 'evidence_bytes': changed,
+                                    'evidence_sha256': hashlib.sha256(changed).hexdigest()})
+        altered = dict(evidence)
+        altered['novelty'] = {**evidence['novelty'], 'reference_pool_sha256': 'f' * 64}
+        changed = json.dumps(altered).encode()
+        with self.assertRaises(ValueError):
+            audit_collected_slot(**{**kwargs, 'evidence_bytes': changed,
+                                    'evidence_sha256': hashlib.sha256(changed).hexdigest()})
         corrupted = [dict(item) for item in captures]
         corrupted[0]['body_base64'] = base64.b64encode(b'bad').decode()
         with self.assertRaises(ValueError):
