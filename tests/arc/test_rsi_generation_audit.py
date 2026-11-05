@@ -111,6 +111,8 @@ class GenerationAuditTests(unittest.TestCase):
         self.assertEqual(audit['status'], 'generation_replay_consistent')
         self.assertEqual(audit['checked_slots'], 10)
         self.assertFalse(audit['training_allowed'])
+        self.assertEqual(audit['budget_usage']['model_calls'], 10)
+        self.assertEqual(audit['budget_usage']['reserved_tokens'], sum(row['token_reservation'] for row in ledger))
         drafts = prepare_generation_drafts(**audit_args)
         self.assertEqual(drafts['draft_count'], 1)
         self.assertFalse(drafts['provisional_minimum_count_met'])
@@ -121,6 +123,12 @@ class GenerationAuditTests(unittest.TestCase):
             audit_generation(**{**audit_args, 'request_records': capture + [capture[0]]})
         stage_path = self.root / 'g0.stage.completed.json'
         stage = json.loads(stage_path.read_text())
+        original = dict(stage['budget_usage'])
+        stage['budget_usage']['reserved_tokens'] += 1
+        stage_path.write_text(json.dumps(stage))
+        with self.assertRaises(ValueError):
+            audit_generation(**audit_args)
+        stage['budget_usage'] = original
         stage['counts']['novel_unverified'] = 9
         stage_path.write_text(json.dumps(stage))
         with self.assertRaises(ValueError):
