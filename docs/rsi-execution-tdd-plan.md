@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Generated example retention cycle
+
+Test a quarantined synthetic example record derived from a verified candidate:
+bind the source and parent task, require one valid generated output per source
+query input, preserve each input/output pair, and exclude private probe results.
+Reject changed source, changed parent grids and malformed generated outputs.
+Label outputs as generated, not ground truth, and leave training unauthorized.
+The mapping from these examples to actual SFT rows remains to be registered.
+
 ### MLX dataset loader audit cycle
 
 Test loading the quarantined artifact through an injected MLX-compatible local
