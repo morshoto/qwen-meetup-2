@@ -559,6 +559,13 @@ deltas. Sandbox counts remain local journal values and are not independently
 verified process or container evidence. Concurrent unrelated reservations
 cause reconciliation to fail rather than being attributed to the generation.
 
+Captured generation replay can also summarize server-reported prompt,
+completion and total tokens across all recorded attempts, including repairs.
+It joins usage to raw responses and keeps partial or missing coverage explicit.
+Fixture runs covered complete and absent usage and rejected an altered ledger.
+These counts are not independently metered, monetary cost remains unknown, and
+the audit's sandbox replay is separate from the recorded collection budget.
+
 ### Comparison budget accounting
 
 Completed comparison records now bind before-and-after shared budget counters;
