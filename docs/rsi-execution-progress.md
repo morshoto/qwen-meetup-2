@@ -104,3 +104,13 @@ solve different test inputs. Infrastructure errors stop evaluation. These are
 fixture-tested primitives, not a matched model comparison: model and adapter
 identity, registered seeds, shared comparison budget, frozen outcomes and run
 provenance must still be implemented and audited.
+
+### Frozen paired comparison
+
+A local comparison record can freeze 200 task outcomes for the parent and
+candidate, with distinct per-sample seeds matched across arms and adapter IDs.
+The summary reads a digest-checked frozen record before the paired bootstrap;
+missing task coverage is reported without a score. The record contains
+caller-supplied outcomes and asserted settings, so the resulting interval is
+descriptive and cannot establish model improvement without independently
+authenticated execution and scoring. No model comparison has been run.
