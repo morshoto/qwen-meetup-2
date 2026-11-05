@@ -35,7 +35,7 @@ class SlotTransportTests(unittest.TestCase):
                 self.server.requests.append(request)
                 seed = json.loads(request)['seed']
                 code = self.server.codes.get(seed) or self.server.override_code or [FAKE_PROGRAMS[2], FAKE_PROGRAMS[1]][len(self.server.requests) - 1]
-                raw = json.dumps({'model': MODEL, 'thinking_mode': 'off',
+                raw = json.dumps({'model': self.server.response_model, 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
                     'choices': [{'message': {'role': 'assistant', 'content': code}, 'finish_reason': self.server.finish_reason}]}).encode()
                 self.send_response(200)
@@ -45,6 +45,7 @@ class SlotTransportTests(unittest.TestCase):
             def log_message(self, *args):
                 pass
         self.server = HTTPServer(('127.0.0.1', 0), Handler)
+        self.server.response_model = MODEL
         self.server.requests = []
         self.server.finish_reason = 'stop'
         self.server.override_code = None
@@ -56,6 +57,33 @@ class SlotTransportTests(unittest.TestCase):
         self.addCleanup(self.server.shutdown)
         self.transport = CapturedSlotTransport(base_url=f'http://127.0.0.1:{self.server.server_port}/v1',
             log_path=self.root / 'requests.jsonl', request_capture_path=self.root / 'raw.jsonl', max_request_seconds=2)
+
+    def test_32b_collected_fixture_replays_only_for_32b(self):
+        self.server.response_model = 'mlx-community/Qwen3-32B-4bit'
+        transport = CapturedSlotTransport(base_url=f'http://127.0.0.1:{self.server.server_port}/v1',
+            log_path=self.root/'requests.jsonl', request_capture_path=self.root/'raw.jsonl',
+            max_request_seconds=2, model_key='32b')
+        ids = [f'task-{i:02}' for i in range(20)]
+        task = Task(ids[0], (([[1, 2]], [[2, 1]]),), ([[3, 4]],))
+        public, private = _quality_grids(42, 5), _quality_grids(43, 5)
+        budget = CollectionBudget.create(self.root, registration_sha256='a'*64, generation=0)
+        common = dict(task_ids=ids, task=task, generation=0, slot=0, expected_manifest_sha256=manifest_sha256(ids),
+            expected_task_sha256=task_sha256(task), public_probes=public, private_probes=private,
+            expected_public_probes_sha256=probes_sha256(public), expected_private_probes_sha256=probes_sha256(private),
+            reference_pool=[], sandbox=FakeE6Sandbox())
+        result = collect_slot(root=self.root, registration_sha256='a'*64, transport=transport, budget=budget, **common)
+        captures = [json.loads(x) for x in (self.root/'raw.jsonl').read_text().splitlines()]
+        ledger = [json.loads(x) for x in (self.root/'requests.jsonl').read_text().splitlines()]
+        responses = [json.loads(x) for x in (self.root/'llm_responses.jsonl').read_text().splitlines()]
+        args = dict(evidence_bytes=(self.root/'g0-slot-00.collection.json').read_bytes(),
+                    evidence_sha256=result['evidence_sha256'], request_records=captures,
+                    response_records=responses, ledger_records=ledger, **common)
+        self.assertEqual(audit_collected_slot(**args,model_key='32b')['status'], 'captured_slot_consistent')
+        draft = make_capture_draft(**args, model_key='32b', parent_adapter='none')
+        self.assertEqual(draft['provenance']['model_id'], self.server.response_model)
+        self.assertFalse(draft['eligible_for_training'])
+        with self.assertRaises(ValueError): audit_collected_slot(**args, model_key='14b')
+        with self.assertRaises(ValueError): make_capture_draft(**args, model_key='14b',parent_adapter='none')
 
     def test_collector_reaches_fixture_server_with_exact_schedule(self):
         ids = [f'task-{i:02}' for i in range(20)]
