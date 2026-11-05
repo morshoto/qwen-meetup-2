@@ -88,6 +88,14 @@ class GenerationAuditTests(unittest.TestCase):
         self.assertFalse(report['training_allowed'])
         saved = json.loads((self.root / 'g0.stage.drafts.json').read_text())
         self.assertEqual(len(saved['drafts']), 9)
+        self.assertEqual(len(saved['synthetic_examples']), 9)
+        for draft, record in zip(saved['drafts'], saved['synthetic_examples']):
+            self.assertEqual(record['parent_task_id'], draft['parent_task_id'])
+            self.assertEqual(record['source_sha256'], draft['source_sha256'])
+            self.assertEqual(record['request_id'], draft['provenance']['request_id'])
+            self.assertEqual(record['slot_evidence_sha256'], draft['provenance']['slot_evidence_sha256'])
+            self.assertEqual(len(record['examples']), 1)
+            self.assertFalse(record['training_allowed'])
         self.assertTrue(all(row['provenance']['execution_mode'] == 'unverified_capture' for row in saved['drafts']))
         self.assertNotIn('query_outputs', json.dumps(saved))
         with self.assertRaises(ValueError):
