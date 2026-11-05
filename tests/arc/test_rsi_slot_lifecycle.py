@@ -2,6 +2,8 @@
 import json
 import os
 import stat
+import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -89,6 +91,16 @@ class SlotLifecycleTests(unittest.TestCase):
             claim_slot(self.root, registration_sha256=REG, generation=0, slot=0)
         self.assertEqual(observe_slot(self.root, registration_sha256=REG, generation=0, slot=0)['status'],
                          'started_outcome_uncertain')
+
+    def test_separate_processes_cannot_claim_the_same_slot(self):
+        code = ('import sys; from src.arc.rsi_slot_lifecycle import claim_slot\n'
+                'try:\n claim_slot(sys.argv[1], registration_sha256="a"*64, generation=0, slot=0)\n'
+                'except FileExistsError:\n sys.exit(17)\n')
+        workers = [subprocess.Popen([sys.executable, '-c', code, str(self.root)],
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+                   for _ in range(2)]
+        outcomes = [worker.communicate(timeout=10) for worker in workers]
+        self.assertEqual(sorted(worker.returncode for worker in workers), [0, 17], outcomes)
 
 
 if __name__ == '__main__':
