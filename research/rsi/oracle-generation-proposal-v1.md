@@ -52,7 +52,7 @@ Per model, per generation: ten task slots, at most three attempts per slot,
 32 model calls including two setup canaries, 200,000 reserved tokens, 300
 sandbox starts and 3,600 seconds. Use the existing schedule and seeds only
 once a new model-specific execution registration has frozen them. No unused
-budget transfers to the other model or stage. These limits are ceilings, not
+budget transfers to the other model or stage. The recorded reference preparation consumes ten starts and its elapsed time from these limits; the setup index remains independently unverified. These limits are ceilings, not
 proof that five candidates can be collected within them.
 
 The 14B and 32B runs require separate model identity, dependency, budget and

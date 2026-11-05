@@ -39,7 +39,7 @@
   ],
   "parent_adapter": "none",
   "provisional_behavior_reference": {
-    "accounting": "initialize generation zero budget with the indexed ten starts; require matching model, setup digest and reference pool at collection and replay",
+    "accounting": "initialize generation zero budget with the indexed ten starts and recorded elapsed seconds; require matching model, setup digest and reference pool at collection and replay",
     "eligible_for_training": false,
     "independently_verified": false,
     "local_result_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-legacy-reference-preparation-20261106-v1/14b/result.json",
@@ -181,7 +181,7 @@
     "research/rsi/exploratory-split-proposal.json": "68ef1fc9c0c081d8f90e08506a4fcbdd795715315e01736da277314c216892de",
     "research/rsi/oracle-generation-proposal-v1.md": "9f6917ef83962b282bc89a58f54458868c5869e3a24221f1a3b6491bf7d843a4",
     "src/arc/rsi_candidate.py": "8f44ccf239bc2af79fde0583eae3bcdd8efc9c189f19f8e0643524b3cbd0cce6",
-    "src/arc/rsi_collection_budget.py": "256bd233d3f9a4f089c062c7c7da02fc57a0c95753f91ae04e184558b2c16d3a",
+    "src/arc/rsi_collection_budget.py": "902807196aaf44b18e0b5b2a258276af0c0cbb17fa93abbb4a8ff83775be32d3",
     "src/arc/rsi_collection_contract.py": "a33e725e9c73c659ab5e9ba0637edb65caca8ef841eeedb155a423c16e54d711",
     "src/arc/rsi_generation_audit.py": "146c52ede52467fdc83960cc66a0c58a0496a36425f00f91ff55457c20863ba8",
     "src/arc/rsi_generation_drafts.py": "39077b48dd4fd818b2281b8cd55beba4704d96c399031a1f717f7e0871d51f90",
