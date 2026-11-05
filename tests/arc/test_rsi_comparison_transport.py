@@ -29,7 +29,7 @@ class ComparisonTransportTests(unittest.TestCase):
                 self.server.requests.append(self.rfile.read(int(self.headers['Content-Length'])))
                 raw = json.dumps({'model': MODEL, 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
-                    'choices': [{'message': {'role': 'assistant', 'content': self.server.content}, 'finish_reason': self.server.finish_reason}]}).encode()
+                    'choices': [{'message': {'role': 'assistant', 'content': self.server.content}, 'finish_reason': ('length' if self.server.truncate_first and len(self.server.requests) == 1 else self.server.finish_reason)}]}).encode()
                 self.send_response(200)
                 self.send_header('Content-Length', str(len(raw)))
                 self.end_headers()
@@ -39,6 +39,7 @@ class ComparisonTransportTests(unittest.TestCase):
         self.server = HTTPServer(('127.0.0.1', 0), Handler)
         self.server.requests = []
         self.server.content, self.server.finish_reason = CODE, 'stop'
+        self.server.truncate_first = False
         self.worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.worker.start()
         self.addCleanup(self.server.server_close)
@@ -62,6 +63,7 @@ class ComparisonTransportTests(unittest.TestCase):
         self.assertEqual([json.loads(raw)['seed'] for raw in self.server.requests], [1024, 1024])
 
     def test_full_comparison_captures_join_and_replay(self):
+        self.server.truncate_first = True
         ids = [f'task-{i:03}' for i in range(200)]
         tasks = {key: Task(key, (([[1], [2]], [[2], [1]]),), ([[3], [4]],)) for key in ids}
         verifier = Verifier({key: [[[4], [3]]] for key in ids})
@@ -71,6 +73,8 @@ class ComparisonTransportTests(unittest.TestCase):
             tasks=tasks, seeds=seeds, parent_adapter='none', candidate_adapter='b' * 64,
             generate=self.transport, sandbox=FakeE6Sandbox(), verifier=verifier, budget=budget)
         self.assertEqual(result['status'], 'frozen_unverified')
+        first = json.loads((self.root / 'comparison-000-parent.json').read_text())
+        self.assertEqual(first['result']['sample_statuses'][0], 'invalid_model_output')
         report = audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
                                            sandbox=FakeE6Sandbox(), verifier=verifier)
         self.assertEqual(report['checked_requests'], 800)
