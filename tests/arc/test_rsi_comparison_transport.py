@@ -115,6 +115,14 @@ class ComparisonTransportTests(unittest.TestCase):
         self.assertIsNone(second['code'])
         self.assertNotEqual(first['request_id'], second['request_id'])
         self.assertEqual(len((self.root / 'parent.responses' / 'llm_responses.jsonl').read_text().splitlines()), 2)
+        ledgers = [json.loads(line) for line in (self.root / 'parent.responses' / 'requests.jsonl').read_text().splitlines()]
+        responses = [json.loads(line) for line in (self.root / 'parent.responses' / 'llm_responses.jsonl').read_text().splitlines()]
+        captures = [json.loads(line) for line in (self.root / 'parent.capture.jsonl').read_text().splitlines()]
+        for index in range(2):
+            outcome = audit_transport(base64.b64decode(captures[index]['body_base64']),
+                base64.b64decode(responses[index]['raw_http_body_base64']), ledgers[index],
+                expected_prompt='prompt', expected_code=None, expected_seed=index + 1, expected_invalid=True)
+            self.assertEqual(outcome['status'], 'transport_invalid_model_output')
 
     def test_invalid_route_or_seed_fails_before_dispatch(self):
         with self.assertRaises(ValueError):
