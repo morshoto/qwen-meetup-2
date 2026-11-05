@@ -1,0 +1,23 @@
+{
+  "ast_sha256": "93919ff3bcd5e2b21e5220cd204da4496846f4b789fe19b2d2b5d55ef0cedeb3",
+  "candidate_code_executed": false,
+  "candidate_index_sha256": "a7d46234ec80fc1c1997d5bd64ce7bc21d303dc1ee7c196ac45b38c26aeec7a5",
+  "comparison": "e9 record equals E8 record after removing verifier-only field",
+  "e8_slot_result_sha256": "2ab78e9a36a524dd81f53e255da45f75eef9a38aa530ec180d09439d4602bb12",
+  "e9_existing_oracles_sha256": "e2736cf0a35b4d688a591bfc9f7606d7ff33460f7d3207ebe61f38183a5980e6",
+  "eligible_for_training": false,
+  "independently_verified_for_new_protocol": false,
+  "limitations": [
+    "exact source and AST checks do not establish semantic novelty",
+    "historical synthetic task ancestry is not an ARC generation task identity",
+    "new private-probe behavior and independent provenance review remain outstanding"
+  ],
+  "model_dispatch": false,
+  "model_id": "mlx-community/Qwen3-14B-4bit",
+  "model_key": "14b",
+  "model_revision": "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+  "private_behavior_for_proposed_probes": "not_evaluated",
+  "record_task_id": "e6f-ec953e3f7a995bc18508fa3c",
+  "source_sha256": "02491e2004c406ea4543ecdba1a7422ed47f0ac3ce7fcfe5a4d9ec6bd89f84af",
+  "status": "historical_static_reference_unverified"
+}
