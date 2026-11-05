@@ -5,16 +5,16 @@ from unittest.mock import patch
 from src.arc.rsi_model_identity import snapshot_model_manifest
 from src.arc.rsi_registered_model import verify_registered_model
 from src.arc.rsi_registration import prepare_draft_registration
-from tests.arc.test_rsi_model_identity import ModelIdentityTests
-from tests.arc.test_rsi_registration import DraftRegistrationTests
+import tests.arc.test_rsi_model_identity as model_fixtures
+import tests.arc.test_rsi_registration as registration_fixtures
 
 
 class RegisteredModelTests(unittest.TestCase):
     def setUp(self):
-        self.reg_fixture = DraftRegistrationTests('test_draft_binds_inputs_schedule_and_remains_non_authorizing')
+        self.reg_fixture = registration_fixtures.DraftRegistrationTests('test_draft_binds_inputs_schedule_and_remains_non_authorizing')
         self.reg_fixture.setUp()
         self.addCleanup(self.reg_fixture.doCleanups)
-        self.model_fixture = ModelIdentityTests('test_manifest_binds_every_file_and_template')
+        self.model_fixture = model_fixtures.ModelIdentityTests('test_manifest_binds_every_file_and_template')
         self.model_fixture.setUp()
         self.addCleanup(self.model_fixture.doCleanups)
         self.root = self.reg_fixture.root
