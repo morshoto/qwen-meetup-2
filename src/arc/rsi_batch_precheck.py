@@ -5,6 +5,8 @@ import re
 
 from src.arc.ast_fingerprint import stable_ast_sha256
 
+from src.arc.rsi_model_identity import _MODELS
+
 _MODEL = 'mlx-community/Qwen3-14B-4bit'
 _REVISION = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
 _HASH = re.compile(r'^[0-9a-f]{64}$')
@@ -20,8 +22,11 @@ def _has_private_payload(value) -> bool:
 
 
 def precheck_batch(drafts: list[dict], *, generation: int, parent_adapter: str,
-                   allowed_tasks: set[str]) -> dict:
+                   allowed_tasks: set[str], model_key: str = '14b') -> dict:
     """Reject structural conflicts; all valid drafts still require independent audit."""
+    if not isinstance(model_key, str) or model_key not in _MODELS:
+        raise ValueError('unsupported model identity')
+    model, revision = _MODELS[model_key]
     if (not isinstance(drafts, list) or type(generation) is not int or generation not in (0, 1) or
             (generation == 0 and parent_adapter != 'none') or
             (generation == 1 and (not isinstance(parent_adapter, str) or not _HASH.fullmatch(parent_adapter))) or
@@ -44,7 +49,7 @@ def precheck_batch(drafts: list[dict], *, generation: int, parent_adapter: str,
                 not isinstance(task, str) or task not in allowed_tasks or
                 draft.get('mask_prompt') is not True or draft.get('loss_target') != 'assistant_completion_only' or
                 not isinstance(provenance, dict) or provenance.get('source_type') != 'generator_distillation' or
-                provenance.get('model_id') != _MODEL or provenance.get('model_revision') != _REVISION or
+                provenance.get('model_id') != model or provenance.get('model_revision') != revision or
                 provenance.get('execution_mode') != 'live_model' or
                 not isinstance(provenance.get('request_id'), str) or not provenance['request_id'] or
                 not isinstance(messages, list) or len(messages) != 3 or

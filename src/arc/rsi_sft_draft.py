@@ -7,19 +7,24 @@ from src.arc.data import Task
 from src.arc.e5_selfplay import solve_prompt
 from src.arc.prompting import FINAL_ANSWER_SYSTEM_PROMPT
 
+from src.arc.rsi_model_identity import _MODELS
+
 _MODEL = 'mlx-community/Qwen3-14B-4bit'
 _REVISION = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
 _HASH = re.compile(r'^[0-9a-f]{64}$')
 
 
 def make_sft_draft(task: Task, code: str, candidate: dict, novelty: dict,
-                   provenance: dict, *, generation: int, parent_adapter: str) -> dict:
+                   provenance: dict, *, generation: int, parent_adapter: str, model_key: str = '14b') -> dict:
+    if not isinstance(model_key, str) or model_key not in _MODELS:
+        raise ValueError('unsupported model identity')
+    model, revision = _MODELS[model_key]
     if (type(generation) is not int or generation not in (0, 1) or
             (generation == 0 and parent_adapter != 'none') or
             (generation == 1 and (not isinstance(parent_adapter, str) or not _HASH.fullmatch(parent_adapter)))):
         raise ValueError('invalid generation parent adapter')
     if (not isinstance(provenance, dict) or provenance.get('source_type') != 'generator_distillation' or
-            provenance.get('model_id') != _MODEL or provenance.get('model_revision') != _REVISION or
+            provenance.get('model_id') != model or provenance.get('model_revision') != revision or
             provenance.get('execution_mode') not in {'fake_fixture', 'unverified_capture', 'live_model'} or
             not isinstance(provenance.get('request_id'), str) or not provenance['request_id'] or
             not isinstance(provenance.get('raw_response_sha256'), str) or

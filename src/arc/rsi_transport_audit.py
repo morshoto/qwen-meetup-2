@@ -10,6 +10,8 @@ import math
 from src.arc.http_backend import BackendError, final_answer
 from src.arc.prompting import FINAL_ANSWER_SYSTEM_PROMPT
 
+from src.arc.rsi_model_identity import _MODELS
+
 _MODEL = 'mlx-community/Qwen3-14B-4bit'
 _REVISION = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
 
@@ -35,7 +37,10 @@ def _json_object(raw: bytes) -> dict:
 
 def audit_transport(request_body: bytes, response_body: bytes, ledger: dict, *,
                     expected_prompt: str, expected_code: str | None, expected_seed: int,
-                    expected_invalid: bool = False) -> dict:
+                    expected_invalid: bool = False, model_key: str = '14b') -> dict:
+    if not isinstance(model_key, str) or model_key not in _MODELS:
+        raise ValueError('unsupported model identity')
+    model, revision = _MODELS[model_key]
     if (not isinstance(request_body, bytes) or not 1 <= len(request_body) <= 1024 * 1024 or
             not isinstance(response_body, bytes) or not 1 <= len(response_body) <= 4 * 1024 * 1024 or
             not isinstance(ledger, dict) or not isinstance(expected_prompt, str) or not expected_prompt or
@@ -47,7 +52,7 @@ def audit_transport(request_body: bytes, response_body: bytes, ledger: dict, *,
     req_hash = hashlib.sha256(request_body).hexdigest()
     resp_hash = hashlib.sha256(response_body).hexdigest()
     if (ledger.get('request_body_sha256') != req_hash or ledger.get('response_sha256') != resp_hash or
-            ledger.get('model') != _MODEL or ledger.get('revision') != _REVISION or
+            ledger.get('model') != model or ledger.get('revision') != revision or
             ledger.get('seed_requested') != expected_seed or ledger.get('thinking_mode_effective') != 'off' or
             (ledger.get('error') is not None and
              (not expected_invalid or ledger.get('error') != {'kind': 'malformed_thinking'})) or
@@ -58,7 +63,7 @@ def audit_transport(request_body: bytes, response_body: bytes, ledger: dict, *,
     allowed = {'model', 'messages', 'temperature', 'max_tokens', 'seed', 'stream',
                'thinking_mode', 'deadline_monotonic'}
     deadline = request.get('deadline_monotonic')
-    if (set(request) != allowed or request.get('model') != _MODEL or
+    if (set(request) != allowed or request.get('model') != model or
             request.get('messages') != [{'role': 'system', 'content': FINAL_ANSWER_SYSTEM_PROMPT},
                                         {'role': 'user', 'content': expected_prompt}] or
             type(request.get('temperature')) not in (int, float) or request['temperature'] != 0.2 or
@@ -68,7 +73,7 @@ def audit_transport(request_body: bytes, response_body: bytes, ledger: dict, *,
             type(deadline) not in (int, float) or not math.isfinite(deadline)):
         raise ValueError('captured request differs from slot configuration')
     response = _json_object(response_body)
-    if (response.get('model') != _MODEL or response.get('thinking_mode') != 'off' or
+    if (response.get('model') != model or response.get('thinking_mode') != 'off' or
             response.get('thinking_control') != 'tokenizer_template_canary_passed'):
         raise ValueError('captured response model or thinking control differs')
     choices = response.get('choices')
