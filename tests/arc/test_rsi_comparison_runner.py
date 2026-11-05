@@ -87,6 +87,17 @@ class ComparisonRunnerTests(unittest.TestCase):
         saved = json.loads((self.root / 'comparison-000-parent.json').read_text())
         self.assertEqual(saved['result']['sample_request_ids'], ['1' * 32, '2' * 32])
 
+    def test_invalid_completion_is_recorded_and_next_sample_runs(self):
+        self.generate.side_effect = [{'code': None, 'request_id': '1' * 32, 'failure': 'invalid_model_output'},
+                                     {'code': FAKE_PROGRAMS[1], 'request_id': '2' * 32},
+                                     TimeoutError('fixture stop')]
+        outcome = self.run_comparison()
+        self.assertEqual(outcome['status'], 'incomplete')
+        saved = json.loads((self.root / 'comparison-000-parent.json').read_text())
+        self.assertEqual(saved['result']['sample_statuses'], ['invalid_model_output', 'accepted'])
+        self.assertEqual(saved['result']['sample_request_ids'], ['1' * 32, '2' * 32])
+        self.assertTrue(saved['score']['solved'])
+
     def test_duplicate_request_id_stops_before_saving_task(self):
         self.generate.side_effect = [{'code': FAKE_PROGRAMS[1], 'request_id': '1' * 32}] * 2
         outcome = self.run_comparison()
