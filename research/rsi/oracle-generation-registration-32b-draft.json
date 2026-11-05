@@ -6,7 +6,7 @@
   "generation": 0,
   "generation_content_manifest_sha256": "b6e48da59bbccc499c0d24f855383661ad118d934b19de435e9ddba3e4be3d2c",
   "generation_id_manifest_sha256": "811147b2fbcb79886d5d9b256e5fdf50eeb25966df86ee12ea931149a8c882c1",
-  "historical_behavior_on_proposed_probes": "not_evaluated",
+  "historical_behavior_on_proposed_probes": "local_preparation_unverified",
   "historical_candidate_policy": "duplicate_reference_only_pending_decision",
   "historical_static_reference": "research/rsi/audits/historical-candidates/32b-static-reference.json",
   "independent_review_completed": false,
@@ -34,9 +34,19 @@
     "independently review and freeze exact probe files and sandbox runtime",
     "freeze full source runtime model and reference pool dependencies",
     "bind and independently audit model specific run and budget",
-    "separate execution authorization"
+    "separate execution authorization",
+    "independently audit reference preparation and account its ten sandbox starts against the generation cap"
   ],
   "parent_adapter": "none",
+  "provisional_behavior_reference": {
+    "eligible_for_training": false,
+    "independently_verified": false,
+    "local_result_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-legacy-reference-preparation-20261106-v1/32b/result.json",
+    "local_result_sha256": "1edddd620cfa60b143ea9e5d1393943f2b856513f13330dd62426091f4073075",
+    "pool_sha256": "b767d6ccb5b28b53a6c3dcc36f95be384fc53ea924ed610772c8faec3177899a",
+    "review_index": "research/rsi/audits/historical-candidates/32b-behavior-reference.json",
+    "sandbox_starts_in_preparation": 10
+  },
   "provisional_legacy_reference_method": "build_legacy_duplicate_reference; synthetic identity retained; behavior not yet evaluated",
   "provisional_probe_candidates": {
     "private": {
@@ -161,6 +171,7 @@
   ],
   "source_sha256": {
     "research/rsi/audits/allocation-review.json": "435db21430293e904f4c0074468a6bcfc953cfb4ad49beeb6bbaebc87468b024",
+    "research/rsi/audits/historical-candidates/32b-behavior-reference.json": "d0a7d2daba8349fe7c17cd2b1db8832eee3796703fd9f3551b35a75e3a588771",
     "research/rsi/audits/historical-candidates/32b-static-reference.json": "df2c358c7bfcc328521013bf87e4e6e2d2920a51f6644dcd4ad9bf069cb73fd8",
     "research/rsi/audits/historical-candidates/32b.json": "84fcc3aefe8203994ffa2feb139d62a8c7bd78ec45b2dbf90e9f3a7e1367000f",
     "research/rsi/audits/oracle-probe-candidates-20261106-v1.json": "dc3e2f7349b41a4fd32d5106fd21580b59aae5818ef60ba3c53765242414750e",
