@@ -710,3 +710,10 @@ bounded-history and selection digests, verifies all 317 known exposures remain
 in generation, and checks exact prompt-content uniqueness across all tasks.
 Record hashes and uncertainty without freezing the split or claiming an
 independent review. Reject modified, overlapping or hidden-label input.
+
+### Version 4 separate-canary design chain
+
+Test the prospective v4 design hash chain through v3, v2 and v1. Preserve the
+750/50/200 draft binding and explicitly retain the new-only strict Oracle gate;
+a design registration must not authorize a canary, training or evaluation.
+Reject changed documents, missing policy fields and altered targets.
