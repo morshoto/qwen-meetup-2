@@ -9,6 +9,7 @@ from src.arc.data import Task
 from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_collection_budget import CollectionBudget
+from src.arc.rsi_generation_budget_draft import prepare_draft_generation_budget
 from src.arc.rsi_generation_stage import collect_generation
 from src.arc.rsi_generation_outcomes import summarize_incomplete_generation
 from src.arc.rsi_lineage_audit import probes_sha256
@@ -116,6 +117,38 @@ class GenerationStageTests(unittest.TestCase):
         self.assertEqual(start['reference_model_key'],'14b')
         self.assertLessEqual(result['budget_after']['sandbox_runs'],300)
         self.assertFalse(result['training_allowed'])
+
+    def test_draft_budget_connects_to_generation_for_each_model(self):
+        repo = Path(__file__).resolve().parents[2]
+        for key in ('14b', '32b'):
+            with self.subTest(model=key), tempfile.TemporaryDirectory() as root:
+                self.root = Path(root)
+                self.transport = Mock(return_value=FAKE_PROGRAMS[1])
+                self.pool = [{'source_sha256':'a'*64, 'ast_sha256':'b'*64, 'behavior_sha256':'c'*64,
+                              'probe_set_sha256':probes_sha256(self.private)}]
+                pool_sha = hashlib.sha256(json.dumps(self.pool, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+                index = f'research/rsi/audits/historical-candidates/{key}-behavior-reference.json'
+                reference = json.loads((repo/index).read_bytes())
+                reference.update(pool_sha256=pool_sha, probe_set_sha256=probes_sha256(self.private))
+                ref_bytes = json.dumps(reference, sort_keys=True).encode()
+                ref_sha = hashlib.sha256(ref_bytes).hexdigest()
+                draft = json.loads((repo/f'research/rsi/oracle-generation-registration-{key}-draft.json').read_bytes())
+                draft['source_sha256'][index] = ref_sha
+                draft['provisional_behavior_reference']['pool_sha256'] = pool_sha
+                draft['provisional_probe_candidates']['private']['canonical_probe_sha256'] = probes_sha256(self.private)
+                draft_bytes = json.dumps(draft, sort_keys=True).encode()
+                draft_sha = hashlib.sha256(draft_bytes).hexdigest()
+                prepared = prepare_draft_generation_budget(root=self.root, registration_bytes=draft_bytes,
+                    expected_registration_sha256=draft_sha, reference_bytes=ref_bytes)
+                self.budget = prepared['budget']
+                result = self.run_stage(registration_sha256=draft_sha, model_key=key,
+                                        expected_reference_setup_sha256=prepared['reference_setup_sha256'])
+                self.assertEqual(result['status'], 'generation_complete_unverified')
+                start = json.loads((self.root/'g0.stage.started.json').read_text())
+                self.assertEqual((start['reference_model_key'], start['reference_setup_sha256']), (key, ref_sha))
+                self.assertEqual(start['budget_before']['sandbox_runs'], 10)
+                self.assertFalse(prepared['execution_authorized'])
+                self.assertFalse(result['training_allowed'])
 
     def test_mismatched_inputs_fail_before_dispatch(self):
         for changes in ({'expected_reference_pool_sha256': 'f' * 64},
