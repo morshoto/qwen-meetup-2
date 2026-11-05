@@ -48,10 +48,13 @@ def collect_slot(*, root, registration_sha256, generation, slot, task_ids, task,
         tokens = 512 + len(json.dumps(messages, ensure_ascii=False).encode('utf-8')) + 1024
         budget.reserve_model(tokens, kind='generation')
         response = transport(prompt, seed=seed, timeout=budget.remaining())
-        request_id = None
+        request_id, invalid = None, False
         if isinstance(response, dict):
-            if set(response) != {'code', 'request_id'}:
+            if set(response) not in ({'code', 'request_id'}, {'code', 'request_id', 'failure'}):
                 raise ValueError('invalid transport response metadata')
+            invalid = 'failure' in response
+            if invalid and (response['failure'] != 'invalid_model_output' or response['code'] is not None):
+                raise ValueError('invalid collection failure marker')
             code, request_id = response['code'], response['request_id']
             if (not isinstance(request_id, str) or not re.fullmatch(r'[0-9a-f]{32}', request_id)
                     or request_id in request_ids):
@@ -59,20 +62,23 @@ def collect_slot(*, root, registration_sha256, generation, slot, task_ids, task,
             request_ids.add(request_id)
         else:
             code = response
-        if not isinstance(code, str) or len(code.encode('utf-8')) > 65536:
-            raise ValueError('transport response is not bounded source text')
-        source_hash = hashlib.sha256(code.strip().encode()).hexdigest()
-        if source_hash in seen:
-            status = 'repeated_code'
+        if invalid:
+            status = 'invalid_model_output'
         else:
-            seen.add(source_hash)
-            candidate = inspect_candidate(task, code, public_probes=public_probes,
-                                          private_probes=private_probes, sandbox=metered_sandbox)
-            status = candidate['status']
-            if status == 'verified_candidate':
-                novelty = screen_novelty(code, candidate['private_behavior_sha256'],
-                                         candidate['private_probe_set_sha256'], reference_pool)
-                status = novelty['status']
+            if not isinstance(code, str) or len(code.encode('utf-8')) > 65536:
+                raise ValueError('transport response is not bounded source text')
+            source_hash = hashlib.sha256(code.strip().encode()).hexdigest()
+            if source_hash in seen:
+                status = 'repeated_code'
+            else:
+                seen.add(source_hash)
+                candidate = inspect_candidate(task, code, public_probes=public_probes,
+                                              private_probes=private_probes, sandbox=metered_sandbox)
+                status = candidate['status']
+                if status == 'verified_candidate':
+                    novelty = screen_novelty(code, candidate['private_behavior_sha256'],
+                                             candidate['private_probe_set_sha256'], reference_pool)
+                    status = novelty['status']
         attempts.append({'seed': seed, 'prompt_sha256': hashlib.sha256(prompt.encode()).hexdigest(),
                          'source': code, 'status': status, 'request_id': request_id})
         if status not in _REPAIRABLE or attempt == 2:

@@ -2,6 +2,7 @@
 import math
 
 from src.arc.rsi_http_backend import CapturingBackend
+from src.arc.http_backend import BackendError
 
 _MODEL = 'mlx-community/Qwen3-14B-4bit'
 _REVISION = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
@@ -33,7 +34,20 @@ class CapturedSlotTransport:
             raise ValueError('invalid scheduled seed or remaining time')
         events = []
         backend = self._backend(min(timeout, self.max_request_seconds), events.append)
-        code = backend.generate(prompt, kind='e5_generator', candidate=seed - 12000)
+        try:
+            code = backend.generate(prompt, kind='e5_generator', candidate=seed - 12000)
+        except BackendError as exc:
+            if exc.kind != 'malformed_thinking':
+                raise
+            if len(events) != 1 or not isinstance(events[0].get('request_id'), str):
+                raise ValueError('request event is unavailable') from exc
+            if events[0].get('finish_reason') not in ('stop', 'length'):
+                raise BackendError('invalid_response', 'missing model completion status') from exc
+            return {'code': None, 'request_id': events[0]['request_id'], 'failure': 'invalid_model_output'}
         if len(events) != 1 or not isinstance(events[0].get('request_id'), str):
             raise ValueError('request event is unavailable')
+        if events[0].get('finish_reason') == 'length':
+            return {'code': None, 'request_id': events[0]['request_id'], 'failure': 'invalid_model_output'}
+        if events[0].get('finish_reason') != 'stop':
+            raise BackendError('invalid_response', 'missing model completion status')
         return {'code': code, 'request_id': events[0]['request_id']}

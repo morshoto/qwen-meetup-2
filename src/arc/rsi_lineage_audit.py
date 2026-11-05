@@ -44,21 +44,27 @@ def inspect_lineage(task_ids: list[str], task, *, generation: int, slot: int, at
         if not isinstance(attempt, dict) or not isinstance(attempt.get('ledger'), dict):
             raise ValueError('invalid attempt evidence')
         code = attempt.get('code')
+        invalid = attempt.get('invalid_model_output', False)
+        if type(invalid) is not bool:
+            raise ValueError('invalid completion marker')
         transport = audit_transport(attempt.get('request_body'), attempt.get('response_body'),
                                     attempt['ledger'], expected_prompt=prompt, expected_code=code,
-                                    expected_seed=selected['attempt_seeds'][index])
+                                    expected_seed=selected['attempt_seeds'][index], expected_invalid=invalid)
         request_id = transport['request_id']
         if request_id in seen_requests:
             raise ValueError('duplicate request identifier')
         seen_requests.add(request_id)
-        source_hash = hashlib.sha256(code.strip().encode()).hexdigest()
-        if source_hash in seen_sources:
-            status = 'repeated_code'
+        if invalid:
+            status = 'invalid_model_output'
         else:
-            seen_sources.add(source_hash)
-            inspected = inspect_candidate(task, code, public_probes=public_probes,
-                                          private_probes=private_probes, sandbox=sandbox)
-            status = inspected['status']
+            source_hash = hashlib.sha256(code.strip().encode()).hexdigest()
+            if source_hash in seen_sources:
+                status = 'repeated_code'
+            else:
+                seen_sources.add(source_hash)
+                inspected = inspect_candidate(task, code, public_probes=public_probes,
+                                              private_probes=private_probes, sandbox=sandbox)
+                status = inspected['status']
         statuses.append(status)
         if index < len(attempts) - 1:
             if status not in _REPAIRABLE:

@@ -74,7 +74,8 @@ def audit_collected_slot(*, evidence_bytes, evidence_sha256, request_records, re
         if request.get('body_sha256') != hashlib.sha256(request_body).hexdigest():
             raise ValueError('request capture hash differs')
         replay.append({'code': attempt.get('source'), 'request_body': request_body,
-                       'response_body': response_body, 'ledger': ledger[request_id]})
+                       'response_body': response_body, 'ledger': ledger[request_id],
+                       'invalid_model_output': attempt.get('status') == 'invalid_model_output'})
         if index < len(attempts) - 1:
             prompt = task_repair_prompt(task, attempt.get('source'), attempt.get('status'))
     checked = inspect_lineage(task_ids, task, generation=generation, slot=slot, attempts=replay,
