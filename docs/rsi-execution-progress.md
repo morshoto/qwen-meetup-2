@@ -312,9 +312,19 @@ The current SFT preparation still uses the original visible demonstrations as
 the prompt and the generated program as the completion. It does not consume
 the retained generated query outputs. Thus the current quarantined MLX dataset
 does not implement training on those generated examples. A concrete synthetic
-task-to-SFT mapping must be designed and registered before it can be evaluated
+task-to-SFT mapping must be registered and audited before it can be evaluated
 or used for training; the existing fixture format check does not resolve this
 gap. No new model call or training occurred.
+
+One proposed mapping is now exercised in generation replay: move the first
+visible demonstration input to the synthetic task's query, retain other visible
+demonstrations, and add generated query pairs as demonstrations. The completion
+is the generating program. Repeated inputs are recorded as mapping rejections
+to avoid revealing the held-out query in a demonstration. The resulting rows
+are in the local stage artifact with `training_allowed: false`; they are not
+connected to the current training preparation or registered as the experiment's
+method. The example and source bindings are locally supplied consistency checks,
+not proof that a particular model generated the labels or that they are correct.
 
 ### Local runtime identity observation
 
