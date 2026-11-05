@@ -688,3 +688,10 @@ verifier, joining each saved request ID to captured request, response and ledger
 bytes. Reject altered task records, scores, usage, missing captures, incomplete
 runs and budget mismatches. A successful replay remains local consistency
 evidence, not independent process attestation or an improvement claim.
+
+### Exploratory content separation
+
+Test exact prompt-content separation among all three proposed partitions,
+including distinct IDs carrying identical task content. Bind content manifests
+to the exploratory registration draft. Exact checks do not establish semantic
+independence, historical provenance, or a final reviewed registration.
