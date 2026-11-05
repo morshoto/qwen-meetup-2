@@ -1,8 +1,10 @@
 import tempfile
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from src.arc.prompting import system_prompt_for_kind
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_collection_contract import ContractCheckedSlotTransport
 from src.arc.rsi_slot_transport import CapturedSlotTransport
@@ -16,6 +18,8 @@ class CollectionContractTests(unittest.TestCase):
         self.budget = CollectionBudget.create(self.root, registration_sha256='a' * 64, generation=0)
         self.transport = CapturedSlotTransport(base_url='http://127.0.0.1:10001/v1',
             log_path=self.root / 'requests.jsonl', request_capture_path=self.root / 'raw.jsonl', max_request_seconds=2)
+        self.reservation = 512 + len(json.dumps([{'role': 'system', 'content': system_prompt_for_kind('e5_generator')},
+                                                   {'role': 'user', 'content': 'prompt'}], ensure_ascii=False).encode()) + 1024
         self.contract = {'ledger_id': '1' * 32, 'token_limit': 200000, 'reserved_tokens': 0}
 
     def check_contract(self, url, model, revision, total_tokens, max_new_tokens, timeout, thinking, **kwargs):
@@ -37,7 +41,7 @@ class CollectionContractTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 wrapped('prompt', seed=12000, timeout=1)
             dispatch.assert_not_called()
-            self.budget.reserve_model(2000, kind='generation')
+            self.budget.reserve_model(self.reservation, kind='generation')
             result = wrapped('prompt', seed=12000, timeout=1)
             self.assertEqual(result['request_id'], 'b' * 32)
             dispatch.assert_called_once()
@@ -48,15 +52,27 @@ class CollectionContractTests(unittest.TestCase):
     def test_ledger_drift_and_server_overspend_stop_dispatch(self, verify):
         verify.side_effect = self.check_contract
         wrapped = self.wrap()
-        self.budget.reserve_model(2000, kind='generation')
+        self.budget.reserve_model(self.reservation, kind='generation')
         self.contract['ledger_id'] = '2' * 32
         with patch.object(CapturedSlotTransport, '__call__') as dispatch:
             with self.assertRaises(ValueError):
                 wrapped('prompt', seed=12000, timeout=1)
             self.contract['ledger_id'] = '1' * 32
-            self.contract['reserved_tokens'] = 2001
+            self.contract['reserved_tokens'] = self.reservation + 1
             with self.assertRaises(ValueError):
                 wrapped('prompt', seed=12000, timeout=1)
+            dispatch.assert_not_called()
+
+    @patch('src.arc.rsi_collection_contract.verify_guarded_contract')
+    def test_wrong_reservation_or_seed_cannot_dispatch(self, verify):
+        verify.side_effect = self.check_contract
+        wrapped = self.wrap()
+        self.budget.reserve_model(self.reservation - 1, kind='generation')
+        with patch.object(CapturedSlotTransport, '__call__') as dispatch:
+            with self.assertRaises(ValueError):
+                wrapped('prompt', seed=12000, timeout=1)
+            with self.assertRaises(ValueError):
+                wrapped('prompt', seed=12100, timeout=1)
             dispatch.assert_not_called()
 
     @patch('src.arc.rsi_collection_contract.verify_guarded_contract')
