@@ -89,7 +89,7 @@ def _timed_sample(sampler, pid: int, timeout: float):
 def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
                         timeout_seconds: float, interval_seconds: float = 1.0,
                         sample_timeout_seconds: float = 1.0,
-                        terminate_grace_seconds: float = 1.0) -> dict:
+                        terminate_grace_seconds: float = 1.0, health_sampler=None) -> dict:
     """Monitor a child that is its own session leader, stopping its process group.
 
     The function requires POSIX waitid/WNOWAIT to retain the child's identity
@@ -98,6 +98,7 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
     """
     numeric = (timeout_seconds, interval_seconds, sample_timeout_seconds, terminate_grace_seconds)
     if (not isinstance(process, subprocess.Popen) or process.returncode is not None or not callable(sampler) or
+            (health_sampler is not None and not callable(health_sampler)) or
             any(type(x) not in (int, float) or not math.isfinite(x) or x <= 0 for x in numeric) or
             interval_seconds > 5 or sample_timeout_seconds > 5 or terminate_grace_seconds > 5 or
             not all(hasattr(os, name) for name in ('WEXITED', 'WNOHANG', 'WNOWAIT', 'P_PID', 'getsid'))):
@@ -136,6 +137,18 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
             stop_reason = training_resource_decision(baseline, samples)
             if stop_reason is not None:
                 break
+            if health_sampler is not None:
+                remaining = timeout_seconds - (time.monotonic() - start)
+                if remaining <= 0:
+                    stop_reason = 'wall_clock_limit'
+                    break
+                health = _timed_sample(health_sampler, process.pid, min(sample_timeout_seconds, remaining))
+                if not isinstance(health, dict) or health.get('status') not in ('ok', 'nonfinite_loss'):
+                    stop_reason = 'health_monitor_unavailable'
+                    break
+                if health['status'] == 'nonfinite_loss':
+                    stop_reason = 'nonfinite_loss'
+                    break
             if _exited_unreaped(process) is not None:
                 stop_reason = 'process_exited'
                 break
