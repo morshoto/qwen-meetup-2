@@ -1,10 +1,12 @@
 """Task-conditioned verification remains provisional until provenance audit."""
+import hashlib
 import unittest
 
 from src.arc.data import Task
 from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_candidate import inspect_candidate
+from src.arc.ast_fingerprint import stable_ast_sha256
 
 
 class RecordingSandbox(FakeE6Sandbox):
@@ -76,6 +78,12 @@ class CandidateTests(unittest.TestCase):
         other = inspect_candidate(self.task, self.code, public_probes=self.public,
                                   private_probes=_quality_grids(44, 5), sandbox=RecordingSandbox())
         self.assertNotEqual(result['private_probe_set_sha256'], other['private_probe_set_sha256'])
+
+    def test_passed_candidate_binds_exact_source_and_ast(self):
+        result = inspect_candidate(self.task, self.code, public_probes=self.public,
+                                   private_probes=self.private, sandbox=self.sandbox)
+        self.assertEqual(result['source_sha256'], hashlib.sha256(self.code.strip().encode()).hexdigest())
+        self.assertEqual(result['ast_sha256'], stable_ast_sha256(self.code))
 
 
 if __name__ == '__main__':
