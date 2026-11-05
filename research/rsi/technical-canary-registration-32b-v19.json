@@ -75,7 +75,9 @@
     "timeout_seconds": 300
   },
   "run_purpose": "single synthetic training step and independent adapter reload",
-  "status": "draft_technical_canary_registration_unverified",
+  "status": "draft_technical_canary_registration_superseded",
+  "superseded_by": "technical-canary-registration-32b-v20.json",
+  "superseded_reason": "source inventory changed for reference budget binding",
   "supersedes": "technical-canary-registration-32b-v18.json",
   "tiny_fixture_report_sha256": "fe228468064f2cd2f7bf518e93eb59526068fd4824e9f164025432e2b7ccac2f",
   "training_allowed": false,
