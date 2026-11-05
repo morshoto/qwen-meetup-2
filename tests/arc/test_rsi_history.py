@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from src.arc.rsi_history import audit_history
+from src.arc.rsi_history import audit_history, provisional_snapshot
 
 
 class HistoryAuditTests(unittest.TestCase):
@@ -50,6 +50,29 @@ class HistoryAuditTests(unittest.TestCase):
         with patch('src.arc.rsi_history.build_registry', side_effect=mutate):
             with self.assertRaisesRegex(ValueError, 'changed'):
                 audit_history(self.root, required_paths=[])
+
+    def test_snapshot_combines_legacy_and_current_exposure(self):
+        (self.root / 'data').mkdir()
+        (self.root / 'data/tasks.json').write_text(json.dumps({key: {} for key in 'abcdef'}))
+        registry = {'protocol': 'p3c_exploration_task_exclusions_v1', 'version': 1,
+                    'exclusions': {'d': ['old']}, 'task_ids': ['d']}
+        (self.root / 'configs/old.json').write_text(json.dumps(registry))
+        snapshot = provisional_snapshot(self.root, task_path='data/tasks.json',
+                                        registry_path='configs/old.json',
+                                        required_paths=[], development_size=2)
+        self.assertEqual(snapshot['partitions']['development'], ['e', 'f'])
+        self.assertEqual(snapshot['known_exposed_in_dataset'], 4)
+        self.assertEqual(snapshot['status'], 'provisional_not_preregistered')
+        self.assertFalse(snapshot['independence_established'])
+
+    def test_snapshot_rejects_invalid_legacy_registry(self):
+        (self.root / 'data').mkdir()
+        (self.root / 'data/tasks.json').write_text('{"a": {}, "b": {}}')
+        (self.root / 'configs/old.json').write_text('{}')
+        with self.assertRaises(ValueError):
+            provisional_snapshot(self.root, task_path='data/tasks.json',
+                                 registry_path='configs/old.json',
+                                 required_paths=[], development_size=1)
 
 
 if __name__ == '__main__':
