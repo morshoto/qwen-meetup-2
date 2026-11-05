@@ -11,6 +11,21 @@ from src.arc.rsi_training_preparation import _BLOCKERS, _MODEL, _REVISION
 from src.arc.rsi_transport_audit import _json_object
 
 
+def prepare_replayed_synthetic_training(*, expected_stage_sha256, seed, **inputs):
+    """Replay local generation before and after preparing unverified inputs."""
+    from src.arc.rsi_comparison_audit import _read
+    from src.arc.rsi_generation_drafts import audit_generation_drafts
+
+    audit_generation_drafts(expected_sha256=expected_stage_sha256, **inputs)
+    with _directory(inputs['root']) as directory:
+        raw, _ = _read(directory, f"g{inputs['generation']}.stage.drafts.json")
+    result = prepare_synthetic_training(root=inputs['root'], stage_bytes=raw,
+        expected_stage_sha256=expected_stage_sha256, tasks=inputs['tasks'], seed=seed)
+    audit_generation_drafts(expected_sha256=expected_stage_sha256, **inputs)
+    result['evidence_type'] = 'caller_supplied_capture_and_sandbox'
+    return result
+
+
 def prepare_synthetic_training(*, root, stage_bytes, expected_stage_sha256, tasks, seed):
     if (not isinstance(stage_bytes, bytes) or not 1 <= len(stage_bytes) <= 4 * 1024 * 1024 or
             not isinstance(expected_stage_sha256, str) or not re.fullmatch(r'[0-9a-f]{64}', expected_stage_sha256) or
