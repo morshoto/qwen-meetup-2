@@ -17,12 +17,12 @@ class CandidateHistoryTests(unittest.TestCase):
 
     def test_extracts_keys_and_ignores_unrelated_budgets(self):
         p = self.root / 'artifacts/a/budget.json'
-        p.write_text(json.dumps({'candidate_keys': ['A:deadbeef:0', 'B:12345678:2']}))
+        p.write_text(json.dumps({'candidate_keys': ['A:deadbeef:0', 'B:12345678:2', 'C:toy_003:0']}))
         (self.root / 'artifacts/budget.json').write_text('{"model_calls": 1}')
         result = audit_candidate_journals(self.root, {'deadbeef', '12345678'})
         self.assertEqual(result['task_ids'], ['12345678', 'deadbeef'])
         self.assertEqual(result['journal_count'], 1)
-        self.assertEqual(result['reservation_count'], 2)
+        self.assertEqual(result['reservation_count'], 3)
         self.assertEqual(result['budget_file_count'], 2)
 
     def test_rejects_malformed_and_duplicate_keys(self):
