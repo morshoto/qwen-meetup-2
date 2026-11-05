@@ -55,6 +55,22 @@ class ResearchProtocolTests(unittest.TestCase):
         self.assertTrue(split['requires_complete_history_audit'])
         self.assertFalse(split['independence_established'])
 
+    def test_proposed_generation_pins_model_and_attempt_schedule(self):
+        generation = self.protocol['proposed_generation']
+        self.assertEqual(generation['model_revision'], 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4')
+        self.assertEqual(generation['slots_per_generation'], 10)
+        self.assertEqual(generation['max_repairs_per_slot'], 2)
+        self.assertEqual(generation['temperature'], 0.2)
+        self.assertEqual(generation['max_new_tokens'], 512)
+
+    def test_evaluation_budget_covers_both_arms(self):
+        budget = self.protocol['proposed_evaluation_per_transition']
+        self.assertEqual(budget['tasks'], 200)
+        self.assertEqual(budget['models'], 2)
+        self.assertEqual(budget['calls_per_model_task'], 2)
+        self.assertEqual(budget['max_calls'], 800)
+        self.assertEqual(budget['max_calls'], budget['tasks'] * budget['models'] * budget['calls_per_model_task'])
+
 
 if __name__ == '__main__':
     unittest.main()
