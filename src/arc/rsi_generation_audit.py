@@ -14,7 +14,7 @@ from src.arc.rsi_transport_audit import _json_object
 def audit_generation(*, root, registration_sha256, generation, parent_adapter, task_ids, tasks,
                      expected_manifest_sha256, expected_task_hashes, public_probes, private_probes,
                      expected_public_probes_sha256, expected_private_probes_sha256, reference_pool,
-                     expected_reference_pool_sha256, request_records, response_records, ledger_records, sandbox):
+                     expected_reference_pool_sha256, request_records, response_records, ledger_records, sandbox, model_key='14b'):
     slots = generation_slots(task_ids, generation)
     if not isinstance(reference_pool, list) or _pool_sha(reference_pool) != expected_reference_pool_sha256:
         raise ValueError('generation reference pool differs')
@@ -50,7 +50,8 @@ def audit_generation(*, root, registration_sha256, generation, parent_adapter, t
                 generation=generation, slot=index, expected_manifest_sha256=expected_manifest_sha256,
                 expected_task_sha256=expected_task_hashes[key], public_probes=public_probes, private_probes=private_probes,
                 expected_public_probes_sha256=expected_public_probes_sha256,
-                expected_private_probes_sha256=expected_private_probes_sha256, reference_pool=pool, sandbox=sandbox)
+                expected_private_probes_sha256=expected_private_probes_sha256, reference_pool=pool, sandbox=sandbox,
+                model_key=model_key)
             for attempt in value['attempts']:
                 request_id = attempt['request_id']
                 if request_id in seen or request_id not in requests or request_id not in responses or request_id not in ledger:

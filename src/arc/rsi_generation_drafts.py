@@ -38,7 +38,7 @@ def _derive_generation_drafts(**inputs):
                     public_probes=inputs['public_probes'], private_probes=inputs['private_probes'],
                     expected_public_probes_sha256=inputs['expected_public_probes_sha256'],
                     expected_private_probes_sha256=inputs['expected_private_probes_sha256'],
-                    reference_pool=pool, sandbox=inputs['sandbox'])
+                    reference_pool=pool, sandbox=inputs['sandbox'], model_key=inputs.get('model_key', '14b'))
                 drafts.append(draft)
                 synthetic_examples.append(examples)
                 try:
