@@ -4,6 +4,7 @@ import sys
 import unittest
 
 from src.arc.rsi_training_stream import watch_training_stream
+from src.arc.rsi_preflight_review import review_preflight_observation
 from tests.arc.test_rsi_process_monitor import state
 
 
@@ -16,7 +17,8 @@ class TrainingStreamTests(unittest.TestCase):
     def run_child(self, script):
         process = child(script)
         try:
-            return watch_training_stream(process, baseline=state(), sampler=lambda _: state(),
+            self.baseline = state()
+            return watch_training_stream(process, baseline=self.baseline, sampler=lambda _: state(),
                 timeout_seconds=3, interval_seconds=0.05, sample_timeout_seconds=0.2,
                 terminate_grace_seconds=0.1)
         finally:
@@ -39,6 +41,17 @@ class TrainingStreamTests(unittest.TestCase):
         self.assertEqual(result['loss']['last_loss'], 0.125)
         self.assertTrue(result['stream_complete'])
         self.assertFalse(result['training_verified'])
+        review = review_preflight_observation(baseline=self.baseline, observation=result)
+        expected = ('preflight_observation_consistent_unverified' if result['group_signals_confirmed']
+                    else 'preflight_observation_rejected')
+        self.assertEqual(review['status'], expected)
+        self.assertFalse(review['training_allowed'])
+
+    def test_zero_exit_without_loss_is_not_a_preflight(self):
+        result = self.run_child('print("finished", flush=True)')
+        review = review_preflight_observation(baseline=self.baseline, observation=result)
+        self.assertEqual(review['status'], 'preflight_observation_rejected')
+        self.assertFalse(review['training_allowed'])
 
     def test_inherited_open_stream_is_not_reported_complete(self):
         script = ('import os,time; pid=os.fork(); '
