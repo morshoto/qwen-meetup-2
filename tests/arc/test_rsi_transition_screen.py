@@ -6,7 +6,7 @@ from src.arc.data import Task, Verifier
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_comparison_budget import ComparisonBudget
 from src.arc.rsi_comparison_runner import run_comparison
-from src.arc.rsi_transition_screen import screen_rsi_chain
+from src.arc.rsi_transition_screen import screen_captured_rsi_chain, screen_rsi_chain
 
 
 class TransitionScreenTests(unittest.TestCase):
@@ -42,6 +42,8 @@ class TransitionScreenTests(unittest.TestCase):
         self.assertEqual(result['status'], 'first_screen_positive_unverified')
         self.assertEqual(result['provisional_selected_adapter'], 'b' * 64)
         self.assertFalse(result['execution_ready'])
+        with self.assertRaises(ValueError):
+            screen_captured_rsi_chain(first=first, tasks=self.tasks, sandbox=FakeE6Sandbox(), verifier=self.verifier)
         result = self.screen(first, second)
         self.assertEqual(result['status'], 'second_screen_nonpositive_unverified')
         self.assertEqual(result['provisional_selected_adapter'], 'b' * 64)

@@ -14,6 +14,7 @@ from src.arc.rsi_comparison_budget import ComparisonBudget
 from src.arc.rsi_comparison_runner import run_comparison
 from src.arc.rsi_comparison_transport import CapturedComparisonTransport
 from src.arc.rsi_transport_audit import audit_transport
+from src.arc.rsi_transition_screen import screen_captured_rsi_chain
 
 MODEL = 'mlx-community/Qwen3-14B-4bit'
 CODE = 'def transform(grid):\n    return grid[::-1]'
@@ -81,6 +82,11 @@ class ComparisonTransportTests(unittest.TestCase):
         self.assertEqual(report['budget_usage']['model_calls'], 800)
         self.assertGreater(report['budget_usage']['reserved_tokens'], 0)
         self.assertFalse(report['independently_verified'])
+        screened = screen_captured_rsi_chain(first={'root': self.root, 'sha256': result['sha256']},
+            tasks=tasks, sandbox=FakeE6Sandbox(), verifier=verifier)
+        self.assertEqual(screened['status'], 'first_screen_nonpositive_unverified')
+        self.assertEqual(screened['evidence_type'], 'caller_supplied_captures_sandbox_and_verifier')
+        self.assertFalse(screened['improvement_claim_supported'])
         ledger_path = self.root / 'parent.responses' / 'requests.jsonl'
         ledger_lines = ledger_path.read_text().splitlines()
         changed = json.loads(ledger_lines[0])
@@ -89,6 +95,9 @@ class ComparisonTransportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
                                       sandbox=FakeE6Sandbox(), verifier=verifier)
+        with self.assertRaises(ValueError):
+            screen_captured_rsi_chain(first={'root': self.root, 'sha256': result['sha256']},
+                tasks=tasks, sandbox=FakeE6Sandbox(), verifier=verifier)
         ledger_path.write_text('\n'.join(ledger_lines) + '\n')
         capture = self.root / 'parent.capture.jsonl'
         lines = capture.read_text().splitlines()
