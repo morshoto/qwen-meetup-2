@@ -9,14 +9,14 @@ from pathlib import Path
 
 import yaml
 
-from src.arc.exploration_registry import build_registry, validate_registry
+from src.arc.exploration_registry import _walk_known_ids, build_registry, validate_registry
 from src.arc.rsi_split import make_split
 
 _JSON_NAMES = {'results.json', 'holdout_manifest.json', 'collection.json',
                'source_manifest.json', 'selection_manifest.json',
                'comparison_identity.json', 'collection_manifest.json',
                'collection_summary.json', 'comparison.json', 'task_manifest.json',
-               'identity.json'}
+               'identity.json', 'generation.json'}
 _JSONL_NAMES = {'task_diagnostics.jsonl', 'candidate_traces.jsonl',
                 'attempted_tasks.jsonl', 'verified_solutions.jsonl',
                 'accepted_solutions.jsonl'}
@@ -65,10 +65,17 @@ def audit_history(root: str | Path, *, required_paths: list[str]) -> dict:
     root = Path(root).resolve()
     before = _inventory(root, required_paths)
     registry = build_registry(root)
+    extra_ids: dict[str, set[str]] = {}
+    for row in before:
+        if Path(row['path']).name == 'generation.json':
+            raw = (root / row['path']).read_bytes()
+            if hashlib.sha256(raw).hexdigest() != row['sha256']:
+                raise ValueError('history inventory changed during audit')
+            _walk_known_ids(json.loads(raw), extra_ids, row['path'])
     after = _inventory(root, required_paths)
     if before != after:
         raise ValueError('history inventory changed during audit')
-    return {'task_ids': registry['task_ids'], 'files': before}
+    return {'task_ids': sorted(set(registry['task_ids']) | set(extra_ids)), 'files': before}
 
 
 def provisional_snapshot(root: str | Path, *, task_path: str, registry_path: str,
