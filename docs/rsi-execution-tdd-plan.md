@@ -695,3 +695,10 @@ Test exact prompt-content separation among all three proposed partitions,
 including distinct IDs carrying identical task content. Bind content manifests
 to the exploratory registration draft. Exact checks do not establish semantic
 independence, historical provenance, or a final reviewed registration.
+
+### E8/E9 failure inventory
+
+Test a read-only aggregation of saved slot and attempt categories, completion,
+valid/strict-new counts and overlapping duplicate flags. Reject malformed input;
+never copy private probe outputs or infer semantic equivalence. Keep historical
+runs and seals unchanged, and do not admit old records to the new training gate.
