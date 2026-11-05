@@ -27,7 +27,9 @@ _V1_FILES = {'configs/rsi-research-protocol.json', 'docs/rsi-research-protocol.m
 
 
 def _read_inputs(root: Path, paths: dict) -> tuple[dict, dict]:
-    if not isinstance(paths, dict) or set(paths) != _KEYS or len(set(paths.values())) != len(paths):
+    if (not isinstance(paths, dict) or set(paths) != _KEYS or
+            any(not isinstance(value, str) or not value for value in paths.values()) or
+            len(set(paths.values())) != len(paths)):
         raise ValueError('registration requires distinct paths for all inputs')
     def unique(pairs):
         value = {}
