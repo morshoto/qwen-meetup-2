@@ -74,6 +74,15 @@ def prepare_technical_canary_bundle(*, root, proposal, manifest_bytes, source_ro
                 os.fsync(fd)
             finally:
                 os.close(fd)
+            for manifest_name, manifest_raw in manifest_bytes.items():
+                fd = os.open(manifest_name + '.json', os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=directory)
+                try:
+                    with os.fdopen(fd, 'wb', closefd=False) as stream:
+                        stream.write(manifest_raw)
+                        stream.flush()
+                    os.fsync(fd)
+                finally:
+                    os.close(fd)
             _create(directory, 'proposal.json', original)
             _create(directory, 'launch.json', launch)
             os.fsync(directory)
