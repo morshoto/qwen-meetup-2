@@ -4,7 +4,7 @@ import stat
 import unittest
 
 from src.arc.data import Task
-from src.arc.rsi_canary_dataset import canary_tasks, prepare_canary_dataset
+from src.arc.rsi_canary_dataset import canary_tasks, prepare_canary_dataset, verify_canary_dataset
 import tests.arc.test_rsi_sft_format as fixtures
 
 
@@ -44,6 +44,36 @@ class CanaryDatasetTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.prepare()
         self.assertFalse((self.root / 'preflight-canary.quarantine').exists())
+
+    def test_readback_rejects_changed_data_audit_inventory_and_files(self):
+        result = self.prepare()
+        args = dict(root=self.root, forbidden_tasks=self.fixture.tasks,
+                    tokenizer=self.fixture.tokenizer, render=self.fixture.render,
+                    expected_dataset_sha256=result['dataset_jsonl_sha256'])
+        self.assertEqual(verify_canary_dataset(**args)['status'], 'canary_consistent_unverified')
+        path = self.root / 'preflight-canary.quarantine'
+        data = path / 'train.jsonl'
+        original = data.read_bytes()
+        data.write_bytes(original + b' ')
+        with self.assertRaises(ValueError):
+            verify_canary_dataset(**args)
+        data.write_bytes(original)
+        data.chmod(0o644)
+        with self.assertRaises(ValueError):
+            verify_canary_dataset(**args)
+        data.chmod(0o600)
+        extra = path / 'valid.jsonl'
+        extra.write_text('{}')
+        with self.assertRaises(ValueError):
+            verify_canary_dataset(**args)
+        extra.unlink()
+        changed = dict(self.fixture.tasks)
+        changed['other'] = Task('other', (([[9]], [[8]]),), ([[7]],))
+        with self.assertRaises(ValueError):
+            verify_canary_dataset(**{**args, 'forbidden_tasks': changed})
+        (path / 'audit.json').write_text('{}')
+        with self.assertRaises(ValueError):
+            verify_canary_dataset(**args)
 
 
 if __name__ == '__main__':
