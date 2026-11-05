@@ -62,3 +62,11 @@ Test that each completed captured attempt records its unique transport request
 ID in the slot evidence, and that malformed or repeated IDs fail closed. Use
 these identifiers for later replay across interleaved logs; they are not proof
 of server identity or an independent seal.
+
+### Captured slot replay cycle
+
+Test hash-bound slot evidence against captured request, response and ledger
+records joined by request ID, including reordered logs, missing or duplicate
+IDs, changed bytes, incorrect statuses, and novelty fingerprints. Replay the
+conditioned lineage with a separately supplied sandbox; keep the result
+ineligible until server and sandbox provenance are independently established.
