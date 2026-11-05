@@ -334,6 +334,15 @@ identity. The stage digest, tasks and generated labels are caller-supplied;
 this preparation remains quarantined and cannot authorize training. Independent
 audit, mapping registration, process containment and the other gates remain open.
 
+The generation draft artifact can also be replayed from slot captures and the
+supplied sandbox before and after synthetic preparation. Replay recomputes the
+generated outputs and mapped prompts; a fixture with an altered generated
+label, updated prompt and recomputed digest was rejected. A failed second replay
+can leave an owner-only preparation file behind; it remains quarantined and
+must not be reused as a successful preparation. Replay depends on locally
+supplied captures, task data and sandbox behavior, and is not independent
+attestation of model, execution or label provenance.
+
 ### Local runtime identity observation
 
 A read-only probe on 2026-11-05 recorded the local arm64 Python interpreter,
