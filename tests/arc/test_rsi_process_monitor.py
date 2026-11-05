@@ -2,10 +2,12 @@
 import os
 import subprocess
 import sys
+import threading
 import time
 import unittest
 
 from src.arc.rsi_process_monitor import watch_owned_process
+from src.arc.rsi_loss_watch import TrainingLossWatch
 
 
 def state(*, free=70):
@@ -20,6 +22,30 @@ def child(seconds=30, *, session=True):
 
 
 class OwnedMonitorTests(unittest.TestCase):
+    def test_streamed_nonfinite_loss_stops_running_fixture(self):
+        script = 'import time; print("Iter 1: Train loss nan, Learning Rate 1e-4", flush=True); time.sleep(30)'
+        process = subprocess.Popen([sys.executable, '-c', script], start_new_session=True,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        watch, ready = TrainingLossWatch(), threading.Event()
+        def consume():
+            watch.feed(process.stdout.readline())
+            ready.set()
+        worker = threading.Thread(target=consume)
+        worker.start()
+        try:
+            self.assertTrue(ready.wait(3))
+            result = watch_owned_process(process, baseline=state(), sampler=lambda _: state(),
+                health_sampler=lambda _: watch.snapshot(), timeout_seconds=3, interval_seconds=0.05,
+                sample_timeout_seconds=0.2, terminate_grace_seconds=0.1)
+            self.assertEqual(result['stop_reason'], 'nonfinite_loss')
+            self.assertIsNotNone(process.returncode)
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+            worker.join(timeout=3)
+            process.stdout.close()
+
     def test_loss_health_stops_fixture_and_unavailable_fails_closed(self):
         for health, expected in ((lambda _: {'status': 'nonfinite_loss'}, 'nonfinite_loss'),
                                  (lambda _: {'status': 'unavailable'}, 'health_monitor_unavailable'),
