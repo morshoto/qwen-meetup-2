@@ -227,3 +227,13 @@ The model-manifest input hash was
 the check returned `draft_model_files_consistent` and `execution_ready: false`.
 This exercise does not validate the synthetic inputs, establish split
 independence, authenticate the runtime or server, or authorize a model call.
+
+### Captured slot to quarantined draft
+
+A replayed, provisionally novel captured slot can now produce an SFT draft bound
+to the final request ID, response digest, slot and slot-evidence digest. The
+draft records its origin as `unverified_capture`, contains no private query
+outputs, and remains ineligible for training. The current batch precheck rejects
+that origin; no local replay or caller-supplied record is promoted to verified
+live-model provenance. The integration was exercised with fixture HTTP and a
+fake sandbox, not with Qwen.
