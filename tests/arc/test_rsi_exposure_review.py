@@ -1,4 +1,6 @@
 """Audit identifiers in retained artifact formats outside the primary scanner."""
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -45,6 +47,15 @@ class ExtraExposureTests(unittest.TestCase):
         with patch.object(Path, 'read_bytes', changing):
             with self.assertRaisesRegex(ValueError, 'changed'):
                 audit_extra_artifacts(self.root, {'a', 'b'})
+
+    def test_recorded_review_matches_and_excludes_the_provisional_split(self):
+        report = json.loads(Path('research/rsi/extended-exposure-review.json').read_text())
+        split_path = Path('research/rsi/provisional-split.json')
+        split = json.loads(split_path.read_text())
+        self.assertEqual(report['status'], 'bounded_metadata_review_only')
+        self.assertEqual(report['split_sha256'], hashlib.sha256(split_path.read_bytes()).hexdigest())
+        self.assertEqual(report['development_overlap_count'], 0)
+        self.assertFalse(set(report['matched_task_ids']) & set(split['partitions']['development']))
 
 
 if __name__ == '__main__':
