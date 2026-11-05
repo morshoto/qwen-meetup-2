@@ -12,6 +12,7 @@ from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_lineage_audit import inspect_lineage, probes_sha256
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
+from src.arc.rsi_collected_slot_audit import audit_collected_slot
 from src.arc.rsi_slot_collector import collect_slot
 from src.arc.rsi_slot_transport import CapturedSlotTransport
 
@@ -80,6 +81,26 @@ class SlotTransportTests(unittest.TestCase):
             sandbox=FakeE6Sandbox())
         self.assertEqual(replay['attempt_statuses'], ['visible_demonstration_mismatch', 'verified_candidate'])
         self.assertFalse(replay['eligible_for_training'])
+        kwargs = dict(evidence_bytes=(self.root / 'g0-slot-00.collection.json').read_bytes(),
+            evidence_sha256=result['evidence_sha256'], request_records=list(reversed(captures)),
+            response_records=list(reversed(responses)), ledger_records=list(reversed(ledger)),
+            task_ids=ids, task=task, generation=0, slot=0, expected_manifest_sha256=manifest_sha256(ids),
+            expected_task_sha256=task_sha256(task), public_probes=public, private_probes=private,
+            expected_public_probes_sha256=probes_sha256(public), expected_private_probes_sha256=probes_sha256(private),
+            reference_pool=[], sandbox=FakeE6Sandbox())
+        checked = audit_collected_slot(**kwargs)
+        self.assertEqual(checked['status'], 'captured_slot_consistent')
+        self.assertFalse(checked['eligible_for_training'])
+        with self.assertRaises(ValueError):
+            audit_collected_slot(**{**kwargs, 'evidence_sha256': 'b' * 64})
+        with self.assertRaises(ValueError):
+            audit_collected_slot(**{**kwargs, 'request_records': captures + [captures[0]]})
+        with self.assertRaises(ValueError):
+            audit_collected_slot(**{**kwargs, 'response_records': responses[:1]})
+        corrupted = [dict(item) for item in captures]
+        corrupted[0]['body_base64'] = base64.b64encode(b'bad').decode()
+        with self.assertRaises(ValueError):
+            audit_collected_slot(**{**kwargs, 'request_records': corrupted})
 
     def test_bad_seed_or_deadline_fails_before_dispatch(self):
         for seed, timeout in [(12030, 1), (11999, 1), (12000, 0), (True, 1)]:
