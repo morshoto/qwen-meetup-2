@@ -133,3 +133,11 @@ Test local guarded HTTP transport for both comparison arms with matched seeds,
 settings and per-arm capture logs. Bind each returned request ID to the saved
 task sample; reject mismatched adapter routing or repeated IDs. The endpoint's
 asserted adapter remains unauthenticated until independently checked.
+
+### Comparison capture replay cycle
+
+Test all 800 sample records against their per-arm request, response and ledger
+captures, joined by unique request ID. Replay the saved programs and scores,
+reject mismatched seeds, prompts, source bytes, missing or duplicate records,
+and preserve the distinction between capture consistency and authenticated
+server, adapter, sandbox or model provenance.
