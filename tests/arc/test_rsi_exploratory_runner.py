@@ -41,14 +41,14 @@ class ExploratoryRunnerTests(unittest.TestCase):
         self.assertTrue(all(c.args[0]==calls[0].args[0] for c in calls))
         self.assertNotIn('[[4, 3]]',calls[0].args[0])
         self.assertEqual(result['summary']['arms']['base']['total_tokens'],1500)
-        with self.assertRaises(FileExistsError): self.run_trial()
+        with self.assertRaisesRegex(ValueError, "fresh"): self.run_trial()
     def test_interruption_is_incomplete_and_never_replayed(self):
         self.generate.side_effect=TimeoutError('unavailable')
         result=self.run_trial()
         self.assertEqual(result['status'],'exploratory_incomplete')
         self.assertEqual(self.budget.snapshot()['model_calls'],1)
         self.assertFalse(result['claim_eligible'])
-        with self.assertRaises(FileExistsError): self.run_trial()
+        with self.assertRaisesRegex(ValueError, "fresh"): self.run_trial()
     def test_changed_manifest_fails_before_dispatch(self):
         self.final[0]=self.ids[0]
         with self.assertRaises(ValueError): self.run_trial()
