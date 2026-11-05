@@ -1,13 +1,23 @@
 import tempfile
 import json
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from src.arc.data import Task
+from src.arc.e6_curriculum import _quality_grids
+from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
+from src.arc.guarded_contract import AUDITED_GENERATE_STEP, source_fingerprints
+from src.arc.http_backend import BackendError
 from src.arc.prompting import system_prompt_for_kind
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_collection_contract import ContractCheckedSlotTransport
 from src.arc.rsi_slot_transport import CapturedSlotTransport
+from src.arc.rsi_slot_collector import collect_slot
+from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
+from src.arc.rsi_lineage_audit import probes_sha256
 
 
 class CollectionContractTests(unittest.TestCase):
@@ -32,6 +42,65 @@ class CollectionContractTests(unittest.TestCase):
         return ContractCheckedSlotTransport(self.transport, budget=self.budget, registration_sha256='a' * 64,
             generation=0, parent_adapter='none', expected_max_prompt_tokens=4096,
             expected_ledger_id='1' * 32, expected_initial_reserved_tokens=0)
+
+    def test_real_contract_parser_gates_fixture_slot(self):
+        model = 'mlx-community/Qwen3-14B-4bit'
+        revision = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                contract = {'contract': 'same_process_token_ids_v1', 'model': model, 'revision': revision,
+                    'thinking_mode': 'off', 'thinking_modes': ['off', 'on'],
+                    'thinking_canary': {'supported': True, 'different_token_ids': True,
+                                        'off_sha256': 'a' * 64, 'on_sha256': 'b' * 64},
+                    'adapter_sha256': self.server.adapter, 'hard_deadline': 'process_exit_v1',
+                    'max_request_seconds': 2, 'token_limit': 200000, 'reserved_tokens': 0,
+                    'max_prompt_tokens': 4096, 'max_new_tokens': 512, 'prefetch_allowance': 1,
+                    'ledger_id': '1' * 32, 'source_sha256': source_fingerprints(),
+                    'driver_type': 'src.arc.mlx_token_driver.MLXTokenDriver', 'driver_runtime_version': '0.30.7',
+                    'driver_source_sha256': AUDITED_GENERATE_STEP['0.30.7']}
+                raw = json.dumps(contract).encode()
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+            def do_POST(self):
+                self.server.posts += 1
+                self.rfile.read(int(self.headers['Content-Length']))
+                raw = json.dumps({'model': model, 'thinking_mode': 'off',
+                    'thinking_control': 'tokenizer_template_canary_passed',
+                    'choices': [{'message': {'role': 'assistant', 'content': FAKE_PROGRAMS[1]},
+                                 'finish_reason': 'stop'}]}).encode()
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+            def log_message(self, *args):
+                pass
+        server = HTTPServer(('127.0.0.1', 0), Handler)
+        server.adapter, server.posts = 'none', 0
+        worker = threading.Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(worker.join)
+        self.addCleanup(server.shutdown)
+        self.transport = CapturedSlotTransport(base_url=f'http://127.0.0.1:{server.server_port}/v1',
+            log_path=self.root / 'requests.jsonl', request_capture_path=self.root / 'raw.jsonl', max_request_seconds=2)
+        wrapped = self.wrap()
+        ids = [f'task-{i:02}' for i in range(20)]
+        task = Task(ids[0], (([[1, 2]], [[2, 1]]),), ([[3, 4]],))
+        public, private = _quality_grids(42, 5), _quality_grids(43, 5)
+        result = collect_slot(root=self.root, registration_sha256='a' * 64, generation=0, slot=0,
+            task_ids=ids, task=task, expected_manifest_sha256=manifest_sha256(ids), expected_task_sha256=task_sha256(task),
+            public_probes=public, private_probes=private, expected_public_probes_sha256=probes_sha256(public),
+            expected_private_probes_sha256=probes_sha256(private), reference_pool=[], transport=wrapped,
+            sandbox=FakeE6Sandbox(), budget=self.budget)
+        self.assertEqual(result['status'], 'novel_unverified')
+        self.assertEqual(server.posts, 1)
+        server.adapter = 'b' * 64
+        self.budget.reserve_model(self.reservation, kind='generation')
+        with self.assertRaises(BackendError):
+            wrapped('prompt', seed=12003, timeout=1)
+        self.assertEqual(server.posts, 1)
 
     @patch('src.arc.rsi_collection_contract.verify_guarded_contract')
     def test_requires_reservation_before_each_request(self, verify):
