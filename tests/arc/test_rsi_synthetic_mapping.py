@@ -4,7 +4,7 @@ import unittest
 from src.arc.data import Task
 from src.arc.e5_selfplay import solve_prompt
 from src.arc.rsi_synthetic_examples import retain_synthetic_examples
-from src.arc.rsi_synthetic_mapping import map_synthetic_row
+from src.arc.rsi_synthetic_mapping import RepeatedSyntheticInput, map_synthetic_row
 from src.arc.rsi_slot_audit import task_sha256
 from tests.arc.test_rsi_sft_draft import SftDraftTests
 from src.arc.rsi_sft_draft import make_sft_draft
@@ -54,7 +54,7 @@ class SyntheticMappingTests(unittest.TestCase):
         examples = copy.deepcopy(self.examples)
         examples['parent_task_sha256'] = task_sha256(task)
         examples['examples'][0]['input'] = [[1, 2]]
-        with self.assertRaises(ValueError):
+        with self.assertRaises(RepeatedSyntheticInput):
             map_synthetic_row(task=task, draft=draft, generated=examples)
 
 
