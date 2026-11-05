@@ -114,3 +114,15 @@ missing task coverage is reported without a score. The record contains
 caller-supplied outcomes and asserted settings, so the resulting interval is
 descriptive and cannot establish model improvement without independently
 authenticated execution and scoring. No model comparison has been run.
+
+### Matched comparison orchestration
+
+A comparison-stage budget now caps evaluation at 800 model calls, 16 million
+reserved tokens, 8,000 sandbox starts and 36,000 seconds. Setup canaries require
+a separate budget. A local runner checks the task and seed schedule, reserves
+before each model and sandbox call, records task results, and freezes complete
+paired outcomes. An interruption records an incomplete result and consumes the
+run marker. A 200-task fake run exercised both arms and the full 800-call count;
+the supplied generators, sandbox, verifier and registration are not
+authenticated. This is not evidence of a real model comparison or authorization
+to run one.
