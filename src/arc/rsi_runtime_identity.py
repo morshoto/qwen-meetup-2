@@ -20,7 +20,7 @@ def snapshot_runtime_identity(python_executable):
         if not target.is_file() or not os.access(python, os.X_OK):
             raise ValueError('runtime interpreter unavailable')
         before = _hash_file(target)
-        result = subprocess.run([str(python), '-I', str(_PROBE)], capture_output=True, text=True,
+        result = subprocess.run([str(python), '-I', '-B', str(_PROBE)], capture_output=True, text=True,
                                 timeout=30, check=False, env={'PATH': '/usr/bin:/bin'})
     except (OSError, subprocess.SubprocessError) as exc:
         raise ValueError('runtime probe unavailable') from exc
