@@ -1,0 +1,33 @@
+{
+  "eligible_for_training": false,
+  "execution_ready": false,
+  "historical_reference_sha256": "3344002bfd31d77566db11a96079b3e36919a1bb21f43d6beef185561f7d7c4d",
+  "independently_verified": false,
+  "limitations": [
+    "provisional local inputs are not independently reviewed",
+    "fingerprints are sampled behavior, not semantic equivalence",
+    "this local reference preparation does not authorize model collection or training"
+  ],
+  "limits": {
+    "cpus": 1,
+    "memory_mib": 128,
+    "pids": 32,
+    "sandbox_starts": 10,
+    "seconds_per_start": 2,
+    "wall_seconds": 60
+  },
+  "model_calls": 0,
+  "model_key": "14b",
+  "private_outputs_exposed": false,
+  "private_probe_canonical_sha256": "8fecded49dbbc5af8a242a0764e61951972b3e1f2c4bbb37684b55b272525239",
+  "private_probe_file_sha256": "87d94138d12b9f91e00e3cde8a386e9048ac5a2162e1fb5b70489891abe8a0d1",
+  "purpose": "duplicate_detection_only",
+  "reference_builder_sha256": "161ef213bca5b1ce0b2e182d9e046257b4f21f1fdcd60e83933311c38ded36e2",
+  "retry_policy": "none",
+  "sandbox_image_id": "sha256:a3013c6339a68a667aa9a5f26377693a1f4357a7f7a12db6470a8f06732b91f1",
+  "sandbox_runner_sha256": "d5087f5f6bffbd467069aa33c6552055f6ee4e4d689a896e141185b80deb6b32",
+  "sandbox_wrapper_sha256": "c5137bc0457184e8d1768f8aaa838a5955fc59c39fb4b09c7865dc5a0d1568cd",
+  "source_sha256": "02491e2004c406ea4543ecdba1a7422ed47f0ac3ce7fcfe5a4d9ec6bd89f84af",
+  "status": "legacy_reference_local_preparation_draft",
+  "training_steps": 0
+}
