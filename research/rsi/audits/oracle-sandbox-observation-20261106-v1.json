@@ -1,0 +1,27 @@
+{
+  "candidate_code_executed": false,
+  "dockerfile_sha256": "a6fbc9cd5fcd4e8f5f3c8121ac6635a66347f24ae5a2c94341b54b683e0a4bfd",
+  "execution_ready": false,
+  "historical_lock_comparisons": {
+    "14b": {
+      "image_matches": true,
+      "lock_sha256": "9fc75941954ffcd45ff2ee03a38d7a30c272381f500c241c6adf4e09863fbc13"
+    },
+    "32b": {
+      "image_matches": true,
+      "lock_sha256": "69ecac507e8a84099cb6662bc8c07078eae1827d4150eacaa41c98e3ad894ada"
+    }
+  },
+  "image_id": "sha256:a3013c6339a68a667aa9a5f26377693a1f4357a7f7a12db6470a8f06732b91f1",
+  "image_runner_sha256": "d5087f5f6bffbd467069aa33c6552055f6ee4e4d689a896e141185b80deb6b32",
+  "image_tag": "arc-sandbox:local",
+  "independently_verified": false,
+  "limitations": [
+    "local image identity and runner readback do not prove sandbox containment",
+    "container runtime and future execution still require independent review"
+  ],
+  "local_runner_sha256": "d5087f5f6bffbd467069aa33c6552055f6ee4e4d689a896e141185b80deb6b32",
+  "model_dispatch": false,
+  "status": "local_sandbox_image_observed_unverified",
+  "training_allowed": false
+}
