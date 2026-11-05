@@ -6,12 +6,15 @@
   "generation": 0,
   "generation_content_manifest_sha256": "b6e48da59bbccc499c0d24f855383661ad118d934b19de435e9ddba3e4be3d2c",
   "generation_id_manifest_sha256": "811147b2fbcb79886d5d9b256e5fdf50eeb25966df86ee12ea931149a8c882c1",
+  "historical_behavior_on_proposed_probes": "not_evaluated",
   "historical_candidate_policy": "duplicate_reference_only_pending_decision",
+  "historical_static_reference": "research/rsi/audits/historical-candidates/14b-static-reference.json",
   "independent_review_completed": false,
   "limitations": [
     "provisional task selection may change after independent review",
     "file hashes and local fixtures do not authenticate execution or provenance",
-    "requested seeds do not establish deterministic model inference"
+    "requested seeds do not establish deterministic model inference",
+    "historical synthetic task IDs are not source ARC generation task IDs; ancestry requires independent review"
   ],
   "limits": {
     "attempts_per_slot": 3,
@@ -157,6 +160,7 @@
   ],
   "source_sha256": {
     "research/rsi/audits/allocation-review.json": "435db21430293e904f4c0074468a6bcfc953cfb4ad49beeb6bbaebc87468b024",
+    "research/rsi/audits/historical-candidates/14b-static-reference.json": "3344002bfd31d77566db11a96079b3e36919a1bb21f43d6beef185561f7d7c4d",
     "research/rsi/audits/historical-candidates/14b.json": "a7d46234ec80fc1c1997d5bd64ce7bc21d303dc1ee7c196ac45b38c26aeec7a5",
     "research/rsi/audits/oracle-probe-candidates-20261106-v1.json": "dc3e2f7349b41a4fd32d5106fd21580b59aae5818ef60ba3c53765242414750e",
     "research/rsi/audits/oracle-sandbox-observation-20261106-v1.json": "8aa2b072dd28bf5915b79e68977527603159ec3fc3e9f782943bc6719868005f",
