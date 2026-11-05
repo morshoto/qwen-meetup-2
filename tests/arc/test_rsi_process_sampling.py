@@ -12,7 +12,8 @@ class ProcessSamplingTests(unittest.TestCase):
         self.assertEqual(process_tree_rss_bytes(listing, 100), 175 * 1024)
 
     def test_missing_duplicate_or_malformed_process_rows_fail_closed(self):
-        for listing in ('1 0 12\n', '100 1 12\n100 1 13\n', '100 1 nope\n'):
+        for listing in ('1 0 12\n', '100 1 12\n100 1 13\n', '100 1 nope\n',
+                        '100 102 1\n101 100 1\n102 101 1\n'):
             with self.subTest(listing=listing), self.assertRaises(ValueError):
                 process_tree_rss_bytes(listing, 100)
 
