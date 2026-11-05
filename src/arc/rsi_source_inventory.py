@@ -7,7 +7,7 @@ and out-of-tree dependencies require separate frozen evidence.
 import hashlib
 from pathlib import Path
 
-_ROOTS = ('src', 'sandbox', 'configs')
+_ROOTS = ('src', 'sandbox', 'configs', 'scripts')
 _FILES = ('pyproject.toml', 'uv.lock')
 
 
