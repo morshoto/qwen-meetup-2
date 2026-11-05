@@ -11,6 +11,8 @@ from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_generation_audit import audit_generation
+from src.arc.rsi_generation_drafts import prepare_generation_drafts
+from src.arc.rsi_batch_precheck import precheck_batch
 from src.arc.rsi_generation_stage import collect_generation
 from src.arc.rsi_lineage_audit import probes_sha256
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
@@ -28,10 +30,11 @@ class GenerationAuditTests(unittest.TestCase):
         self.public, self.private = _quality_grids(42, 5), _quality_grids(43, 5)
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
-                self.rfile.read(int(self.headers['Content-Length']))
+                request = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                code = self.server.codes.get(request['seed'], FAKE_PROGRAMS[1])
                 raw = json.dumps({'model': 'mlx-community/Qwen3-14B-4bit', 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
-                    'choices': [{'message': {'role': 'assistant', 'content': FAKE_PROGRAMS[1]}, 'finish_reason': 'stop'}]}).encode()
+                    'choices': [{'message': {'role': 'assistant', 'content': code}, 'finish_reason': 'stop'}]}).encode()
                 self.send_response(200)
                 self.send_header('Content-Length', str(len(raw)))
                 self.end_headers()
@@ -39,6 +42,7 @@ class GenerationAuditTests(unittest.TestCase):
             def log_message(self, *args):
                 pass
         self.server = HTTPServer(('127.0.0.1', 0), Handler)
+        self.server.codes = {}
         worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         worker.start()
         self.addCleanup(self.server.server_close)
@@ -48,6 +52,46 @@ class GenerationAuditTests(unittest.TestCase):
             log_path=self.root / 'requests.jsonl', request_capture_path=self.root / 'capture.jsonl', max_request_seconds=2)
         self.pool = []
         self.pool_hash = hashlib.sha256(b'[]').hexdigest()
+
+    def test_nine_distinct_fixture_drafts_remain_quarantined(self):
+        codes = {}
+        for index, key in enumerate(self.ids[:10]):
+            shift = (index % 9) + 1
+            code = f'def transform(grid):\n    return [[(x + {shift}) % 10 for x in row] for row in grid]'
+            codes[code] = shift
+            self.server.codes[12000 + index * 3] = code
+            self.tasks[key] = Task(key, (([[1, 2]], [[(1 + shift) % 10, (2 + shift) % 10]]),), ([[3, 4]],))
+        self.hashes = {key: task_sha256(self.tasks[key]) for key in self.ids[:10]}
+        class Sandbox:
+            def run(self, code, grid):
+                return [[(x + codes[code]) % 10 for x in row] for row in grid]
+        common = dict(root=self.root, registration_sha256='a' * 64, generation=0, parent_adapter='none',
+            task_ids=self.ids, tasks=self.tasks, expected_manifest_sha256=manifest_sha256(self.ids),
+            expected_task_hashes=self.hashes, public_probes=self.public, private_probes=self.private,
+            expected_public_probes_sha256=probes_sha256(self.public), expected_private_probes_sha256=probes_sha256(self.private),
+            reference_pool=self.pool, expected_reference_pool_sha256=self.pool_hash)
+        budget = CollectionBudget.create(self.root, registration_sha256='a' * 64, generation=0)
+        result = collect_generation(**common, transport=self.transport, sandbox=Sandbox(), budget=budget)
+        self.assertEqual(result['counts'], {'novel_unverified': 9, 'duplicate_source': 1})
+        capture = [json.loads(line) for line in (self.root / 'capture.jsonl').read_text().splitlines()]
+        ledger = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
+        response = [json.loads(line) for line in (self.root / 'llm_responses.jsonl').read_text().splitlines()]
+        kwargs = dict(**common, request_records=capture, ledger_records=ledger, response_records=response, sandbox=Sandbox())
+        with self.assertRaises(ValueError):
+            prepare_generation_drafts(**{**kwargs, 'request_records': capture[:-1]})
+        self.assertFalse((self.root / 'g0.stage.drafts.json').exists())
+        report = prepare_generation_drafts(**kwargs)
+        self.assertEqual(report['draft_count'], 9)
+        self.assertTrue(report['provisional_minimum_count_met'])
+        self.assertFalse(report['training_allowed'])
+        saved = json.loads((self.root / 'g0.stage.drafts.json').read_text())
+        self.assertEqual(len(saved['drafts']), 9)
+        self.assertTrue(all(row['provenance']['execution_mode'] == 'unverified_capture' for row in saved['drafts']))
+        self.assertNotIn('query_outputs', json.dumps(saved))
+        with self.assertRaises(ValueError):
+            precheck_batch(saved['drafts'], generation=0, parent_adapter='none', allowed_tasks=set(self.ids))
+        with self.assertRaises(FileExistsError):
+            prepare_generation_drafts(**kwargs)
 
     def test_captured_generation_replays_in_order_and_detects_tampering(self):
         common = dict(root=self.root, registration_sha256='a' * 64, generation=0, parent_adapter='none',
