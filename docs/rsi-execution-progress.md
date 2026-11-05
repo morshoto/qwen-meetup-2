@@ -255,3 +255,14 @@ feedback. Capture replay checks that the raw response and finish reason support
 the terminal outcome, and draft conversion rejects it. Fixture HTTP exercised
 these cases; infrastructure failures still leave the slot uncertain. No live
 model calls were made.
+
+### Collection generation and replay
+
+A generation-stage runner now collects ten scheduled slots under one budget,
+adds provisionally novel candidates to the reference pool before later slots,
+and records completion or interruption. It binds the supplied task, probe,
+parent and initial pool identities. A fixture HTTP run and replay checked all
+ten slot journals, captures, pool evolution and counts; missing, duplicate or
+altered evidence was rejected. The stage and replay use caller-supplied model,
+sandbox and registration inputs, so their results remain unverified and cannot
+authorize training. No Qwen call was made.
