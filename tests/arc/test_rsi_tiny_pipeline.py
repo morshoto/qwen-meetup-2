@@ -52,5 +52,6 @@ class TinyPipelineTests(unittest.TestCase):
             self.assertTrue(result['stream_complete'])
             self.assertEqual(result['loss']['last_step'], 1)
             self.assertTrue(result['tiny_adapter_reloaded'])
+            self.assertEqual(result['tiny_reloaded_factor_matches'],28)
             self.assertFalse(result['training_verified'])
             self.assertFalse(result['promotion_allowed'])
