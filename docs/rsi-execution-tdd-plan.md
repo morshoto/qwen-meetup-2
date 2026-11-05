@@ -632,3 +632,12 @@ the separately proposed 750/50/200 manifests. Recompute the 50-task selection,
 reject changed inputs, overlaps and changes to either generation's scheduled
 slots, and retain non-authorizing and independent-review gates. Do not change
 the previously registered 800/200 design record or dispatch any model call.
+
+### Exploratory comparison budget
+
+Test a separate durable local budget for the 50-task comparison, bounded at
+200 model calls, 4,000,000 reserved tokens, 2,000 sandbox starts and 9,000
+seconds (one quarter of the proposed 200-task ceilings). Setup canaries require
+separate registration. Test durable reopen, limits and separation from the
+200-task ledger. These are proposed ceilings, not authorization or proof of
+server enforcement.
