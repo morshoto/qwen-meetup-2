@@ -126,3 +126,10 @@ version, and runs the format precheck with the actual ChatDataset processor.
 Keep the audit result separate from model inference, training authorization and
 independent batch provenance. Exercise the local tokenizer with synthetic
 fixture records if the pinned runtime is available.
+
+### Comparison capture binding cycle
+
+Test local guarded HTTP transport for both comparison arms with matched seeds,
+settings and per-arm capture logs. Bind each returned request ID to the saved
+task sample; reject mismatched adapter routing or repeated IDs. The endpoint's
+asserted adapter remains unauthenticated until independently checked.
