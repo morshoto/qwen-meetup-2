@@ -5,6 +5,7 @@ import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from unittest.mock import Mock
 
 from src.arc.data import Task
 from src.arc.e6_curriculum import _quality_grids
@@ -17,6 +18,8 @@ from src.arc.rsi_generation_stage import collect_generation
 from src.arc.rsi_lineage_audit import probes_sha256
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
 from src.arc.rsi_slot_transport import CapturedSlotTransport
+from src.arc.rsi_synthetic_preparation import prepare_synthetic_training
+from src.arc.rsi_sft_format import audit_sft_format
 
 
 class GenerationAuditTests(unittest.TestCase):
@@ -101,6 +104,27 @@ class GenerationAuditTests(unittest.TestCase):
         for row in saved['proposed_sft_rows']:
             self.assertEqual(row['mapping'], 'generated_demos_holdout_first_visible_v1')
             self.assertFalse(row['training_allowed'])
+        raw = (self.root / 'g0.stage.drafts.json').read_bytes()
+        altered = json.loads(raw)
+        altered['proposed_sft_rows'][0]['messages'][1]['content'] += ' altered'
+        altered_raw = json.dumps(altered).encode()
+        args = dict(root=self.root, stage_bytes=raw, expected_stage_sha256=report['sha256'],
+                    tasks=self.tasks, seed=42)
+        with self.assertRaises(ValueError):
+            prepare_synthetic_training(**{**args, 'stage_bytes': altered_raw,
+                'expected_stage_sha256': hashlib.sha256(altered_raw).hexdigest()})
+        self.assertFalse((self.root / 'synthetic.training.preparation.json').exists())
+        prepared = prepare_synthetic_training(**args)
+        self.assertFalse(prepared['training_allowed'])
+        plan = json.loads((self.root / 'synthetic.training.preparation.json').read_text())
+        self.assertEqual(plan['stage_sha256'], report['sha256'])
+        self.assertEqual(len(plan['generation_training']['records']), 9)
+        tokenizer = Mock()
+        tokenizer.apply_chat_template.return_value = [10, 11]
+        audited = audit_sft_format(plan, tasks=prepared['synthetic_tasks'], tokenizer=tokenizer,
+                                   render=lambda row: ([10, 11, 12], 2))
+        self.assertEqual(audited['row_count'], 9)
+        self.assertFalse(audited['training_allowed'])
         self.assertTrue(all(row['provenance']['execution_mode'] == 'unverified_capture' for row in saved['drafts']))
         self.assertNotIn('query_outputs', json.dumps(saved))
         with self.assertRaises(ValueError):
