@@ -1,5 +1,6 @@
 """Contract checks for the proposed research protocol, not experiment results."""
 import json
+import hashlib
 import unittest
 from pathlib import Path
 
@@ -78,6 +79,17 @@ class ResearchProtocolTests(unittest.TestCase):
         self.assertEqual(budget['calls_per_model_task'], 2)
         self.assertEqual(budget['max_calls'], 800)
         self.assertEqual(budget['max_calls'], budget['tasks'] * budget['models'] * budget['calls_per_model_task'])
+
+    def test_design_registration_pins_reviewed_inputs_without_authorizing_execution(self):
+        registration = json.loads(Path('research/rsi/design-registration-v1.json').read_text())
+        self.assertEqual(registration['kind'], 'design_only')
+        self.assertFalse(registration['execution_ready'])
+        self.assertEqual(set(registration['files']), {
+            'configs/rsi-research-protocol.json', 'docs/rsi-research-protocol.md',
+            'research/rsi/provisional-split.json'})
+        for path, expected in registration['files'].items():
+            with self.subTest(path=path):
+                self.assertEqual(hashlib.sha256(Path(path).read_bytes()).hexdigest(), expected)
 
 
 if __name__ == '__main__':
