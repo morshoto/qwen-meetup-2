@@ -729,3 +729,13 @@ The reconciliation binds the proposal and review file hashes; it is not an
 independent audit, and missing history, unrecognized formats and pretraining
 exposure remain unknown. The legacy task-text scan had no positive control in
 the retained files, as noted above.
+
+### Retained SQLite ledger review
+
+A read-only [schema and inventory review](../research/rsi/ledger-schema-review.json)
+covered 220 retained SQLite files containing 2,271 request rows. The request
+tables have token-sequence hashes, token counts and request IDs but no task ID
+column. No write-ahead log was present, and database hashes matched before and
+after the review. This does not associate the hashes with source tasks, rule out
+missing ledgers, or independently establish what a model received. The bounded
+inventory's independent review must account for this limitation.
