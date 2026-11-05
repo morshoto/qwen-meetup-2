@@ -51,6 +51,21 @@ class SlotCollectorTests(unittest.TestCase):
         self.assertEqual(evidence['status'], 'novel_unverified')
         self.assertNotIn(str(self.private[0]), repr(evidence))
 
+    def test_duplicate_source_is_terminal_and_not_eligible(self):
+        self.transport.side_effect = [FAKE_PROGRAMS[2]] * 3
+        result = self.collect()
+        self.assertEqual(result['status'], 'repeated_code')
+        self.assertFalse(result['eligible_for_training'])
+        self.assertEqual(self.transport.call_count, 2)
+
+    def test_exhausted_budget_stops_before_transport(self):
+        self.budget.reserve_model(200000, kind='canary')
+        with self.assertRaises(TimeoutError):
+            self.collect()
+        self.transport.assert_not_called()
+        self.assertEqual(observe_slot(self.root, registration_sha256=REG, generation=0, slot=0)['status'],
+                         'started_outcome_uncertain')
+
     def test_wrong_task_stops_before_claim_or_dispatch(self):
         with self.assertRaises(ValueError):
             self.collect(expected_task_sha256='b' * 64)
