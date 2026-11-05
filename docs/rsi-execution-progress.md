@@ -696,3 +696,11 @@ the implementation used by every old run. The candidate review found no
 development IDs in any of these journals, but it cannot identify the four
 pending requests or establish whether the server received any of them. Do not
 resume or replay them automatically.
+
+A further read-only check found the `cache` object empty in all five journals,
+so there are no cached analysis responses there from which to reconstruct an
+initial code request. Three associated `identity.json` files record an
+`src/arc/agent.py` digest different from the current file; the other two lack
+that implementation digest. Reconstructions using current code therefore do
+not establish the historical prompt format. The one digest match above remains
+only a consistency observation, and the other four requests remain unidentified.
