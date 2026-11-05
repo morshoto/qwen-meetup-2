@@ -20,6 +20,10 @@ _KEYS = {'challenges', 'solutions', 'split', 'public_probes', 'private_probes',
 _HASH = re.compile(r'^[0-9a-f]{64}$')
 _MODEL = 'mlx-community/Qwen3-14B-4bit'
 _REVISION = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
+_V1 = 'research/rsi/design-registration-v1.json'
+_V2_DOCUMENT = 'research/rsi/design-v2.md'
+_V1_FILES = {'configs/rsi-research-protocol.json', 'docs/rsi-research-protocol.md',
+             'research/rsi/provisional-split.json'}
 
 
 def _read_inputs(root: Path, paths: dict) -> tuple[dict, dict]:
@@ -92,6 +96,52 @@ def _validate_data(inputs: dict) -> None:
             raise ValueError('invalid challenge or solution data') from exc
 
 
+def _verify_design_chain(root: Path, design: dict, split_hash: str) -> dict[str, str]:
+    """Verify the recorded local version chain, not an external timestamp."""
+    def file_bytes(relative: str) -> bytes:
+        path = root
+        for part in Path(relative).parts:
+            path = path / part
+            if path.is_symlink():
+                raise ValueError('symlinked design file')
+        try:
+            return path.read_bytes()
+        except OSError as exc:
+            raise ValueError('design file is unavailable') from exc
+    def check_files(mapping, expected):
+        if not isinstance(mapping, dict) or set(mapping) != expected:
+            raise ValueError('design file inventory differs')
+        for name in sorted(expected):
+            if not isinstance(mapping[name], str) or not _HASH.fullmatch(mapping[name]):
+                raise ValueError('invalid design fingerprint')
+            if hashlib.sha256(file_bytes(name)).hexdigest() != mapping[name]:
+                raise ValueError('design file hash differs: ' + name)
+    reference = design.get('reference')
+    if (design.get('supersedes') != _V1 or not isinstance(reference, dict) or
+            reference.get('model') != 'Qwen3.8-27B' or
+            reference.get('split') != 'ARC-AGI-2 semi-private' or
+            reference.get('reasoning_effort') != 'xhigh' or reference.get('matched_compute') is not False):
+        raise ValueError('design reference differs')
+    check_files(design.get('files'), {_V1, _V2_DOCUMENT})
+    try:
+        def unique(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result:
+                    raise ValueError('duplicate design key')
+                result[key] = value
+            return result
+        v1 = json.loads(file_bytes(_V1), object_pairs_hook=unique)
+    except (ValueError, UnicodeDecodeError) as exc:
+        raise ValueError('invalid design registration') from exc
+    if not isinstance(v1, dict) or v1.get('kind') != 'design_only' or v1.get('execution_ready') is not False:
+        raise ValueError('invalid prior design registration')
+    check_files(v1.get('files'), _V1_FILES)
+    if v1['files']['research/rsi/provisional-split.json'] != split_hash:
+        raise ValueError('input split differs from design registration')
+    return {**design['files'], **v1['files']}
+
+
 def prepare_draft_registration(root: str | Path, *, input_paths: dict, generation: int) -> dict:
     root = Path(root).resolve()
     inputs, hashes = _read_inputs(root, input_paths)
@@ -112,6 +162,7 @@ def prepare_draft_registration(root: str | Path, *, input_paths: dict, generatio
     if (not isinstance(design, dict) or design.get('kind') != 'design_only' or
             design.get('execution_ready') is not False or design.get('competitive_target_percent') != 42.4):
         raise ValueError('design registration is invalid')
+    design_hashes = _verify_design_chain(root, design, hashes['split'])
     public, private = inputs['public_probes'], inputs['private_probes']
     public_hash, private_hash = probes_sha256(public), probes_sha256(private)
     if (len({canonical(grid) for grid in public}) != len(public) or
@@ -128,10 +179,11 @@ def prepare_draft_registration(root: str | Path, *, input_paths: dict, generatio
     screen_novelty('def transform(grid): return grid', '0' * 64, private_hash, inputs['reference_pool'])
     inventory = build_source_inventory(root)
     _, after_hashes = _read_inputs(root, input_paths)
-    if hashes != after_hashes:
+    if hashes != after_hashes or design_hashes != _verify_design_chain(root, design, hashes['split']):
         raise ValueError('registration inputs changed during capture')
     return {'status': 'draft_not_execution_ready', 'execution_ready': False,
             'generation': generation, 'input_paths': dict(input_paths), 'input_sha256': hashes,
+            'design_file_sha256': design_hashes,
             'local_sources': inventory, 'public_probe_sha256': public_hash,
             'private_probe_sha256': private_hash, 'slots': slots,
             'blockers': ['split independence not established', 'model runtime and sandbox not independently authenticated',
