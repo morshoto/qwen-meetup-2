@@ -23,6 +23,9 @@ from src.arc.rsi_slot_transport import CapturedSlotTransport
 from src.arc.rsi_synthetic_preparation import prepare_replayed_synthetic_training, prepare_synthetic_training
 from src.arc.rsi_sft_format import audit_sft_format
 from src.arc.rsi_synthetic_dataset import materialize_replayed_synthetic_dataset
+from src.arc.rsi_canary_dataset import prepare_canary_dataset
+from src.arc.rsi_preflight_spec import prepare_preflight_spec
+from tests.arc.test_rsi_mlx_dataset import Dataset
 
 
 class GenerationAuditTests(unittest.TestCase):
@@ -198,6 +201,22 @@ class GenerationAuditTests(unittest.TestCase):
         dataset_marker = json.loads((self.root / 'synthetic.dataset.replay.json').read_text())
         self.assertEqual(dataset_marker['dataset_jsonl_sha256'], dataset['dataset_jsonl_sha256'])
         self.assertFalse(dataset_marker['training_allowed'])
+        render = lambda row: ([10, 11, 12], 2)
+        canary = prepare_canary_dataset(root=self.root, forbidden_tasks=self.tasks, tokenizer=tokenizer, render=render)
+        def loader(path, tokenizer, config):
+            rows = [json.loads(line) for line in (path / 'train.jsonl').read_text().splitlines()]
+            return Dataset(rows, render), [], []
+        spec = prepare_preflight_spec(root=self.root, preparation_bytes=plan_path.read_bytes(),
+            expected_preparation_sha256=marker['preparation_sha256'], expected_canary_sha256=canary['dataset_jsonl_sha256'],
+            expected_generation_dataset_sha256=dataset['dataset_jsonl_sha256'], synthetic_tasks=prepared['synthetic_tasks'],
+            forbidden_tasks=self.tasks, tokenizer=tokenizer, render=render, load_local_dataset=loader,
+            model_dir=self.root / 'model', generation_data_dir=self.root / 'generation-sft.quarantine',
+            adapter_dir=self.root / 'canary-adapter', previous_adapter_file=None,
+            identity_hashes={'model_manifest': 'a' * 64, 'runtime_manifest': 'b' * 64,
+                'environment_manifest': 'c' * 64, 'source_inventory': 'd' * 64,
+                'tokenizer': 'e' * 64, 'tokenizer_config': 'f' * 64})
+        self.assertEqual(spec['status'], 'preflight_proposed_unverified')
+        self.assertFalse(spec['execution_ready'])
         self.assertTrue(all(row['provenance']['execution_mode'] == 'unverified_capture' for row in saved['drafts']))
         self.assertNotIn('query_outputs', json.dumps(saved))
         with self.assertRaises(ValueError):
