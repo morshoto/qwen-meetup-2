@@ -21,6 +21,7 @@ from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
 from src.arc.rsi_slot_transport import CapturedSlotTransport
 from src.arc.rsi_synthetic_preparation import prepare_replayed_synthetic_training, prepare_synthetic_training
 from src.arc.rsi_sft_format import audit_sft_format
+from src.arc.rsi_synthetic_dataset import materialize_replayed_synthetic_dataset
 
 
 class GenerationAuditTests(unittest.TestCase):
@@ -171,6 +172,25 @@ class GenerationAuditTests(unittest.TestCase):
                                    render=lambda row: ([10, 11, 12], 2))
         self.assertEqual(audited['row_count'], 9)
         self.assertFalse(audited['training_allowed'])
+        dataset_args = dict(**kwargs, expected_stage_sha256=report['sha256'],
+                            expected_preparation_sha256=marker['preparation_sha256'],
+                            synthetic_tasks=prepared['synthetic_tasks'], tokenizer=tokenizer,
+                            render=lambda row: ([10, 11, 12], 2))
+        marker_raw = marker_path.read_bytes()
+        marker_path.unlink()
+        with self.assertRaises(ValueError):
+            materialize_replayed_synthetic_dataset(**dataset_args)
+        marker_path.write_bytes(marker_raw)
+        marker_path.chmod(0o600)
+        with self.assertRaises(ValueError):
+            materialize_replayed_synthetic_dataset(**{**dataset_args, 'expected_preparation_sha256': '0' * 64})
+        self.assertFalse((self.root / 'generation-sft.quarantine').exists())
+        dataset = materialize_replayed_synthetic_dataset(**dataset_args)
+        self.assertEqual(dataset['row_count'], 9)
+        self.assertFalse(dataset['training_allowed'])
+        dataset_marker = json.loads((self.root / 'synthetic.dataset.replay.json').read_text())
+        self.assertEqual(dataset_marker['dataset_jsonl_sha256'], dataset['dataset_jsonl_sha256'])
+        self.assertFalse(dataset_marker['training_allowed'])
         self.assertTrue(all(row['provenance']['execution_mode'] == 'unverified_capture' for row in saved['drafts']))
         self.assertNotIn('query_outputs', json.dumps(saved))
         with self.assertRaises(ValueError):
