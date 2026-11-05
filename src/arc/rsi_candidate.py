@@ -5,8 +5,8 @@ import hashlib
 
 from src.arc.data import Task, validate_grid
 from src.arc.ast_fingerprint import stable_ast_sha256
-from src.arc.e5_selfplay import _safe_transform_code
 from src.arc.e6_curriculum import canonical, verify_oracle
+from src.arc.e6f_repair import _static_failure, classify_failure
 from src.arc.http_backend import BackendError
 
 
@@ -30,8 +30,11 @@ def inspect_candidate(task: Task, code: str, *, public_probes: list, private_pro
                                             for group in (public, private, source))
     if public_set & private_set or source_set & (public_set | private_set):
         raise ValueError('source and verification inputs overlap')
-    if not isinstance(code, str) or not _safe_transform_code(code):
+    if not isinstance(code, str):
         return _failure('static_safety_rejected')
+    static_failure = _static_failure(code)
+    if static_failure:
+        return _failure(static_failure)
     synthetic_train = []
     try:
         for grid, target in task.train:
@@ -47,7 +50,12 @@ def inspect_candidate(task: Task, code: str, *, public_probes: list, private_pro
             return _failure('identity_only_rejected')
     except (BackendError, TimeoutError):
         raise
-    except (ValueError, TypeError, RuntimeError):
+    except (ValueError, TypeError, RuntimeError) as exc:
+        category, _ = classify_failure(exc)
+        if category in {'runtime_exception', 'shape_or_color_violation'}:
+            return _failure(category)
+        if category == 'nondeterministic_output':
+            return _failure('nondeterministic_output_rejected')
         return _failure('public_validation_rejected')
     try:
         hidden_outputs = verify_oracle(code, private, sandbox=sandbox)
