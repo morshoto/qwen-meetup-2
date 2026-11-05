@@ -53,3 +53,8 @@ class ExploratoryRunnerTests(unittest.TestCase):
         self.final[0]=self.ids[0]
         with self.assertRaises(ValueError): self.run_trial()
         self.generate.assert_not_called()
+
+    def test_changed_registration_rejected_before_dispatch(self):
+        self.reg['unbound']='changed'
+        with self.assertRaises(ValueError): self.run_trial()
+        self.generate.assert_not_called()
