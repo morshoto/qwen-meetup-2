@@ -44,7 +44,9 @@
     "timeout_seconds": 300
   },
   "run_purpose": "single synthetic training step and independent adapter reload",
-  "status": "draft_technical_canary_registration_unverified",
+  "status": "draft_technical_canary_registration_superseded",
+  "superseded_by": "technical-canary-registration-14b-v7.json",
+  "superseded_reason": "source inventory changed for tiny pipeline fixture",
   "supersedes": "technical-canary-registration-14b-v5.json",
   "training_allowed": false,
   "training_started": false
