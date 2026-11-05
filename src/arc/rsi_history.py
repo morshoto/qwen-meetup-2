@@ -100,3 +100,28 @@ def provisional_snapshot(root: str | Path, *, task_path: str, registry_path: str
             'partitions': make_split(tasks, exposed, development_size=development_size),
             'task_source': task_path, 'prior_registry': registry_path,
             'required_paths': sorted(set(required_paths)), 'inspected_files': audit['files']}
+
+
+def verify_snapshot(root: str | Path, snapshot: dict, *, development_size: int = 200) -> None:
+    """Recompute a provisional snapshot; this does not certify source completeness."""
+    root = Path(root).resolve()
+    expected_code = {'src/arc/rsi_history.py', 'src/arc/exploration_registry.py',
+                     'src/arc/rsi_split.py'}
+    code_rows = snapshot.get('audit_code', [])
+    if (len(code_rows) != len(expected_code) or
+            {row.get('path') for row in code_rows} != expected_code):
+        raise ValueError('audit code inventory is invalid')
+    for row in code_rows:
+        try:
+            digest = hashlib.sha256((root / row['path']).read_bytes()).hexdigest()
+        except OSError as exc:
+            raise ValueError('audit code is unavailable') from exc
+        if digest != row.get('sha256'):
+            raise ValueError('audit code differs from snapshot')
+    current = provisional_snapshot(root, task_path=snapshot['task_source'],
+                                   registry_path=snapshot['prior_registry'],
+                                   required_paths=snapshot['required_paths'],
+                                   development_size=development_size)
+    saved = {key: value for key, value in snapshot.items() if key != 'audit_code'}
+    if current != saved:
+        raise ValueError('snapshot differs from retained source inventory')

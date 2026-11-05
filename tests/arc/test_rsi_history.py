@@ -98,18 +98,18 @@ class HistoryAuditTests(unittest.TestCase):
                                         required_paths=[], development_size=2)
         snapshot['audit_code'] = [{'path': p, 'sha256': hashlib.sha256((self.root / p).read_bytes()).hexdigest()}
                                   for p in code_paths]
-        verify_snapshot(self.root, snapshot)
+        verify_snapshot(self.root, snapshot, development_size=2)
         snapshot['partitions']['development'].reverse()
         with self.assertRaisesRegex(ValueError, 'snapshot differs'):
-            verify_snapshot(self.root, snapshot)
+            verify_snapshot(self.root, snapshot, development_size=2)
         snapshot['partitions']['development'].reverse()
-        (self.root / 'artifacts/run/generation.json').write_text('{"task_id":"e"}')
+        (self.root / 'artifacts/run/generation.json').write_text('{"task_id":"a"}')
         with self.assertRaisesRegex(ValueError, 'snapshot differs'):
-            verify_snapshot(self.root, snapshot)
+            verify_snapshot(self.root, snapshot, development_size=2)
         (self.root / 'artifacts/run/generation.json').unlink()
         (self.root / code_paths[0]).write_text('changed')
         with self.assertRaisesRegex(ValueError, 'audit code'):
-            verify_snapshot(self.root, snapshot)
+            verify_snapshot(self.root, snapshot, development_size=2)
 
 
 if __name__ == '__main__':
