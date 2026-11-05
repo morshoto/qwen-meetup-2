@@ -29,6 +29,7 @@ class RuntimeIdentityTests(unittest.TestCase):
         with patch('src.arc.rsi_runtime_identity.subprocess.run', return_value=SimpleNamespace(returncode=0, stdout=json.dumps(report), stderr='')) as process:
             value = snapshot_runtime_identity(self.python)
             self.assertIn('-I', process.call_args.args[0])
+            self.assertIn('-B', process.call_args.args[0])
             return value
 
     def test_reviewed_runtime_is_an_observation_not_authorization(self):
