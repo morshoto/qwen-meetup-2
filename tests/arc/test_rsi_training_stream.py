@@ -8,6 +8,8 @@ import unittest
 from src.arc.rsi_training_stream import watch_training_stream
 from src.arc.rsi_preflight_review import review_preflight_observation
 from src.arc.rsi_process_sampling import sample_baseline, sample_process
+from src.arc.rsi_canary_containment import fork_restricted_command
+from src.arc.rsi_training_resources import training_resource_decision
 from tests.arc.test_rsi_process_monitor import state
 
 
@@ -59,6 +61,33 @@ class TrainingStreamTests(unittest.TestCase):
             self.assertTrue(result['stream_complete'])
             self.assertFalse(result['training_verified'])
             self.assertFalse(result['escaped_processes_excluded'])
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+            process.stdout.close()
+
+    @unittest.skipUnless(platform.system() == 'Darwin' and Path('/usr/bin/sandbox-exec').exists(),
+                         'macOS sandbox and sampler required')
+    def test_restricted_synthetic_fixture_with_live_sampling(self):
+        baseline = sample_baseline(Path('.'))
+        if training_resource_decision(baseline, [baseline]) is not None:
+            self.skipTest('host is outside proposed resource limits')
+        script = ("import os,time\ntry: os.fork()\nexcept PermissionError: pass\n"
+                  "else: raise SystemExit('fork was not blocked')\n"
+                  "print('Iter 1: Train loss 0.125, x',flush=True)\ntime.sleep(1.5)")
+        command = fork_restricted_command([sys.executable, '-u', '-c', script])['argv']
+        process = subprocess.Popen(command, start_new_session=True, stdin=subprocess.DEVNULL,
+                                   stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        try:
+            result = watch_training_stream(process, baseline=baseline, sampler=lambda pid: sample_process(Path('.'), pid),
+                timeout_seconds=4, interval_seconds=0.2, sample_timeout_seconds=1, terminate_grace_seconds=0.1)
+            self.assertEqual(result['stop_reason'], 'process_exited')
+            self.assertEqual(result['exit_code'], 0)
+            self.assertEqual(result['loss']['last_step'], 1)
+            self.assertTrue(result['stream_complete'])
+            self.assertFalse(result['escaped_processes_excluded'])
+            self.assertFalse(result['training_verified'])
         finally:
             if process.poll() is None:
                 os.killpg(process.pid, 9)
