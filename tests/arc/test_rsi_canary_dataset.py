@@ -4,7 +4,8 @@ import stat
 import unittest
 
 from src.arc.data import Task
-from src.arc.rsi_canary_dataset import canary_tasks, prepare_canary_dataset, verify_canary_dataset
+from src.arc.rsi_canary_dataset import audit_canary_loader, canary_tasks, prepare_canary_dataset, verify_canary_dataset
+from tests.arc.test_rsi_mlx_dataset import Dataset
 import tests.arc.test_rsi_sft_format as fixtures
 
 
@@ -74,6 +75,24 @@ class CanaryDatasetTests(unittest.TestCase):
         (path / 'audit.json').write_text('{}')
         with self.assertRaises(ValueError):
             verify_canary_dataset(**args)
+
+    def test_loader_must_preserve_canary_rows_masks_and_splits(self):
+        result = self.prepare()
+        args = dict(root=self.root, forbidden_tasks=self.fixture.tasks,
+                    tokenizer=self.fixture.tokenizer, render=self.fixture.render,
+                    expected_dataset_sha256=result['dataset_jsonl_sha256'])
+        def load(path, tokenizer, config):
+            self.assertTrue(config.mask_prompt)
+            rows = [json.loads(line) for line in (path / 'train.jsonl').read_text().splitlines()]
+            return Dataset(rows, self.fixture.render), [], []
+        report = audit_canary_loader(**args, load_local_dataset=load)
+        self.assertEqual(report['status'], 'canary_loader_consistent_unverified')
+        self.assertFalse(report['training_allowed'])
+        def extra(path, tokenizer, config):
+            train, _, test = load(path, tokenizer, config)
+            return train, [1], test
+        with self.assertRaises(ValueError):
+            audit_canary_loader(**args, load_local_dataset=extra)
 
 
 if __name__ == '__main__':
