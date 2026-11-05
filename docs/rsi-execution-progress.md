@@ -1,0 +1,34 @@
+# Issue 2 execution status
+
+The [research design](rsi-research-protocol.md) and
+[v2 target amendment](../research/rsi/design-v2.md) remain prospective. This
+branch is an offline implementation in progress, not an executed experiment.
+
+## Process monitoring
+
+`src.arc.rsi_process_monitor.watch_owned_process` watches an already-created,
+unreaped child that leads its own session. It checks resource samples and sends
+termination signals only to that owned process group, retaining the leader PID
+until cleanup. Missing, stale, or unavailable samples stop the child. On 64-bit
+macOS it supports Python builds lacking `os.waitid` through the Darwin libc
+interface. `src.arc.rsi_process_sampling` supplies host and process-tree samples.
+
+Local verification used short-lived Python fixture children, including one that
+ignored `SIGTERM`; no model or training process was started. In a local fixture
+using the real host sampler, the leader exited with code 0 and three samples
+were observed. macOS returned a permission uncertainty during group cleanup, so
+`group_signals_confirmed` was false. The monitor does not prove that descendants
+which escape its session are gone, that samples capture instantaneous peaks, or
+that a model trained successfully. Training integration and independent process,
+resource, artifact and adapter verification remain unfinished.
+
+## Current gates
+
+- The task split remains provisional and its retained-history inventory cannot
+  prove the absence of missing prompt exposure or model pretraining exposure.
+- Draft registration, replay, transport consistency and SFT prechecks do not
+  establish an independently authenticated run or authorize training.
+- A guarded live collector, independently audited run evidence, training gate,
+  monitor integration and matched evaluation are not yet complete.
+- Live model calls, training, external compute and independent scoring require
+  their separately scoped authorizations and frozen budgets. None were run here.
