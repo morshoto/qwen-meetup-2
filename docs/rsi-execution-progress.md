@@ -275,6 +275,13 @@ validation and test splits in a 2026-11-05 fixture using the same 1,000-task
 inventory. This is local loader evidence, not canary registration, full
 exposure clearance or training feasibility.
 
+A preflight proposal can now bind a checked canary dataset, training
+preparation, MLX configuration, fixed resource limits and supplied model,
+runtime, environment, source and tokenizer hashes. Fixtures reject changed
+inputs, overlapping paths and loader failures. The hashes and loader are
+caller-supplied; the resulting owner-only proposal is not a witnessed
+registration, an independent dependency audit or authorization to train.
+
 ### RSI chat format and mask precheck
 
 A format precheck converts quarantined rows to MLX-style chat JSONL and checks
