@@ -100,3 +100,11 @@ Test that task records retain bounded sample source and can be replayed against
 separately supplied tasks, sandbox and verifier. Replay all 400 task-arm records
 and check their scores against the frozen outcomes. Reject missing or changed
 records; the local replay does not prove model, runtime, adapter or run origin.
+
+### Training preparation cycle
+
+Test that a prospective batch is bound to canonical task prompts, distinct
+quarantined sources, the parent adapter, and fixed QLoRA settings. A separate
+one-step preflight plan must not consume the generation batch or authorize any
+training. Missing independent audit, execution registration, process-containment
+proof and explicit authorization must remain visible blockers.
