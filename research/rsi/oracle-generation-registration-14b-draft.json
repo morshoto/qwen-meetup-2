@@ -39,6 +39,7 @@
   ],
   "parent_adapter": "none",
   "provisional_behavior_reference": {
+    "accounting": "initialize generation zero budget with the indexed ten starts; require matching model, setup digest and reference pool at collection and replay",
     "eligible_for_training": false,
     "independently_verified": false,
     "local_result_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-legacy-reference-preparation-20261106-v1/14b/result.json",
@@ -47,7 +48,7 @@
     "review_index": "research/rsi/audits/historical-candidates/14b-behavior-reference.json",
     "sandbox_starts_in_preparation": 10
   },
-  "provisional_legacy_reference_method": "build_legacy_duplicate_reference; synthetic identity retained; behavior not yet evaluated",
+  "provisional_legacy_reference_method": "build_legacy_duplicate_reference; synthetic identity retained; local behavior reference prepared, independent review pending",
   "provisional_probe_candidates": {
     "private": {
       "canonical_probe_sha256": "8fecded49dbbc5af8a242a0764e61951972b3e1f2c4bbb37684b55b272525239",
@@ -180,12 +181,12 @@
     "research/rsi/exploratory-split-proposal.json": "68ef1fc9c0c081d8f90e08506a4fcbdd795715315e01736da277314c216892de",
     "research/rsi/oracle-generation-proposal-v1.md": "9f6917ef83962b282bc89a58f54458868c5869e3a24221f1a3b6491bf7d843a4",
     "src/arc/rsi_candidate.py": "8f44ccf239bc2af79fde0583eae3bcdd8efc9c189f19f8e0643524b3cbd0cce6",
-    "src/arc/rsi_collection_budget.py": "a1010e4c68df7351f1ba6c9dd31c98cc4601290a594c797dd22b8c2cc138f694",
+    "src/arc/rsi_collection_budget.py": "256bd233d3f9a4f089c062c7c7da02fc57a0c95753f91ae04e184558b2c16d3a",
     "src/arc/rsi_collection_contract.py": "a33e725e9c73c659ab5e9ba0637edb65caca8ef841eeedb155a423c16e54d711",
-    "src/arc/rsi_generation_audit.py": "ee453f8bc0b0dac38acf77fafc68c0a88cd106759d5ec356f2b639c0a4e66a3a",
+    "src/arc/rsi_generation_audit.py": "146c52ede52467fdc83960cc66a0c58a0496a36425f00f91ff55457c20863ba8",
     "src/arc/rsi_generation_drafts.py": "39077b48dd4fd818b2281b8cd55beba4704d96c399031a1f717f7e0871d51f90",
     "src/arc/rsi_generation_outcomes.py": "3a6c4d907186139721d491bbe4b534dc491c26817adaddb68e60c30bb5483f85",
-    "src/arc/rsi_generation_stage.py": "f4fd1747720f62df62e9ba794b6c650f3b39e6a3f957255082abeda60ffa07d2",
+    "src/arc/rsi_generation_stage.py": "75e1a6f87a4c6fa2250901b343b005a0cd31f76e6b790a6169c843b67e9d4faa",
     "src/arc/rsi_novelty.py": "13bdad6911d1dc0f33eae6ad6dc9c1bad80f66b67befaeb1c8bd2d7f945a92f0",
     "src/arc/rsi_reference_pool.py": "161ef213bca5b1ce0b2e182d9e046257b4f21f1fdcd60e83933311c38ded36e2",
     "src/arc/rsi_slot_collector.py": "8c1c933e1e1f42aab7fe0033c5b79ead395344fb2c9e5556a72e3830fd973360",
