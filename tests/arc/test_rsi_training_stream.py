@@ -27,6 +27,22 @@ class TrainingStreamTests(unittest.TestCase):
                 process.wait()
             process.stdout.close()
 
+    def test_stream_watch_applies_registered_model_limits(self):
+        limits = {'timeout_seconds': 3, 'minimum_disk_gib': 20, 'minimum_free_memory_percent': 60,
+                  'maximum_swap_growth_mib': 512, 'maximum_process_rss_gib': 32, 'sample_interval_seconds': 1}
+        process = child('import time; time.sleep(10)')
+        try:
+            result = watch_training_stream(process, baseline=state(), sampler=lambda _: state(free=55),
+                timeout_seconds=3, interval_seconds=0.05, sample_timeout_seconds=0.2,
+                terminate_grace_seconds=0.1, resource_limits=limits)
+            self.assertEqual(result['stop_reason'], 'memory_pressure_limit')
+            self.assertFalse(result['training_verified'])
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+            process.stdout.close()
+
     def test_nonfinite_and_malformed_output_stop_child(self):
         for loss, expected in [('nan', 'nonfinite_loss'), ('???', 'health_monitor_unavailable')]:
             script = f'import time; print("Iter 1: Train loss {loss}, x", flush=True); time.sleep(30)'

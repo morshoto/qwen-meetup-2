@@ -29,6 +29,16 @@ class PreflightReviewTests(unittest.TestCase):
         self.assertIn('independent_adapter_reload', result['remaining_gates'])
         self.assertIn('execution_provenance', result['remaining_gates'])
 
+    def test_review_checks_registered_limits_and_elapsed(self):
+        limits = {'timeout_seconds': 1, 'minimum_disk_gib': 20, 'minimum_free_memory_percent': 75,
+                  'maximum_swap_growth_mib': 512, 'maximum_process_rss_gib': 32, 'sample_interval_seconds': 1}
+        result = review_preflight_observation(baseline=self.baseline, observation=self.observation, resource_limits=limits)
+        self.assertEqual(result['status'], 'preflight_observation_rejected')
+        self.assertFalse(result['training_allowed'])
+        invalid = dict(limits, maximum_process_rss_gib=33)
+        self.assertEqual(review_preflight_observation(baseline=self.baseline, observation=self.observation,
+                         resource_limits=invalid)['status'], 'preflight_observation_rejected')
+
     def test_bad_exit_loss_stream_or_resource_is_rejected(self):
         changes = [
             {'stop_reason': 'wall_clock_limit'}, {'exit_code': 1}, {'stream_complete': False},
