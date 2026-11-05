@@ -649,3 +649,15 @@ not prove that a model received it. A non-match does not rule out other prompt
 formats, omitted files, other encodings or pretraining exposure; the split
 remains provisional. The scanner's nested-string, malformed-file and changing
 inventory behavior is covered by offline tests.
+
+### Historical prompt hash review
+
+The [hash review](../research/rsi/historical-prompt-hash-review.json) checked
+reconstructions of direct and analysis prompts, including both system-prompt
+modes and their serialized request messages, for 200 provisional development
+tasks. It found no matching hashes in 6,762 retained JSON/JSONL files. As a
+separate exploratory positive control, applying these reconstructions to all
+1,000 source tasks matched 191 entries in 211 request-log files. That count is
+not a count of distinct tasks or independently verified dispatches. Historical
+format changes, missing records and pretraining remain unresolved, so these
+checks do not establish split independence.
