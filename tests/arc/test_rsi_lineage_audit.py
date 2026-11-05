@@ -8,7 +8,7 @@ from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_task_generation import task_prompt, task_repair_prompt
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
-from src.arc.rsi_lineage_audit import inspect_lineage
+from src.arc.rsi_lineage_audit import inspect_lineage, probes_sha256
 from tests.arc.test_rsi_transport_audit import build_evidence
 
 
@@ -35,12 +35,15 @@ class LineageTests(unittest.TestCase):
         second_prompt = task_repair_prompt(self.task, FAKE_PROGRAMS[2], 'visible_demonstration_mismatch')
         self.second = attempt(second_prompt, FAKE_PROGRAMS[1], 12001, 'r1')
 
-    def check(self, rows, *, private=None):
+    def check(self, rows, *, private=None, expected_private=None):
+        selected_private = self.private if private is None else private
         return inspect_lineage(self.ids, self.task, generation=0, slot=0, attempts=rows,
                                expected_manifest_sha256=manifest_sha256(self.ids),
                                expected_task_sha256=task_sha256(self.task),
                                public_probes=self.public,
-                               private_probes=self.private if private is None else private,
+                               private_probes=selected_private,
+                               expected_public_probes_sha256=probes_sha256(self.public),
+                               expected_private_probes_sha256=expected_private or probes_sha256(selected_private),
                                sandbox=FakeE6Sandbox())
 
     def test_replays_visible_failure_then_model_repair_without_claiming_training(self):
@@ -69,6 +72,11 @@ class LineageTests(unittest.TestCase):
     def test_rejects_more_than_three_attempts(self):
         with self.assertRaises(ValueError):
             self.check([self.first] * 4)
+
+    def test_changed_probe_set_is_rejected_before_replay(self):
+        with self.assertRaisesRegex(ValueError, 'probe'):
+            self.check([self.first], private=_quality_grids(44, 5),
+                       expected_private=probes_sha256(self.private))
 
 
 if __name__ == '__main__':
