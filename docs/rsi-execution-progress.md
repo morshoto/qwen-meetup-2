@@ -275,6 +275,13 @@ validation and test splits in a 2026-11-05 fixture using the same 1,000-task
 inventory. This is local loader evidence, not canary registration, full
 exposure clearance or training feasibility.
 
+The canary loader audit can now load the pinned local tokenizer and MLX-LM
+0.30.7 components directly, checking the tokenizer and configuration hashes
+before and after. A native local fixture passed with the five synthetic rows
+and the same 1,000 supplied training tasks; it used `python -B` and loaded no
+model weights. This does not authenticate the running process or establish a
+complete forbidden-task inventory.
+
 A preflight proposal can now bind a checked canary dataset, training
 preparation, MLX configuration, fixed resource limits and supplied model,
 runtime, environment, source and tokenizer hashes. Fixtures reject changed
