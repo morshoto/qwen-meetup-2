@@ -163,3 +163,10 @@ Test that the draft registration's model-manifest bytes match the actual local
 snapshot, and detect changes to either the registered inputs or model files.
 Recheck registration before and after the file audit. This is not a final
 preregistration, remote witness, or server process attestation.
+
+### Captured collection to draft cycle
+
+Test that a captured slot must pass replay before it can produce a quarantined
+SFT draft, and that the draft binds the final captured request, response hash,
+source, task and novelty result. Mark origin as unverified; the existing batch
+gate must continue to reject the draft until independent provenance is proven.
