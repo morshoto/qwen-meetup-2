@@ -77,6 +77,22 @@ class OwnedMonitorTests(unittest.TestCase):
                 os.killpg(process.pid, 9)
                 process.wait()
 
+    def test_registered_model_limits_stop_fixture(self):
+        limits = {'timeout_seconds': 3, 'minimum_disk_gib': 20, 'minimum_free_memory_percent': 60,
+                  'maximum_swap_growth_mib': 512, 'maximum_process_rss_gib': 32, 'sample_interval_seconds': 1}
+        process = child()
+        try:
+            result = watch_owned_process(process, baseline=state(), sampler=lambda _: state(free=55),
+                                         timeout_seconds=3, interval_seconds=0.05,
+                                         sample_timeout_seconds=0.2, terminate_grace_seconds=0.1,
+                                         resource_limits=limits)
+            self.assertEqual(result['stop_reason'], 'memory_pressure_limit')
+            self.assertIsNotNone(process.returncode)
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+
     def test_monitor_timeout_stops_owned_fixture(self):
         process = child()
         def slow(_):
