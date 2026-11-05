@@ -673,3 +673,10 @@ Test that the exploratory runner rejects any registration whose canonical JSON
 hash does not equal the budget's registration identity, before dispatch. The
 hash is local consistency evidence and does not establish independent review,
 authentication, or authorization.
+
+### Exploratory completion evidence
+
+Test that a completed exploratory fixture retains a separate completion marker
+binding the result digest and final local budget counters, with exactly 200
+reserved calls. Interrupted or inconsistent runs remain incomplete. Local
+markers and reported usage do not authenticate provenance or authorize a run.
