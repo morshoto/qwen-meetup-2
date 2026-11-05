@@ -11,8 +11,8 @@ from src.arc.rsi_model_identity import _signature, verify_adapter_identity
 from src.arc.rsi_transport_audit import _json_object
 
 
-def _read_factors(root, expected):
-    inspect_adapter_structure(root, expected_sha256=expected)
+def _read_factors(root, expected, model_key):
+    inspect_adapter_structure(root, expected_sha256=expected, model_key=model_key)
     try:
         fd = os.open(root / 'adapters.safetensors', os.O_RDONLY | os.O_NOFOLLOW)
         with os.fdopen(fd, 'rb') as stream:
@@ -24,7 +24,7 @@ def _read_factors(root, expected):
         header = _json_object(raw[8:8 + length])
         data = memoryview(raw)[8 + length:]
         factors = {}
-        for name in _expected_shapes():
+        for name in _expected_shapes(model_key):
             start, end = header[name]['data_offsets']
             factors[name] = np.frombuffer(data[start:end], dtype='<f4')
     except (OSError, ValueError, KeyError, struct.error) as exc:
@@ -34,11 +34,11 @@ def _read_factors(root, expected):
 
 
 def compare_adapter_factors(candidate_dir, *, expected_candidate_sha256, parent_dir=None,
-                            expected_parent_sha256=None):
+                            expected_parent_sha256=None, model_key='14b'):
     if (parent_dir is None) != (expected_parent_sha256 is None):
         raise ValueError('parent adapter and digest must be supplied together')
-    candidate = _read_factors(Path(candidate_dir).expanduser().resolve(), expected_candidate_sha256)
-    parent = (_read_factors(Path(parent_dir).expanduser().resolve(), expected_parent_sha256)
+    candidate = _read_factors(Path(candidate_dir).expanduser().resolve(), expected_candidate_sha256, model_key)
+    parent = (_read_factors(Path(parent_dir).expanduser().resolve(), expected_parent_sha256, model_key)
               if parent_dir is not None else None)
     pair_count = sum(bool(np.any(value != 0)) and bool(np.any(candidate[name[:-1] + 'b'] != 0))
                      for name, value in candidate.items() if name.endswith('.lora_a'))
@@ -52,14 +52,14 @@ def compare_adapter_factors(candidate_dir, *, expected_candidate_sha256, parent_
 
 
 def probe_adapter_products(candidate_dir, *, expected_candidate_sha256, parent_dir=None,
-                           expected_parent_sha256=None):
+                           expected_parent_sha256=None, model_key='14b'):
     """Find bounded file-level witnesses; failure to find one is inconclusive."""
     if (parent_dir is None) != (expected_parent_sha256 is None):
         raise ValueError('parent adapter and digest must be supplied together')
-    candidate = _read_factors(Path(candidate_dir).expanduser().resolve(), expected_candidate_sha256)
-    parent = (_read_factors(Path(parent_dir).expanduser().resolve(), expected_parent_sha256)
+    candidate = _read_factors(Path(candidate_dir).expanduser().resolve(), expected_candidate_sha256, model_key)
+    parent = (_read_factors(Path(parent_dir).expanduser().resolve(), expected_parent_sha256, model_key)
               if parent_dir is not None else None)
-    shapes = _expected_shapes()
+    shapes = _expected_shapes(model_key)
     candidate_witness, parent_witness = None, None
     checked = 0
     for name in sorted(key for key in shapes if key.endswith('.lora_a')):
