@@ -93,3 +93,14 @@ checks the novelty result. Reordered fixture logs pass; missing, duplicate, and
 tampered records fail. The digest, records, registration inputs and sandbox are
 still supplied by the caller, so this does not establish an independently sealed
 run or training eligibility.
+
+### Matched task evaluation primitives
+
+The evaluation helper requests two independent source samples with the same
+label-free solve prompt, checks visible demonstrations, caps each sample at ten
+sandbox starts, and retains at most two valid outputs per test input. It scores
+through the isolated solution verifier, including cases where different samples
+solve different test inputs. Infrastructure errors stop evaluation. These are
+fixture-tested primitives, not a matched model comparison: model and adapter
+identity, registered seeds, shared comparison budget, frozen outcomes and run
+provenance must still be implemented and audited.
