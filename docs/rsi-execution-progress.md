@@ -718,3 +718,14 @@ provisional split. The separately recorded prompt reviews and location search
 must also be independently reviewed and reconciled before any freeze. This
 proposal is not independent review, a final manifest, execution authorization,
 or evidence of no prior exposure.
+
+### Prompt review reconciliation
+
+A [local reconciliation](../research/rsi/prompt-reconciliation.json) replayed
+all three saved prompt checks over the proposed 200 development tasks and the
+same 6,762 retained JSON/JSONL files. The dataset, provisional split, recorded
+review code and result inventories matched, with no saved or replayed matches.
+The reconciliation binds the proposal and review file hashes; it is not an
+independent audit, and missing history, unrecognized formats and pretraining
+exposure remain unknown. The legacy task-text scan had no positive control in
+the retained files, as noted above.
