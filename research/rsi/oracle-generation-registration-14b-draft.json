@@ -184,6 +184,7 @@
     "src/arc/rsi_collection_budget.py": "902807196aaf44b18e0b5b2a258276af0c0cbb17fa93abbb4a8ff83775be32d3",
     "src/arc/rsi_collection_contract.py": "a33e725e9c73c659ab5e9ba0637edb65caca8ef841eeedb155a423c16e54d711",
     "src/arc/rsi_generation_audit.py": "146c52ede52467fdc83960cc66a0c58a0496a36425f00f91ff55457c20863ba8",
+    "src/arc/rsi_generation_budget_draft.py": "ffb16e68625129f7aa642d06dd37da895e3242eee93cadaa8b5acc971180c1be",
     "src/arc/rsi_generation_drafts.py": "39077b48dd4fd818b2281b8cd55beba4704d96c399031a1f717f7e0871d51f90",
     "src/arc/rsi_generation_outcomes.py": "3a6c4d907186139721d491bbe4b534dc491c26817adaddb68e60c30bb5483f85",
     "src/arc/rsi_generation_stage.py": "75e1a6f87a4c6fa2250901b343b005a0cd31f76e6b790a6169c843b67e9d4faa",
