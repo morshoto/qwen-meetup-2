@@ -1,0 +1,33 @@
+{
+  "bounded_sha256": "67b421802ffd521b18e8170b7f79b11f03ba2822879a49a17898a0fc67706512",
+  "content_manifest_sha256": {
+    "development": "0f5b34c0d6e2f70d23c5398e51b1427a4c0817259dfeb04d0d30b516507053cd",
+    "exploratory": "3f8c0e1be4b551291781b4a14d9ef2208c53a1dccf18499d6bf0f7246037b2a6",
+    "generation": "b6e48da59bbccc499c0d24f855383661ad118d934b19de435e9ddba3e4be3d2c"
+  },
+  "counts": {
+    "development": 200,
+    "exploratory": 50,
+    "generation": 750
+  },
+  "dataset_sha256": "779eaba89790ebad9af02514a7efc0aefaf2cf8236f046a31bbf8b9ec48f20f5",
+  "exact_content_unique": true,
+  "execution_ready": false,
+  "id_manifest_sha256": {
+    "development": "7a91907a41baf06d748ae7139910e869edd768189920bdf9c0288dba49301690",
+    "exploratory": "daf8c48c7d72916781a44724763c98020541da72df3450a34c3519076d74f792",
+    "generation": "811147b2fbcb79886d5d9b256e5fdf50eeb25966df86ee12ea931149a8c882c1"
+  },
+  "independent_review_completed": false,
+  "known_exposed_counts": {
+    "development": 0,
+    "exploratory": 0,
+    "generation": 317
+  },
+  "review_code_sha256": "794cc7a3fc77a0b673b22276c7acb95261634bba3697081aa3331bf333b5b14a",
+  "selection_file_sha256": "68ef1fc9c0c081d8f90e08506a4fcbdd795715315e01736da277314c216892de",
+  "selection_sha256": "b8c393e0a954e567839e0958aae0f346a02174282d157dad780246d3bdcb2a79",
+  "status": "allocation_consistent_unverified",
+  "unknown_pretraining_exposure": true,
+  "unknown_prior_project_exposure": true
+}
