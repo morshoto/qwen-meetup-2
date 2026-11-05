@@ -148,3 +148,11 @@ Test both local guarded endpoints before collection and again before dispatch,
 checking the declared model, adapter, thinking canary, reviewed driver, distinct
 ledgers and combined token ceilings. Reject changing or regressing contract
 state. A server declaration is not process or weight attestation.
+
+### Local model and adapter identity cycle
+
+Test complete local snapshot file hashing, quantization and weight-index checks,
+chat-template binding, file drift and escaping symlink rejection. Test the
+existing two-file adapter digest against registered expectations. These local
+hashes are evidence of files read, not proof of server process identity or an
+independently witnessed registration.
