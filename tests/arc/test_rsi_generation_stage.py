@@ -47,6 +47,10 @@ class GenerationStageTests(unittest.TestCase):
         self.assertEqual(self.pool, [])
         self.assertFalse(result['training_allowed'])
         self.assertTrue((self.root / 'g0.stage.completed.json').exists())
+        start = json.loads((self.root / 'g0.stage.started.json').read_text())
+        self.assertEqual(start['task_hashes'], self.hashes)
+        self.assertEqual(start['public_probe_sha256'], probes_sha256(self.public))
+        self.assertEqual(start['private_probe_sha256'], probes_sha256(self.private))
         with self.assertRaises(FileExistsError):
             self.run_stage()
 
