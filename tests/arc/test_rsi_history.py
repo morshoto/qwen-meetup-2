@@ -1,11 +1,13 @@
 """Fail closed when the retained task exposure inventory is incomplete."""
 import json
+import hashlib
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from src.arc.rsi_history import audit_history, provisional_snapshot
+from src.arc.rsi_history import audit_history, provisional_snapshot, verify_snapshot
 
 
 class HistoryAuditTests(unittest.TestCase):
@@ -79,6 +81,35 @@ class HistoryAuditTests(unittest.TestCase):
             provisional_snapshot(self.root, task_path='data/tasks.json',
                                  registry_path='configs/old.json',
                                  required_paths=[], development_size=1)
+
+    def test_snapshot_verification_detects_source_and_partition_changes(self):
+        (self.root / 'data').mkdir()
+        (self.root / 'data/tasks.json').write_text(json.dumps({key: {} for key in 'abcdef'}))
+        registry = {'protocol': 'p3c_exploration_task_exclusions_v1', 'version': 1,
+                    'exclusions': {'d': ['old']}, 'task_ids': ['d']}
+        (self.root / 'configs/old.json').write_text(json.dumps(registry))
+        code_paths = ['src/arc/rsi_history.py', 'src/arc/exploration_registry.py', 'src/arc/rsi_split.py']
+        for relative in code_paths:
+            target = self.root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(Path(relative), target)
+        snapshot = provisional_snapshot(self.root, task_path='data/tasks.json',
+                                        registry_path='configs/old.json',
+                                        required_paths=[], development_size=2)
+        snapshot['audit_code'] = [{'path': p, 'sha256': hashlib.sha256((self.root / p).read_bytes()).hexdigest()}
+                                  for p in code_paths]
+        verify_snapshot(self.root, snapshot)
+        snapshot['partitions']['development'].reverse()
+        with self.assertRaisesRegex(ValueError, 'snapshot differs'):
+            verify_snapshot(self.root, snapshot)
+        snapshot['partitions']['development'].reverse()
+        (self.root / 'artifacts/run/generation.json').write_text('{"task_id":"e"}')
+        with self.assertRaisesRegex(ValueError, 'snapshot differs'):
+            verify_snapshot(self.root, snapshot)
+        (self.root / 'artifacts/run/generation.json').unlink()
+        (self.root / code_paths[0]).write_text('changed')
+        with self.assertRaisesRegex(ValueError, 'audit code'):
+            verify_snapshot(self.root, snapshot)
 
 
 if __name__ == '__main__':
