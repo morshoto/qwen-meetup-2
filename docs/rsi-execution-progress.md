@@ -171,6 +171,18 @@ origins are not independently authenticated, and the existing MLX trainer
 expects a different provenance contract. The artifact is not a registered
 training dataset and no preflight or training was started.
 
+### Local MLX dataset loader fixture
+
+On 2026-11-05, `python -m tests.arc.rsi_mlx_dataset_fixture MODEL_DIRECTORY`
+used the local 14B tokenizer and MLX-LM 0.30.7 loader to read five fabricated
+rows from a temporary quarantine directory. The loaded rows and their masked
+token sequences matched the checked artifact; validation and test splits were
+empty. The dataset SHA-256 was
+`97029d0e0ba4510041314d94499d61e7bac33c67f8d8bf0c68bad228f1acf501`.
+The audit uses local, caller-supplied components and does not authenticate
+their provenance or demonstrate training. It loaded no model weights and did
+not run a preflight or training.
+
 ### Local 14B tokenizer fixture observation
 
 On 2026-11-05, the read-only fixture procedure
