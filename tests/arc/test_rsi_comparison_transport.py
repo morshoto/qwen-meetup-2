@@ -28,9 +28,12 @@ class ComparisonTransportTests(unittest.TestCase):
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
                 self.server.requests.append(self.rfile.read(int(self.headers['Content-Length'])))
+                content = self.server.content
+                if self.server.arm_difference and (len(self.server.requests) - 1) % 4 < 2:
+                    content = 'def transform(grid):\n    return [row[:] for row in grid]'
                 raw = json.dumps({'model': MODEL, 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
-                    'choices': [{'message': {'role': 'assistant', 'content': self.server.content}, 'finish_reason': ('length' if self.server.truncate_first and len(self.server.requests) == 1 else self.server.finish_reason)}]}).encode()
+                    'choices': [{'message': {'role': 'assistant', 'content': content}, 'finish_reason': ('length' if self.server.truncate_first and len(self.server.requests) == 1 else self.server.finish_reason)}]}).encode()
                 self.send_response(200)
                 self.send_header('Content-Length', str(len(raw)))
                 self.end_headers()
@@ -41,6 +44,7 @@ class ComparisonTransportTests(unittest.TestCase):
         self.server.requests = []
         self.server.content, self.server.finish_reason = CODE, 'stop'
         self.server.truncate_first = False
+        self.server.arm_difference = False
         self.worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.worker.start()
         self.addCleanup(self.server.server_close)
@@ -95,6 +99,7 @@ class ComparisonTransportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
                                       sandbox=FakeE6Sandbox(), verifier=verifier)
+
         with self.assertRaises(ValueError):
             screen_captured_rsi_chain(first={'root': self.root, 'sha256': result['sha256']},
                 tasks=tasks, sandbox=FakeE6Sandbox(), verifier=verifier)
@@ -123,6 +128,32 @@ class ComparisonTransportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
                                       sandbox=FakeE6Sandbox(), verifier=verifier)
+
+    def test_two_captured_transitions_require_both_capture_sets(self):
+        self.server.arm_difference = True
+        ids = [f'task-{i:03}' for i in range(200)]
+        tasks = {key: Task(key, (([[1], [2]], [[2], [1]]),), ([[3], [4]],)) for key in ids}
+        verifier = Verifier({key: [[[4], [3]]] for key in ids})
+        seeds = {key: [10000 + i * 2, 10001 + i * 2] for i, key in enumerate(ids)}
+        refs = []
+        for generation, parent, candidate in ((0, 'none', 'b' * 64), (1, 'b' * 64, 'c' * 64)):
+            root = self.root / f'run-{generation}'
+            root.mkdir(mode=0o700)
+            transport = CapturedComparisonTransport(root=root, parent_url=self.url, candidate_url=self.url,
+                parent_adapter=parent, candidate_adapter=candidate, max_request_seconds=2)
+            budget = ComparisonBudget.create(root, registration_sha256='a' * 64, generation=generation)
+            result = run_comparison(root=root, registration_sha256='a' * 64, generation=generation,
+                task_ids=ids, tasks=tasks, seeds=seeds, parent_adapter=parent, candidate_adapter=candidate,
+                generate=transport, sandbox=FakeE6Sandbox(), verifier=verifier, budget=budget)
+            refs.append({'root': root, 'sha256': result['sha256']})
+        screened = screen_captured_rsi_chain(first=refs[0], second=refs[1], tasks=tasks,
+            sandbox=FakeE6Sandbox(), verifier=verifier)
+        self.assertEqual(screened['status'], 'second_screen_positive_unverified')
+        self.assertFalse(screened['execution_ready'])
+        (refs[1]['root'] / 'candidate.capture.jsonl').unlink()
+        with self.assertRaises(ValueError):
+            screen_captured_rsi_chain(first=refs[0], second=refs[1], tasks=tasks,
+                sandbox=FakeE6Sandbox(), verifier=verifier)
 
     def test_truncated_and_malformed_completions_are_captured_invalid(self):
         self.server.finish_reason = 'length'
