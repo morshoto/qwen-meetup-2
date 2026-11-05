@@ -266,3 +266,13 @@ ten slot journals, captures, pool evolution and counts; missing, duplicate or
 altered evidence was rejected. The stage and replay use caller-supplied model,
 sandbox and registration inputs, so their results remain unverified and cannot
 authorize training. No Qwen call was made.
+
+### Generation draft batch
+
+A replayed generation can now derive quarantined SFT drafts in slot order using
+the same evolving novelty pool. Fixture runs exercised both one provisional
+draft and nine distinct provisional drafts; the count threshold is reported
+separately from training eligibility. Every draft remains marked
+`unverified_capture`, and the existing batch precheck rejects it for training.
+The observed count is not the required independently audited strict-new count.
+No Qwen calls or training occurred.
