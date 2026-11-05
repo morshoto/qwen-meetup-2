@@ -83,3 +83,13 @@ the lineage precheck. This is local consistency evidence only: neither the
 fixture server nor the caller-supplied sandbox establishes live provenance,
 registered model weights, adapter identity, or independent audit. No live model
 call was performed.
+
+### Capture-to-slot replay
+
+Captured transport request IDs are now recorded in each slot attempt. The replay
+precheck joins request, response and ledger records by ID, verifies the supplied
+slot evidence digest, reconstructs prompts and seeds, replays the verifier, and
+checks the novelty result. Reordered fixture logs pass; missing, duplicate, and
+tampered records fail. The digest, records, registration inputs and sandbox are
+still supplied by the caller, so this does not establish an independently sealed
+run or training eligibility.
