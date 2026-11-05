@@ -76,14 +76,25 @@ class CollectionBudget:
         with self._locked() as directory:
             return self._state(directory)
 
+    @staticmethod
+    def _remaining(state, wall, monotonic):
+        if (not math.isfinite(wall) or not math.isfinite(monotonic) or
+                wall < state['last_wall'] or monotonic < state['last_monotonic']):
+            raise TimeoutError('collection budget expired or clock moved backwards')
+        remaining = 3600 - max(wall - state['started_wall'], monotonic - state['started_monotonic'])
+        if remaining <= 0:
+            raise TimeoutError('collection budget expired or clock moved backwards')
+        return remaining
+
+    def remaining(self):
+        with self._locked() as directory:
+            return self._remaining(self._state(directory), time.time(), time.monotonic())
+
     def _reserve(self, *, tokens=0, sandbox=False):
         with self._locked() as directory:
             state = self._state(directory)
             wall, monotonic = time.time(), time.monotonic()
-            if (not math.isfinite(wall) or not math.isfinite(monotonic) or
-                    wall < state['last_wall'] or monotonic < state['last_monotonic'] or
-                    wall - state['started_wall'] >= 3600 or monotonic - state['started_monotonic'] >= 3600):
-                raise TimeoutError('collection budget expired or clock moved backwards')
+            self._remaining(state, wall, monotonic)
             if sandbox:
                 if state['sandbox_runs'] >= 300:
                     raise TimeoutError('collection sandbox budget exhausted')
