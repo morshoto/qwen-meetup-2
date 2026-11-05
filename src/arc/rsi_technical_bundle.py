@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from src.arc.rsi_model_identity import _hash_file
+from src.arc.rsi_canary_containment import fork_restricted_command
 from src.arc.rsi_slot_lifecycle import _create, _directory
 from src.arc.rsi_technical_canary import verify_technical_canary_identities
 
@@ -55,6 +56,8 @@ def prepare_technical_canary_bundle(*, root, proposal, manifest_bytes, source_ro
               'environment': {'HF_HUB_OFFLINE': '1', 'TRANSFORMERS_OFFLINE': '1',
                               'TOKENIZERS_PARALLELISM': 'false', 'PYTHONDONTWRITEBYTECODE': '1'},
               'evidence_type': 'local_files_and_caller_supplied_manifests'}
+    launch['fork_restricted_argv'] = fork_restricted_command(launch['argv'])['argv']
+    launch['containment_verified'] = False
     verify()
     if python.resolve(strict=True) != interpreter or _hash_file(interpreter) != python_hash or _hash_file(wrapper) != wrapper_hash:
         raise ValueError('technical canary launch inputs changed')
