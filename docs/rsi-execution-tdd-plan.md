@@ -70,3 +70,11 @@ records joined by request ID, including reordered logs, missing or duplicate
 IDs, changed bytes, incorrect statuses, and novelty fingerprints. Replay the
 conditioned lineage with a separately supplied sandbox; keep the result
 ineligible until server and sandbox provenance are independently established.
+
+### Matched evaluation task cycle
+
+Test that two independent samples use the same label-free solve prompt, that
+static rejection, visible-example failures and invalid grid outputs count as
+failed attempts, and that infrastructure failures and the ten-start per-sample
+cap stop scoring. Test per-test-input guesses and task scoring via the isolated
+solution verifier. Keep supplied model and sandbox identity unauthenticated.
