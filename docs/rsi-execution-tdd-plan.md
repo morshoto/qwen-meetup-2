@@ -573,3 +573,10 @@ Test reconstruction of the legacy code agent's complete task-text block and
 scan retained strings for it inside longer prompts. Record only bounded matches;
 hash-only code requests and unretained or different prompt formats remain
 unresolved.
+
+### Interrupted candidate journal review
+
+Test parsing of P3-A candidate reservation keys from retained budget journals,
+including incomplete runs, malformed keys, duplicate reservations and changing
+files. Compare task identifiers with the provisional development split; a
+reservation is conservative possible exposure and does not prove dispatch.
