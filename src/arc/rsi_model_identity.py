@@ -71,7 +71,9 @@ def snapshot_model_manifest(model_dir):
             target = item.resolve(strict=True)
         except (OSError, RuntimeError) as exc:
             raise ValueError('snapshot file unavailable') from exc
-        if not target.is_relative_to(root) and not target.is_relative_to(repo / 'blobs'):
+        shared_cache = (repo.name == 'models--mlx-community--Qwen3-14B-4bit' and
+                        repo.parent.name == 'hub' and target.is_relative_to(repo.parent / 'blobs'))
+        if not target.is_relative_to(root) and not target.is_relative_to(repo / 'blobs') and not shared_cache:
             raise ValueError('snapshot file escapes its repository')
         paths[name] = target
         hashes[name] = _hash_file(target)
