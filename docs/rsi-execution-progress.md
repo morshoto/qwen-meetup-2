@@ -704,3 +704,17 @@ initial code request. Three associated `identity.json` files record an
 that implementation digest. Reconstructions using current code therefore do
 not establish the historical prompt format. The one digest match above remains
 only a consistency observation, and the other four requests remain unidentified.
+
+### Version 3 bounded inventory proposal
+
+`src.arc.rsi_bounded_inventory.propose_bounded_inventory` recomputes the legacy
+registry, retained-history inventory, extended metadata review and candidate
+journal review, unions their known dataset task IDs, and deterministically
+constructs a development candidate. It hashes the task source, registry and
+review code and repeats the reviews to detect local changes. The [local
+proposal](../research/rsi/bounded-exposure-proposal.json) records 317 known
+exposed source tasks and selects the same 200 development IDs as the earlier
+provisional split. The separately recorded prompt reviews and location search
+must also be independently reviewed and reconciled before any freeze. This
+proposal is not independent review, a final manifest, execution authorization,
+or evidence of no prior exposure.
