@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from src.arc.data import Task, Verifier
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
-from src.arc.rsi_evaluation import evaluate_task, score_task
+from src.arc.rsi_evaluation import InvalidModelOutput, evaluate_task, score_task
 
 
 class EvaluationTests(unittest.TestCase):
@@ -21,6 +21,13 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual([c.kwargs['sample'] for c in self.generate.call_args_list], [0, 1])
         self.assertNotIn('[[4, 3]]', self.generate.call_args_list[0].args[0])
         self.assertEqual(result['predictions'], [[[[4, 3]]]])
+        self.assertTrue(score_task(self.task, result, self.verifier)['solved'])
+
+    def test_invalid_model_completion_counts_as_failed_sample(self):
+        result = evaluate_task(self.task, generate=Mock(side_effect=[InvalidModelOutput(), FAKE_PROGRAMS[1]]),
+                               sandbox=FakeE6Sandbox())
+        self.assertEqual(result['sample_statuses'], ['invalid_model_output', 'accepted'])
+        self.assertEqual(result['sample_sources'][0], None)
         self.assertTrue(score_task(self.task, result, self.verifier)['solved'])
 
     def test_static_and_invalid_outputs_are_failed_attempts(self):
