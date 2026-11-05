@@ -156,3 +156,10 @@ chat-template binding, file drift and escaping symlink rejection. Test the
 existing two-file adapter digest against registered expectations. These local
 hashes are evidence of files read, not proof of server process identity or an
 independently witnessed registration.
+
+### Registered model consistency cycle
+
+Test that the draft registration's model-manifest bytes match the actual local
+snapshot, and detect changes to either the registered inputs or model files.
+Recheck registration before and after the file audit. This is not a final
+preregistration, remote witness, or server process attestation.
