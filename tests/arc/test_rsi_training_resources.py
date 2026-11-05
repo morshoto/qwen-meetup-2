@@ -22,6 +22,20 @@ class TrainingResourceTests(unittest.TestCase):
             with self.subTest(reason=reason):
                 self.assertEqual(training_resource_decision(sample(), [sample(0), state]), reason)
 
+    def test_tighter_canary_limits_are_applied_per_model(self):
+        limits = {'timeout_seconds': 60, 'minimum_disk_gib': 25, 'minimum_free_memory_percent': 30,
+                  'maximum_swap_growth_mib': 100, 'maximum_process_rss_gib': 12, 'sample_interval_seconds': 3}
+        cases = [(sample(3, disk=25 * 1024**3), 'insufficient_disk'),
+                 (sample(3, free=30), 'memory_pressure_limit'),
+                 (sample(3, swap=100), 'swap_increase_limit'),
+                 (sample(3, rss=12 * 1024**3), 'process_rss_limit'),
+                 (sample(4), 'monitor_evidence_invalid')]
+        for state, reason in cases:
+            with self.subTest(reason=reason):
+                self.assertEqual(training_resource_decision(sample(), [state], limits=limits), reason)
+        self.assertEqual(training_resource_decision(sample(), [sample(3)], limits=dict(limits, maximum_process_rss_gib=33)),
+                         'monitor_evidence_invalid')
+
     def test_sustained_swap_growth_stops_before_absolute_limit(self):
         states = [sample(0), sample(5, swap=1), sample(10, swap=2)]
         self.assertEqual(training_resource_decision(sample(), states), 'swap_growth_trend')
