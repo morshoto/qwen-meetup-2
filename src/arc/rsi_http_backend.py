@@ -24,8 +24,9 @@ from src.arc.response_diagnostics import diagnose_raw_response
 class CapturingBackend(OpenAICompatibleBackend):
     def __init__(self, *, request_capture_path: Path, **kwargs):
         super().__init__(**kwargs)
-        if not self.guarded or self.api_style != 'openai_compatible' or self.log_path is None:
-            raise ValueError('request capture requires guarded mode and a request log')
+        if (not self.guarded or self.api_style != 'openai_compatible' or self.log_path is None or
+                kwargs.get('allow_remote', False) or self.thinking != 'off'):
+            raise ValueError('request capture requires local guarded thinking-off mode and a request log')
         capture = Path(request_capture_path).expanduser().resolve()
         log = Path(self.log_path).expanduser().resolve()
         if capture in {log, log.with_name('llm_responses.jsonl')}:
