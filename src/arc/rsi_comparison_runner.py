@@ -4,6 +4,7 @@ This orchestration does not establish model, adapter, sandbox, seed support or
 registration authenticity. It does not authorize a live experiment.
 """
 import json
+import re
 from pathlib import Path
 
 from src.arc.data import Task
@@ -39,19 +40,34 @@ def run_comparison(*, root, registration_sha256, generation, task_ids, tasks, se
         _create(directory, 'comparison.started.json', {'registration_sha256': registration_sha256,
                                                          'generation': generation})
     outcomes = {'parent': {}, 'candidate': {}}
+    seen_request_ids = set()
     metered = BudgetedSandbox(sandbox, budget)
     try:
         for index, task_id in enumerate(task_ids):
             task = tasks[task_id]
             for arm, adapter in (('parent', parent_adapter), ('candidate', candidate_adapter)):
+                request_ids = []
                 def call(prompt, *, sample):
                     messages = [{'role': 'system', 'content': system_prompt_for_kind('e5_self_solve')},
                                 {'role': 'user', 'content': prompt}]
                     reserved = 512 + len(json.dumps(messages, ensure_ascii=False).encode('utf-8')) + 1024
                     budget.reserve_model(reserved, kind='evaluation')
-                    return generate(prompt, arm=arm, adapter=adapter, task_id=task_id, sample=sample,
-                                    seed=seeds[task_id][sample], timeout=budget.remaining())
+                    response = generate(prompt, arm=arm, adapter=adapter, task_id=task_id, sample=sample,
+                                        seed=seeds[task_id][sample], timeout=budget.remaining())
+                    request_id = None
+                    if isinstance(response, dict):
+                        if set(response) != {'code', 'request_id'}:
+                            raise ValueError('invalid comparison transport response')
+                        request_id = response['request_id']
+                        if (not isinstance(request_id, str) or not re.fullmatch(r'[0-9a-f]{32}', request_id)
+                                or request_id in seen_request_ids):
+                            raise ValueError('invalid or duplicate comparison request ID')
+                        seen_request_ids.add(request_id)
+                        response = response['code']
+                    request_ids.append(request_id)
+                    return response
                 result = evaluate_task(task, generate=call, sandbox=metered)
+                result['sample_request_ids'] = request_ids
                 score = score_task(task, result, verifier)
                 value = {'solved': score['solved'], 'seeds': list(seeds[task_id])}
                 with _directory(root) as directory:

@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import re
 import stat
 
 from src.arc.data import Task
@@ -59,6 +60,7 @@ def replay_comparison(root, *, expected_sha256, tasks, sandbox, verifier):
                 any(not isinstance(tasks[key], Task) or tasks[key].id != key or
                     task_sha256(tasks[key]) != frozen['task_hashes'][key] for key in ids)):
             raise ValueError('comparison tasks differ')
+        seen_requests = set()
         for index, task_id in enumerate(ids):
             for arm in ('parent', 'candidate'):
                 _, record = _read(directory, f'comparison-{index:03d}-{arm}.json')
@@ -68,10 +70,20 @@ def replay_comparison(root, *, expected_sha256, tasks, sandbox, verifier):
                 if (not isinstance(result, dict) or not isinstance(result.get('sample_sources'), list) or
                         len(result['sample_sources']) != 2):
                     raise ValueError('sample sources unavailable')
+                requests = result.get('sample_request_ids')
+                if not isinstance(requests, list) or len(requests) != 2:
+                    raise ValueError('sample request identifiers unavailable')
+                for request_id in requests:
+                    if request_id is not None:
+                        if (not isinstance(request_id, str) or not re.fullmatch(r'[0-9a-f]{32}', request_id)
+                                or request_id in seen_requests):
+                            raise ValueError('invalid or duplicate sample request ID')
+                        seen_requests.add(request_id)
                 sources = result['sample_sources']
                 def generate(_prompt, *, sample):
                     return sources[sample]
                 replayed = evaluate_task(tasks[task_id], generate=generate, sandbox=sandbox)
+                replayed['sample_request_ids'] = requests
                 if replayed != result:
                     raise ValueError('task execution differs from replay')
                 score = score_task(tasks[task_id], replayed, verifier)
