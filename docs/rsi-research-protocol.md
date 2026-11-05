@@ -90,6 +90,13 @@ only and leave the competitive claim unverified.
    the proposed development split remains unestablished until the history audit
    and manifest freeze are complete. Model pretraining exposure is
    unknown and must be disclosed; this split cannot prove absence of contamination.
+   A [provisional split](../research/rsi/provisional-split.json) records an
+   offline scan of the retained local artifacts: 316 of the 1,000 source tasks
+   appeared in the union of that scan and the older registry. It records source
+   hashes and uses `src.arc.rsi_split.make_split` to choose 200 development
+   tasks outside those known IDs. This is not the final manifest: the scanner
+   silently skips unreadable files and cannot prove its source inventory is
+   complete. Independently audit missing and unreadable history before use.
 3. On generation tasks, Qwen writes and repairs candidate programs. Execute in
    the existing network-isolated sandbox with bounded resources. A generic
    verifier checks format, determinism, safety, output validity and independent
