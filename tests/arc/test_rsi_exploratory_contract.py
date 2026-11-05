@@ -27,7 +27,7 @@ class ExploratoryContractTests(unittest.TestCase):
         return ContractCheckedExploratoryTransport(self.transport,budget=self.budget,registration_sha256='a'*64,
                                                     generation=0,expected_max_prompt_tokens=4096)
     def reply(self,url,*args,**kwargs): return dict(self.states[url])
-    @patch('src.arc.rsi_exploratory_contract.verify_guarded_contract')
+    @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
     def test_requires_exact_reservation_and_routes(self,verify):
         verify.side_effect=self.reply; guard=self.make()
         with patch.object(CapturedExploratoryTransport,'__call__',return_value={'code':'x','request_id':'1'*32,'usage':None}) as dispatch:
@@ -35,14 +35,14 @@ class ExploratoryContractTests(unittest.TestCase):
             self.budget.reserve_model(self.reservation,kind='evaluation')
             guard('prompt',arm='base',adapter='none',task_id='t',sample=0,seed=1,timeout=1)
             self.assertEqual(dispatch.call_count,1)
-    @patch('src.arc.rsi_exploratory_contract.verify_guarded_contract')
+    @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
     def test_rejects_changed_ledgers_or_server_overspend(self,verify):
         verify.side_effect=self.reply; guard=self.make(); self.budget.reserve_model(self.reservation,kind='evaluation')
         self.states[self.a]['reserved_tokens']=self.reservation+1
         with patch.object(CapturedExploratoryTransport,'__call__') as dispatch:
             with self.assertRaises(ValueError): guard('prompt',arm='base',adapter='none',task_id='t',sample=0,seed=1,timeout=1)
             dispatch.assert_not_called()
-    @patch('src.arc.rsi_exploratory_contract.verify_guarded_contract')
+    @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
     def test_rejects_shared_or_overlarge_ledgers(self,verify):
         verify.side_effect=self.reply
         self.states[self.b]['ledger_id']=self.states[self.a]['ledger_id']
