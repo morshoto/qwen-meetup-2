@@ -102,6 +102,15 @@ only and leave the competitive claim unverified.
    before invoking it. This is not the final manifest: the inventory cannot
    establish that every historical source was retained or recognized.
    Independently audit missing history before use.
+
+   Recompute the saved provisional split against its recorded local inputs and
+   code with the command below. It requires the ignored historical artifacts
+   and source data to be available at their recorded paths; success does not
+   establish that the historical inventory is complete.
+
+   ```sh
+   python -c "import json; from src.arc.rsi_history import verify_snapshot; verify_snapshot('.', json.load(open('research/rsi/provisional-split.json')))"
+   ```
 3. For each generation select ten successive task IDs in sorted generation
    order: positions 0–9 for the first generation and 10–19 for the second.
    For each selected task use the existing `solve_prompt` format: expose its
