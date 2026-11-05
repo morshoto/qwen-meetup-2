@@ -26,7 +26,7 @@ class MLXConfigurationTests(unittest.TestCase):
         config = result['config']
         self.assertFalse(result['training_allowed'])
         self.assertEqual(result['timeout_seconds'], 1800)
-        self.assertEqual(config['data'], str(self.paths['generation_data_dir']))
+        self.assertEqual(config['data'], str(self.paths['generation_data_dir'].resolve()))
         self.assertEqual(config['iters'], 20)
         self.assertEqual(config['num_layers'], 2)
         self.assertEqual(config['learning_rate'], 0.0001)
@@ -38,7 +38,7 @@ class MLXConfigurationTests(unittest.TestCase):
         result = self.preview(phase='preflight')
         self.assertEqual(result['timeout_seconds'], 300)
         self.assertEqual(result['config']['iters'], 1)
-        self.assertEqual(result['config']['data'], str(self.paths['canary_data_dir']))
+        self.assertEqual(result['config']['data'], str(self.paths['canary_data_dir'].resolve()))
         with self.assertRaises(ValueError):
             self.preview(phase='preflight', canary_data_dir=self.paths['generation_data_dir'])
 
@@ -49,7 +49,7 @@ class MLXConfigurationTests(unittest.TestCase):
             self.preview(plan=plan)
         parent = self.root / 'parent' / 'adapters.safetensors'
         result = self.preview(plan=plan, previous_adapter_file=parent)
-        self.assertEqual(result['config']['resume_adapter_file'], str(parent))
+        self.assertEqual(result['config']['resume_adapter_file'], str(parent.resolve()))
         self.assertEqual(result['parent_adapter_claim'], 'b' * 64)
         self.assertFalse(result['parent_adapter_verified'])
 
