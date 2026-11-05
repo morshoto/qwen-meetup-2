@@ -23,7 +23,9 @@ class PreflightBundleTests(unittest.TestCase):
         self.wrapper = cli / 'p3b_train.py'
         self.wrapper.write_bytes(b'fixture wrapper')
         self.args = dict(root=self.root, expected_spec_sha256=self.fixture.digest,
-            manifest_bytes=self.fixture.raw, source_root=self.root, python_executable=self.python)
+            manifest_bytes=self.fixture.raw, source_root=self.root, python_executable=self.python,
+            **{key: self.fixture.fixture.args[key] for key in
+               ('synthetic_tasks', 'forbidden_tasks', 'tokenizer', 'render', 'load_local_dataset')})
 
     @patch('src.arc.rsi_preflight_bundle.verify_preflight_local_identities')
     def test_bundle_binds_config_wrapper_and_offline_command(self, verify):
@@ -55,6 +57,27 @@ class PreflightBundleTests(unittest.TestCase):
         (self.root / 'preflight.proposal.json').write_text('{}')
         with self.assertRaises(ValueError):
             prepare_preflight_bundle(**self.args)
+        self.assertFalse((self.root / 'preflight.launch.quarantine').exists())
+
+    @patch('src.arc.rsi_preflight_bundle.verify_preflight_local_identities')
+    def test_changed_datasets_and_rehashed_settings_are_rejected(self, verify):
+        verify.return_value = {'status': 'preflight_local_identities_consistent', 'execution_ready': False,
+                               'independently_verified': False, 'proposal_sha256': self.fixture.digest}
+        for relative in ('preflight-canary.quarantine/train.jsonl', 'generation-sft.quarantine/train.jsonl'):
+            path = self.root / relative
+            original = path.read_bytes()
+            path.write_bytes(original + b' ')
+            with self.assertRaises(ValueError):
+                prepare_preflight_bundle(**self.args)
+            path.write_bytes(original)
+        path = self.root / 'preflight.proposal.json'
+        spec = json.loads(path.read_text())
+        spec['config']['learning_rate'] = 0.01
+        path.write_text(json.dumps(spec))
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        verify.return_value['proposal_sha256'] = digest
+        with self.assertRaises(ValueError):
+            prepare_preflight_bundle(**{**self.args, 'expected_spec_sha256': digest})
         self.assertFalse((self.root / 'preflight.launch.quarantine').exists())
 
 
