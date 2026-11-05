@@ -78,6 +78,22 @@ class ComparisonRunnerTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             self.run_comparison()
 
+    def test_capture_ids_are_bound_to_saved_samples(self):
+        self.generate.side_effect = [{'code': FAKE_PROGRAMS[1], 'request_id': '1' * 32},
+                                     {'code': FAKE_PROGRAMS[1], 'request_id': '2' * 32},
+                                     TimeoutError('fixture stop')]
+        outcome = self.run_comparison()
+        self.assertEqual(outcome['status'], 'incomplete')
+        saved = json.loads((self.root / 'comparison-000-parent.json').read_text())
+        self.assertEqual(saved['result']['sample_request_ids'], ['1' * 32, '2' * 32])
+
+    def test_duplicate_request_id_stops_before_saving_task(self):
+        self.generate.side_effect = [{'code': FAKE_PROGRAMS[1], 'request_id': '1' * 32}] * 2
+        outcome = self.run_comparison()
+        self.assertEqual(outcome['status'], 'incomplete')
+        self.assertEqual(outcome['failure_type'], 'ValueError')
+        self.assertFalse((self.root / 'comparison-000-parent.json').exists())
+
     def test_invalid_input_fails_before_dispatch(self):
         self.seeds[self.ids[0]] = [1, 1]
         with self.assertRaises(ValueError):
