@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Diagnostic content separation cycle
+
+Test final diagnostic proposals against actual generation, development and
+diagnostic prompt data, using ID-independent canonical content hashes as well
+as task IDs. Reject identical prompt data under different IDs and invalid
+grids before writing. Hash the full supplied generation manifest and retain the
+limits of caller-supplied data and incomplete historical exposure audits.
+
 ### Final diagnostic proposal cycle
 
 Test a non-authorizing final diagnostic proposal derived from captured
