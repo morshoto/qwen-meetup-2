@@ -37,6 +37,7 @@
     "separate execution authorization"
   ],
   "parent_adapter": "none",
+  "provisional_legacy_reference_method": "build_legacy_duplicate_reference; synthetic identity retained; behavior not yet evaluated",
   "provisional_probe_candidates": {
     "private": {
       "canonical_probe_sha256": "55d78dc92f9ed1d6d53ca839e1e4a2ccfaf6fa54062f28b96ce432e64a2b3182",
@@ -175,6 +176,7 @@
     "src/arc/rsi_generation_outcomes.py": "3a6c4d907186139721d491bbe4b534dc491c26817adaddb68e60c30bb5483f85",
     "src/arc/rsi_generation_stage.py": "f4fd1747720f62df62e9ba794b6c650f3b39e6a3f957255082abeda60ffa07d2",
     "src/arc/rsi_novelty.py": "13bdad6911d1dc0f33eae6ad6dc9c1bad80f66b67befaeb1c8bd2d7f945a92f0",
+    "src/arc/rsi_reference_pool.py": "161ef213bca5b1ce0b2e182d9e046257b4f21f1fdcd60e83933311c38ded36e2",
     "src/arc/rsi_slot_collector.py": "8c1c933e1e1f42aab7fe0033c5b79ead395344fb2c9e5556a72e3830fd973360",
     "src/arc/rsi_slot_transport.py": "3fb13e228aa6a67c5b9a1bdc55cb5a25c130cb8641823a55c44bf891434646ee",
     "src/arc/rsi_task_generation.py": "97f8e430b3c5677128f50d7d1d986ff31d0599ec9fd0b8836ae26028a57c1c0d",
