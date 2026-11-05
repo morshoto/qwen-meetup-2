@@ -551,3 +551,10 @@ splits, and reject loader or masking discrepancies. Exercise the pinned local
 MLX loader with synthetic data and the local tokenizer without loading model
 weights or invoking training. This is format evidence, not provenance or
 authorization.
+
+### Retained exact prompt exposure cycle
+
+Test a read-only scan of retained JSON and JSONL string values for supplied exact
+prompt texts, including nested values, malformed files and changed inventories.
+Record matches and source paths without treating a match as proof of dispatch;
+absence cannot exclude other prompt formats, missing files or pretraining.
