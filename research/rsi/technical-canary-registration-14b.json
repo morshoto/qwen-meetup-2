@@ -1,0 +1,48 @@
+{
+  "candidate_reuse_allowed": false,
+  "config_sha256": "8491e5d4d504a30582ea6f57c635615e4c484646fdd9717960be9264032ec4e7",
+  "data_source": "fixed_synthetic_canary",
+  "dataset_sha256": "c7ca0ab04a51cebc44d0b4cf95de24519c3595448efbabd1abef2700bb26d19b",
+  "execution_ready": false,
+  "independently_verified": false,
+  "limitations": [
+    "local paths and manifests can drift and must be reverified before execution",
+    "resource limits do not establish hardware feasibility",
+    "this draft and its hash list do not authorize a launch"
+  ],
+  "local_file_sha256": {
+    "preflight-canary.quarantine/audit.json": "ba7c843d9fd5eb776d4405ff66a97d2428e036895ff1eab62295404b9609dff3",
+    "preflight-canary.quarantine/train.jsonl": "c7ca0ab04a51cebc44d0b4cf95de24519c3595448efbabd1abef2700bb26d19b",
+    "technical-canary-14b.launch.quarantine/environment_manifest.json": "e55846f399d0b0d4b3c748aa381e7038afa574c7a5f4424dbab9bd2b8f6196c2",
+    "technical-canary-14b.launch.quarantine/launch.json": "1cc7da0a997dccea74a6b5decabc8980ecffebbf7dbaafd3ffdc807a3d9a7f2a",
+    "technical-canary-14b.launch.quarantine/mlx_lora.json": "8491e5d4d504a30582ea6f57c635615e4c484646fdd9717960be9264032ec4e7",
+    "technical-canary-14b.launch.quarantine/model_manifest.json": "e2df5138afed02a3ed3d87013b06f117c576d1b2f79bbcf72d2724565220e39d",
+    "technical-canary-14b.launch.quarantine/proposal.json": "0400824f62e667e0c1b2a597c7d0ac9c2d8fc54a4a02b437a30225505bd1632d",
+    "technical-canary-14b.launch.quarantine/runtime_manifest.json": "7af1101bc86e9f47c13305650bf7069983d4b3767c0489bf3e0057b11f37ad09",
+    "technical-canary-14b.launch.quarantine/source_inventory.json": "d68eaf38e25f9cf78b36cd48b2e4b7d4f03783cba03fd4950705a2d891d439b1"
+  },
+  "local_root": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-canary-review-20261105-v2/14b",
+  "model_id": "mlx-community/Qwen3-14B-4bit",
+  "model_key": "14b",
+  "model_revision": "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+  "outstanding": [
+    "independent registration and identity review",
+    "containment of escaped descendants",
+    "authenticated resource sampling and loss monitoring",
+    "independent save and reload verification procedure",
+    "separately scoped technical canary authorization"
+  ],
+  "promotion_allowed": false,
+  "resource_limits": {
+    "maximum_process_rss_gib": 32,
+    "maximum_swap_growth_mib": 512,
+    "minimum_disk_gib": 20,
+    "minimum_free_memory_percent": 20,
+    "sample_interval_seconds": 5,
+    "timeout_seconds": 300
+  },
+  "run_purpose": "single synthetic training step and independent adapter reload",
+  "status": "draft_technical_canary_registration_unverified",
+  "training_allowed": false,
+  "training_started": false
+}
