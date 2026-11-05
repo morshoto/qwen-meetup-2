@@ -10,6 +10,26 @@
     "requires_complete_history_audit": true,
     "independence_established": false
   },
+  "proposed_generation": {
+    "model_revision": "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+    "slots_per_generation": 10,
+    "max_repairs_per_slot": 2,
+    "temperature": 0.2,
+    "max_new_tokens": 512,
+    "max_calls_per_stage": 32,
+    "max_reserved_tokens_per_stage": 200000,
+    "max_sandbox_starts_per_stage": 300,
+    "max_wall_seconds_per_stage": 3600
+  },
+  "proposed_evaluation_per_transition": {
+    "tasks": 200,
+    "models": 2,
+    "calls_per_model_task": 2,
+    "max_calls": 800,
+    "max_reserved_tokens": 16000000,
+    "max_sandbox_starts": 8000,
+    "max_wall_seconds": 36000
+  },
   "evaluation": {
     "competitive_target_percent": 26.0,
     "benchmark": "ARC-AGI-2 semi-private",

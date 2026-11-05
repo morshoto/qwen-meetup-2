@@ -102,8 +102,19 @@ only and leave the competitive claim unverified.
    before invoking it. This is not the final manifest: the inventory cannot
    establish that every historical source was retained or recognized.
    Independently audit missing history before use.
-3. On generation tasks, Qwen writes and repairs candidate programs. Execute in
-   the existing network-isolated sandbox with bounded resources. A generic
+3. For each generation select ten successive task IDs in sorted generation
+   order: positions 0–9 for the first generation and 10–19 for the second.
+   For each selected task use the existing `solve_prompt` format: expose its
+   demonstration input/output pairs and test inputs, but never its test outputs.
+   Qwen writes a `transform(grid)` program; allow up to two model-authored
+   repairs using only sanitized execution and visible-demonstration feedback.
+   Run the accepted program on the source task's demonstration inputs and test
+   inputs to produce synthetic input/output examples. These generated outputs
+   are not ground-truth labels for the source task. The E9 generator currently
+   uses a generic prompt with no task input, so this task-conditioned generation
+   and its provenance audit must be implemented and tested in issue #2; E9
+   collection results cannot be treated as results from this design.
+   Execute in the existing network-isolated sandbox with bounded resources. A generic
    verifier checks format, determinism, safety, output validity and independent
    probes; model-authored program output may be used as a synthetic label but is
    labeled **generator distillation**, not a verified real ARC solution. Do not
@@ -117,7 +128,9 @@ only and leave the competitive claim unverified.
    valid, strict-new, duplicate, and rejected candidates separately; retain all
    reasons and raw provenance. Never feed private probe outputs back to Qwen.
 5. Require at least five distinct strict same-model Oracles with sealed source
-   and data provenance before any training. Five is an existing feasibility gate,
+   and data provenance before any training. Include only newly generated records
+   from the current model generation in this gate; historical records are
+   duplicate references only. Five is an existing feasibility gate,
    not evidence that the dataset is sufficient for generalization. Freeze SFT
    input hashes, parent model identity, split, loss mask, seed, hyperparameters,
    adapter configuration and training budget before training. First perform a
@@ -143,7 +156,32 @@ existing sealed artifacts.
 Design caps for each proposed collection stage are at most 32 calls, 200,000
 reserved tokens, 300 sandbox starts and 3,600 seconds, matching the E8 per-model
 ceiling; exact slots, seeds, prompt and dependency closure must be registered
-before the run. The proposed training configuration follows the existing 8B
+before the run. Each generation uses ten slots, temperature 0.2, at most 512
+new tokens per request, Thinking off, and at most two repairs per slot; canaries
+count toward the 32-call stage cap. Request seed is `12000 + 100 * generation
++ 3 * slot + attempt` for zero-based generation, slot, and attempt indices;
+requested seeds do not guarantee deterministic inference. Hash the exact prompt,
+model revision, task manifest, verifier, reference pool, and dependency closure
+in the execution registration. The existing E9 runner does not implement this
+task-conditioned schedule.
+
+For each candidate-versus-parent development comparison, propose at most 200
+tasks × two model arms × two independent program samples, or 800 model calls;
+cap total reserved tokens at 16 million, sandbox starts at 8,000, and wall time
+at 36,000 seconds. These are proposed ceilings, not measured resource needs or
+authorization. Setup canaries require their own separately registered cap. Use
+the same `solve_prompt` format and generation settings for both arms, run each
+program on visible demonstrations and test inputs; retain candidates that pass
+all visible demonstrations and submit at most two valid outputs per test input
+in candidate order. Invalid model outputs and rejected programs count as failed
+attempts. Permit at most ten sandbox starts per sample; abort and report an
+incomplete comparison if a task exceeds that cap or infrastructure fails,
+rather than excluding the task. Do not expose test outputs to the model.
+Freeze task-level results before computing a 10,000-resample paired bootstrap
+with seed 42; report all outcomes, including incomplete runs. These limits are
+per comparison and cannot be transferred to another stage.
+
+The proposed training configuration follows the existing 8B
 pilot, without assuming 14B will fit: batch size 1, rank 8, alpha 16, learning
 rate 0.0001, maximum sequence length 2048, two adapted layers, and at most 20
 steps and 1,800 seconds per generation. A separately authorized preflight uses
