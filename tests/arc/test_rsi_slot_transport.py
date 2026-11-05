@@ -68,6 +68,8 @@ class SlotTransportTests(unittest.TestCase):
         ledger = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
         responses = [json.loads(line) for line in (self.root / 'llm_responses.jsonl').read_text().splitlines()]
         evidence = json.loads((self.root / 'g0-slot-00.collection.json').read_text())
+        self.assertEqual([item['request_id'] for item in evidence['attempts']], [item['request_id'] for item in ledger])
+        self.assertEqual([item['request_id'] for item in evidence['attempts']], [item['request_id'] for item in captures])
         attempts = [{'code': attempt['source'], 'request_body': raw,
                      'response_body': base64.b64decode(response['raw_http_body_base64']), 'ledger': event}
                     for attempt, raw, response, event in zip(evidence['attempts'], self.server.requests, responses, ledger)]

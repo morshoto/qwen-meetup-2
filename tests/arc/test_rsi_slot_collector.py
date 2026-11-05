@@ -66,6 +66,20 @@ class SlotCollectorTests(unittest.TestCase):
         self.assertEqual(observe_slot(self.root, registration_sha256=REG, generation=0, slot=0)['status'],
                          'started_outcome_uncertain')
 
+    def test_invalid_or_reused_transport_id_stops_slot(self):
+        for payload in ({'code': FAKE_PROGRAMS[1], 'request_id': 'bad'},
+                        {'code': FAKE_PROGRAMS[1], 'request_id': None}):
+            with self.subTest(payload=payload):
+                with tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    budget = CollectionBudget.create(root, registration_sha256=REG, generation=0)
+                    with self.assertRaises(ValueError):
+                        self.collect(root=root, budget=budget, transport=Mock(return_value=payload))
+        request_id = 'b' * 32
+        with self.assertRaises(ValueError):
+            self.collect(transport=Mock(side_effect=[{'code': FAKE_PROGRAMS[2], 'request_id': request_id},
+                                                     {'code': FAKE_PROGRAMS[1], 'request_id': request_id}]))
+
     def test_wrong_task_stops_before_claim_or_dispatch(self):
         with self.assertRaises(ValueError):
             self.collect(expected_task_sha256='b' * 64)
