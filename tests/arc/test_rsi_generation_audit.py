@@ -60,6 +60,8 @@ class GenerationAuditTests(unittest.TestCase):
             code = f'def transform(grid):\n    return [[(x + {shift}) % 10 for x in row] for row in grid]'
             codes[code] = shift
             self.server.codes[12000 + index * 3] = code
+            if index == 9:
+                self.server.codes[12001 + index * 3] = code
             self.tasks[key] = Task(key, (([[1, 2]], [[(1 + shift) % 10, (2 + shift) % 10]]),), ([[3, 4]],))
         self.hashes = {key: task_sha256(self.tasks[key]) for key in self.ids[:10]}
         class Sandbox:
@@ -72,7 +74,7 @@ class GenerationAuditTests(unittest.TestCase):
             reference_pool=self.pool, expected_reference_pool_sha256=self.pool_hash)
         budget = CollectionBudget.create(self.root, registration_sha256='a' * 64, generation=0)
         result = collect_generation(**common, transport=self.transport, sandbox=Sandbox(), budget=budget)
-        self.assertEqual(result['counts'], {'novel_unverified': 9, 'duplicate_source': 1})
+        self.assertEqual(result['counts'], {'novel_unverified': 9, 'repeated_code': 1})
         capture = [json.loads(line) for line in (self.root / 'capture.jsonl').read_text().splitlines()]
         ledger = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
         response = [json.loads(line) for line in (self.root / 'llm_responses.jsonl').read_text().splitlines()]
@@ -101,7 +103,7 @@ class GenerationAuditTests(unittest.TestCase):
             reference_pool=self.pool, expected_reference_pool_sha256=self.pool_hash)
         budget = CollectionBudget.create(self.root, registration_sha256='a' * 64, generation=0)
         result = collect_generation(**common, transport=self.transport, sandbox=FakeE6Sandbox(), budget=budget)
-        self.assertEqual(result['counts'], {'novel_unverified': 1, 'duplicate_source': 9})
+        self.assertEqual(result['counts'], {'novel_unverified': 1, 'repeated_code': 9})
         capture = [json.loads(line) for line in (self.root / 'capture.jsonl').read_text().splitlines()]
         ledger = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
         response = [json.loads(line) for line in (self.root / 'llm_responses.jsonl').read_text().splitlines()]
@@ -111,7 +113,7 @@ class GenerationAuditTests(unittest.TestCase):
         self.assertEqual(audit['status'], 'generation_replay_consistent')
         self.assertEqual(audit['checked_slots'], 10)
         self.assertFalse(audit['training_allowed'])
-        self.assertEqual(audit['budget_usage']['model_calls'], 10)
+        self.assertEqual(audit['budget_usage']['model_calls'], 19)
         self.assertEqual(audit['budget_usage']['reserved_tokens'], sum(row['token_reservation'] for row in ledger))
         drafts = prepare_generation_drafts(**audit_args)
         self.assertEqual(drafts['draft_count'], 1)

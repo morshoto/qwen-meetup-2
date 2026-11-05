@@ -42,10 +42,10 @@ class GenerationStageTests(unittest.TestCase):
     def test_ten_slots_screen_against_previous_novel_slots(self):
         result = self.run_stage()
         self.assertEqual(result['status'], 'generation_complete_unverified')
-        self.assertEqual(result['counts'], {'novel_unverified': 1, 'duplicate_source': 9})
-        self.assertEqual(self.transport.call_count, 10)
-        self.assertEqual(self.budget.snapshot()['model_calls'], 10)
-        self.assertEqual(result['budget_usage']['model_calls'], 10)
+        self.assertEqual(result['counts'], {'novel_unverified': 1, 'repeated_code': 9})
+        self.assertEqual(self.transport.call_count, 19)
+        self.assertEqual(self.budget.snapshot()['model_calls'], 19)
+        self.assertEqual(result['budget_usage']['model_calls'], 19)
         self.assertGreater(result['budget_usage']['reserved_tokens'], 0)
         self.assertGreater(result['budget_usage']['sandbox_runs'], 0)
         self.assertEqual(self.pool, [])
@@ -68,7 +68,7 @@ class GenerationStageTests(unittest.TestCase):
             development_task_ids=set(self.ids[10:]), sandbox=FakeE6Sandbox(), max_sandbox_starts=10)
         self.pool = reference['pool']
         result = self.run_stage()
-        self.assertEqual(result['counts'], {'duplicate_source': 10})
+        self.assertEqual(result['counts'], {'repeated_code': 10})
         self.assertFalse(reference['eligible_for_training'])
         self.assertFalse(result['training_allowed'])
 
@@ -76,7 +76,7 @@ class GenerationStageTests(unittest.TestCase):
         self.transport.side_effect = [FAKE_PROGRAMS[1], FAKE_PROGRAMS[1], TimeoutError('uncertain')]
         result = self.run_stage()
         self.assertEqual(result['status'], 'generation_incomplete')
-        self.assertEqual(result['completed_slots'], 2)
+        self.assertEqual(result['completed_slots'], 1)
         self.assertEqual(result['budget_usage']['model_calls'], 3)
         self.assertGreater(result['budget_usage']['reserved_tokens'], 0)
         self.assertFalse(result['training_allowed'])
