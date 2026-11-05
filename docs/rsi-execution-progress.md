@@ -300,6 +300,22 @@ separately from training eligibility. Every draft remains marked
 The observed count is not the required independently audited strict-new count.
 No Qwen calls or training occurred.
 
+### Generated example retention and SFT design gap
+
+Generation draft replay now retains each candidate's generated query
+input/output pairs in the owner-only stage artifact, bound to the parent task,
+program source, request ID and slot evidence. The pairs are generated labels,
+not ground truth; the record and its origin remain unverified. They are kept
+outside the chat messages and contain no private verifier probes.
+
+The current SFT preparation still uses the original visible demonstrations as
+the prompt and the generated program as the completion. It does not consume
+the retained generated query outputs. Thus the current quarantined MLX dataset
+does not implement training on those generated examples. A concrete synthetic
+task-to-SFT mapping must be designed and registered before it can be evaluated
+or used for training; the existing fixture format check does not resolve this
+gap. No new model call or training occurred.
+
 ### Local runtime identity observation
 
 A read-only probe on 2026-11-05 recorded the local arm64 Python interpreter,
