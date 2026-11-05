@@ -15,7 +15,7 @@ _IDENTITIES = {'model_manifest', 'runtime_manifest', 'environment_manifest', 'so
                'tokenizer', 'tokenizer_config'}
 
 
-def prepare_preflight_spec(*, root, preparation_bytes, expected_preparation_sha256, expected_canary_sha256,
+def _build_preflight_spec(*, root, preparation_bytes, expected_preparation_sha256, expected_canary_sha256,
                            expected_generation_dataset_sha256, synthetic_tasks, forbidden_tasks,
                            tokenizer, render, load_local_dataset, model_dir,
                            generation_data_dir, adapter_dir, previous_adapter_file, identity_hashes):
@@ -77,7 +77,41 @@ def prepare_preflight_spec(*, root, preparation_bytes, expected_preparation_sha2
     raw = (json.dumps(record, sort_keys=True, separators=(',', ':')) + '\n').encode()
     audit_canary_loader(**args)
     verify_generation()
+    return record, raw
+
+
+def prepare_preflight_spec(**inputs):
+    record, raw = _build_preflight_spec(**inputs)
+    root = inputs['root']
     with _directory(root) as directory:
         _create(directory, 'preflight.proposal.json', record)
     return {'status': record['status'], 'execution_ready': False, 'training_allowed': False,
             'sha256': hashlib.sha256(raw).hexdigest()}
+
+
+def verify_preflight_spec(*, root, expected_spec_sha256, synthetic_tasks, forbidden_tasks,
+                          tokenizer, render, load_local_dataset):
+    if not _hash(expected_spec_sha256):
+        raise ValueError('invalid preflight specification digest')
+    with _directory(root) as directory:
+        spec_raw, spec = _read(directory, 'preflight.proposal.json')
+        preparation, _ = _read(directory, 'synthetic.training.preparation.json')
+    if hashlib.sha256(spec_raw).hexdigest() != expected_spec_sha256:
+        raise ValueError('preflight specification digest differs')
+    try:
+        config = spec['config']
+        expected, raw = _build_preflight_spec(root=root, preparation_bytes=preparation,
+            expected_preparation_sha256=spec['preparation_sha256'], expected_canary_sha256=spec['canary_dataset_sha256'],
+            expected_generation_dataset_sha256=spec['generation_dataset_sha256'], synthetic_tasks=synthetic_tasks,
+            forbidden_tasks=forbidden_tasks, tokenizer=tokenizer, render=render, load_local_dataset=load_local_dataset,
+            model_dir=config['model'], generation_data_dir=Path(root) / 'generation-sft.quarantine',
+            adapter_dir=config['adapter_path'], previous_adapter_file=config['resume_adapter_file'],
+            identity_hashes=spec['identity_hashes'])
+    except (KeyError, TypeError) as exc:
+        raise ValueError('invalid preflight specification') from exc
+    with _directory(root) as directory:
+        after, _ = _read(directory, 'preflight.proposal.json')
+    if spec_raw != after or spec_raw != raw or spec != expected:
+        raise ValueError('preflight specification differs from replay')
+    return {'status': 'preflight_spec_consistent_unverified', 'execution_ready': False,
+            'training_allowed': False, 'proposal_sha256': expected_spec_sha256}

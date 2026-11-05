@@ -9,6 +9,7 @@ from src.arc.rsi_comparison_audit import _read
 from src.arc.rsi_comparison_freeze import _hash
 from src.arc.rsi_model_identity import _hash_file
 from src.arc.rsi_preflight_identity import verify_preflight_local_identities
+from src.arc.rsi_preflight_spec import verify_preflight_spec
 from src.arc.rsi_slot_lifecycle import _create, _directory
 
 
@@ -25,7 +26,8 @@ def _write_config(directory, raw):
     os.fsync(directory)
 
 
-def prepare_preflight_bundle(*, root, expected_spec_sha256, manifest_bytes, source_root, python_executable):
+def prepare_preflight_bundle(*, root, expected_spec_sha256, manifest_bytes, source_root, python_executable,
+                             synthetic_tasks, forbidden_tasks, tokenizer, render, load_local_dataset):
     if not _hash(expected_spec_sha256):
         raise ValueError('invalid preflight proposal digest')
     with _directory(root) as directory:
@@ -37,6 +39,10 @@ def prepare_preflight_bundle(*, root, expected_spec_sha256, manifest_bytes, sour
             spec['config'].get('mask_prompt') is not True or
             spec['config'].get('data') != str((Path(root) / 'preflight-canary.quarantine').resolve())):
         raise ValueError('invalid preflight proposal')
+    replay_args = dict(root=root, expected_spec_sha256=expected_spec_sha256, synthetic_tasks=synthetic_tasks,
+                       forbidden_tasks=forbidden_tasks, tokenizer=tokenizer, render=render,
+                       load_local_dataset=load_local_dataset)
+    verify_preflight_spec(**replay_args)
     checked = verify_preflight_local_identities(root=root, expected_spec_sha256=expected_spec_sha256,
         manifest_bytes=manifest_bytes, source_root=source_root, python_executable=python_executable)
     if (checked.get('status') != 'preflight_local_identities_consistent' or checked.get('execution_ready') is not False or
@@ -66,6 +72,7 @@ def prepare_preflight_bundle(*, root, expected_spec_sha256, manifest_bytes, sour
               'environment': {'HF_HUB_OFFLINE': '1', 'TRANSFORMERS_OFFLINE': '1',
                               'TOKENIZERS_PARALLELISM': 'false', 'PYTHONDONTWRITEBYTECODE': '1'},
               'evidence_type': 'local_files_and_caller_supplied_manifests'}
+    verify_preflight_spec(**replay_args)
     with _directory(root) as parent:
         current, _ = _read(parent, 'preflight.proposal.json')
         if current != spec_raw or python.resolve(strict=True) != interpreter or _hash_file(interpreter) != python_hash or _hash_file(wrapper) != wrapper_hash:
