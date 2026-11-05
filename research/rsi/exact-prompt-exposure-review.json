@@ -1,0 +1,18 @@
+{
+  "dataset_sha256": "779eaba89790ebad9af02514a7efc0aefaf2cf8236f046a31bbf8b9ec48f20f5",
+  "file_count": 6762,
+  "independence_established": false,
+  "inventory_sha256": "592cf357335282add4e196fa247440ad99e6e9ce5dc49cccac90334036be1b56",
+  "limitations": [
+    "exact current solve_prompt strings only",
+    "retained JSON and JSONL string values only",
+    "matches do not prove model dispatch",
+    "missing files, other prompt formats and pretraining remain unexamined"
+  ],
+  "matches": {},
+  "prompt_code_sha256": "ddbbf5ca1f5af94215b226e9e1331bd08069b9c487b5baf9e18e743145fd65ea",
+  "prompt_count": 200,
+  "scanner_sha256": "c2d79ff3abe483a9758453d04964da0d08eaeab7fc86a9a698f4e36a17fb3c0f",
+  "split_sha256": "5a3f55299ac1988a40680d1510cffe62650bb537462d94c6b024534c707102e6",
+  "status": "bounded_exact_prompt_review_only"
+}

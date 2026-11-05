@@ -637,3 +637,15 @@ remain visible through budget usage. These checks used fixtures only.
 The concise [results and gate report](rsi-experiment-results.md) links the
 protocol to the current stopping point and identifies the evidence needed before
 continuation. It does not report a live RSI result.
+
+### Retained exact-prompt review
+
+A separate [bounded review](../research/rsi/exact-prompt-exposure-review.json)
+scanned JSON and JSONL string values in 6,762 retained artifact files for the
+current `solve_prompt` text of each of the 200 provisional development tasks.
+It found no exact matches. The inventory, source dataset, split and relevant
+code hashes are recorded in the review. A match would identify retained text,
+not prove that a model received it. A non-match does not rule out other prompt
+formats, omitted files, other encodings or pretraining exposure; the split
+remains provisional. The scanner's nested-string, malformed-file and changing
+inventory behavior is covered by offline tests.
