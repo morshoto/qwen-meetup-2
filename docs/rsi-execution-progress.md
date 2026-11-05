@@ -149,6 +149,17 @@ batch audit, a registered canary, trainer data-format audit, process containment
 execution registration and explicit training authorization remain open gates.
 No training or preflight was started.
 
+### MLX configuration preview
+
+`preview_mlx_configuration` translates the proposed preflight and generation
+settings into a reviewable MLX configuration, including prompt masking, two
+adapted layers, rank 8 and scale 2.0. It requires separate canary and
+generation dataset paths and records the second-generation parent adapter as
+an unverified claim. A local check against MLX-LM 0.30.7's configuration keys
+accepted the 21 previewed keys for both phases. This checks the key names, not
+trainer execution, adapter compatibility, path contents or resource limits.
+The preview is not an execution registration or training authorization.
+
 ### RSI chat format and mask precheck
 
 A format precheck converts quarantined rows to MLX-style chat JSONL and checks
