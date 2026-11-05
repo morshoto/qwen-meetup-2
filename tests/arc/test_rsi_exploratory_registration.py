@@ -22,7 +22,9 @@ class ExploratoryRegistrationTests(unittest.TestCase):
         self.proposal['selection_code_sha256']=hashlib.sha256(Path('src/arc/rsi_exploratory_split.py').read_bytes()).hexdigest()
         self.base={'generation':0,'slots':generation_slots(self.generation,0),'input_paths':{},
                    'input_sha256':{'split':'a'*64,'challenges':'b'*64},'status':'draft_not_execution_ready','execution_ready':False}
-        self.inputs={'split':{'partitions':{'generation':self.generation,'development':self.development}},
+        challenges={key:{'train':[{'input':[[i//100,(i//10)%10,i%10]],'output':[[0]]}],
+                         'test':[{'input':[[1]]}]} for i,key in enumerate(self.generation+self.development)}
+        self.inputs={'challenges':challenges, 'split':{'partitions':{'generation':self.generation,'development':self.development}},
                      'design_registration':{'supersedes':'research/rsi/design-registration-v2.json',
                                              'exposure_policy':'bounded_review_unknown_project_exposure'}}
         self.verify=patch('src.arc.rsi_exploratory_registration.verify_draft_registration').start()
@@ -38,6 +40,8 @@ class ExploratoryRegistrationTests(unittest.TestCase):
         self.assertFalse(result['execution_ready']); self.assertFalse(result['independent_review_completed'])
         self.assertEqual(result['counts'],{'generation':750,'exploratory':50,'development':200})
         self.assertEqual(len(result['generation_manifest_sha256']),64)
+        self.assertEqual(len(result['generation_content_sha256']),64)
+        self.assertEqual(len(result['exploratory_content_sha256']),64)
         self.assertEqual(self.verify.call_count,2)
 
     def test_rejects_changed_selection_and_base_split(self):
@@ -47,6 +51,12 @@ class ExploratoryRegistrationTests(unittest.TestCase):
         self.proposal['selection_code_sha256']=hashlib.sha256(Path('src/arc/rsi_exploratory_split.py').read_bytes()).hexdigest()
         self.inputs['split']['partitions']['development'][0]='other'
         with self.assertRaises(ValueError):self.prepare()
+
+    def test_rejects_identical_content_under_different_ids(self):
+        key=self.proposal['exploratory_task_ids'][0]
+        self.inputs['challenges'][key]=self.inputs['challenges'][self.development[0]]
+        with self.assertRaisesRegex(ValueError,'content'):
+            self.prepare()
 
     def test_rejects_changed_scheduled_slots(self):
         self.base['slots']=generation_slots(self.generation,1)
