@@ -91,7 +91,7 @@ def collect_generation(*, root, registration_sha256, generation, parent_adapter,
              'initial_reference_pool_sha256': expected_reference_pool_sha256, 'budget_before': budget_before}
     with _directory(root) as directory:
         _create(directory, f'g{generation}.stage.started.json', start)
-    completed, counts = [], Counter()
+    completed, counts, attempt_counts = [], Counter(), Counter()
     try:
         for item in slots:
             index, key = item['slot'], item['task_id']
@@ -110,12 +110,14 @@ def collect_generation(*, root, registration_sha256, generation, parent_adapter,
                 pool.append({name: novelty[name] for name in
                              ('source_sha256', 'ast_sha256', 'behavior_sha256', 'probe_set_sha256')})
             counts[result['status']] += 1
+            attempt_counts.update(attempt['status'] for attempt in value['attempts'])
             completed.append({'slot': index, 'task_id': key, 'status': result['status'],
                               'evidence_sha256': result['evidence_sha256']})
         budget_after = _counters(budget.snapshot())
         usage = _budget_delta(budget_before, budget_after)
         report = {'status': 'generation_complete_unverified', 'completed_slots': len(completed),
-                  'slots': completed, 'counts': dict(counts), 'final_reference_pool_sha256': _pool_sha(pool),
+                  'slots': completed, 'counts': dict(counts), 'attempt_counts': dict(attempt_counts),
+                  'final_reference_pool_sha256': _pool_sha(pool),
                   'budget_after': budget_after, 'budget_usage': usage,
                   'training_allowed': False, 'evidence_type': 'caller_supplied_components_unverified'}
         with _directory(root) as directory:
@@ -128,7 +130,8 @@ def collect_generation(*, root, registration_sha256, generation, parent_adapter,
         except Exception:
             budget_after, usage = None, None
         report = {'status': 'generation_incomplete', 'completed_slots': len(completed), 'slots': completed,
-                  'counts': dict(counts), 'failure_type': type(exc).__name__, 'training_allowed': False,
+                  'counts': dict(counts), 'attempt_counts': dict(attempt_counts),
+                  'failure_type': type(exc).__name__, 'training_allowed': False,
                   'budget_after': budget_after, 'budget_usage': usage,
                   'evidence_type': 'caller_supplied_components_unverified'}
         with _directory(root) as directory:

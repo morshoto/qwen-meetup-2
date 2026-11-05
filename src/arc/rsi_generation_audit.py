@@ -25,7 +25,7 @@ def audit_generation(*, root, registration_sha256, generation, parent_adapter, t
         'task_hashes': expected_task_hashes, 'public_probe_sha256': expected_public_probes_sha256,
         'private_probe_sha256': expected_private_probes_sha256,
         'initial_reference_pool_sha256': expected_reference_pool_sha256}
-    counts, checked, seen = Counter(), [], set()
+    counts, attempt_counts, checked, seen = Counter(), Counter(), [], set()
     with _directory(root) as directory:
         if _exists(directory, f'g{generation}.stage.incomplete.json'):
             raise ValueError('incomplete generation cannot be replayed as complete')
@@ -61,6 +61,7 @@ def audit_generation(*, root, registration_sha256, generation, parent_adapter, t
                 pool.append({name: novelty[name] for name in
                              ('source_sha256', 'ast_sha256', 'behavior_sha256', 'probe_set_sha256')})
             counts[value['status']] += 1
+            attempt_counts.update(attempt['status'] for attempt in value['attempts'])
             checked.append(expected_entry)
     reserved_tokens = 0
     for request_id in seen:
@@ -75,10 +76,12 @@ def audit_generation(*, root, registration_sha256, generation, parent_adapter, t
     if usage['model_calls'] != len(seen) or usage['reserved_tokens'] != reserved_tokens:
         raise ValueError('generation budget usage differs from captures')
     expected_report = {'status': 'generation_complete_unverified', 'completed_slots': 10,
-                       'slots': checked, 'counts': dict(counts), 'final_reference_pool_sha256': _pool_sha(pool),
+                       'slots': checked, 'counts': dict(counts), 'attempt_counts': dict(attempt_counts),
+                       'final_reference_pool_sha256': _pool_sha(pool),
                        'budget_after': report['budget_after'], 'budget_usage': usage,
                        'training_allowed': False, 'evidence_type': 'caller_supplied_components_unverified'}
     if report != expected_report or any(set(group) != seen for group in (requests, responses, ledger)):
         raise ValueError('generation stage report or capture coverage differs')
-    return {'status': 'generation_replay_consistent', 'checked_slots': 10, 'counts': dict(counts), 'budget_usage': usage,
+    return {'status': 'generation_replay_consistent', 'checked_slots': 10, 'counts': dict(counts),
+            'attempt_counts': dict(attempt_counts), 'budget_usage': usage,
             'training_allowed': False, 'evidence_type': 'caller_supplied_capture_and_sandbox'}
