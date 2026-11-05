@@ -16,6 +16,7 @@ from src.arc.rsi_comparison_transport import CapturedComparisonTransport
 from src.arc.rsi_transport_audit import audit_transport
 from src.arc.rsi_transition_screen import screen_captured_rsi_chain
 from src.arc.rsi_base_comparison import _paired_frozen_summary, summarize_captured_base_comparison
+from src.arc.rsi_final_proposal import prepare_final_diagnostic_proposal
 
 MODEL = 'mlx-community/Qwen3-14B-4bit'
 CODE = 'def transform(grid):\n    return grid[::-1]'
@@ -158,6 +159,25 @@ class ComparisonTransportTests(unittest.TestCase):
         self.assertEqual(summary['difference_percentage_points'], 100.0)
         self.assertEqual(summary['selected_adapter'], 'c' * 64)
         self.assertFalse(summary['improvement_claim_supported'])
+        proposal_root = self.root / 'final-proposal'
+        proposal_root.mkdir(mode=0o700)
+        proposal_args = dict(root=proposal_root, first=refs[0], second=refs[1], tasks=tasks,
+            sandbox=FakeE6Sandbox(), verifier=verifier, diagnostic_task_hashes={'evaluation-fixture': 'd' * 64},
+            harness_sha256='e' * 64, settings_sha256='f' * 64,
+            budget={'model_calls': 100, 'reserved_tokens': 1000000, 'sandbox_runs': 1000, 'wall_seconds': 3600})
+        with self.assertRaises(ValueError):
+            prepare_final_diagnostic_proposal(**{**proposal_args, 'diagnostic_task_hashes': {ids[0]: 'd' * 64}})
+        with self.assertRaises(ValueError):
+            prepare_final_diagnostic_proposal(**{**proposal_args, 'budget': {**proposal_args['budget'], 'model_calls': 801}})
+        self.assertEqual(list(proposal_root.iterdir()), [])
+        proposal = prepare_final_diagnostic_proposal(**proposal_args)
+        frozen = json.loads((proposal_root / 'final.diagnostic.proposal.json').read_text())
+        self.assertEqual(frozen['selected_adapter'], 'c' * 64)
+        self.assertEqual(frozen['comparison_sha256'], [ref['sha256'] for ref in refs])
+        self.assertEqual(frozen['competitive_target_percent'], 42.4)
+        self.assertFalse(proposal['execution_ready'])
+        with self.assertRaises(FileExistsError):
+            prepare_final_diagnostic_proposal(**proposal_args)
         first_record = json.loads((refs[0]['root'] / 'comparison.frozen.json').read_text())
         selected_record = json.loads((refs[1]['root'] / 'comparison.frozen.json').read_text())
         key = ids[0]
