@@ -56,6 +56,12 @@ local model configuration and MLX-LM source, and has not been validated against
 an actual trained adapter. A structural match does not prove weights changed,
 that the adapter loads into the model, or that its origin is authentic.
 
+A separate factor comparison rejects adapters without a nonzero A/B pair in
+the same module and detects numerical changes from a supplied parent, treating
+positive and negative zero as equal. It is tested with synthetic files only.
+Nonzero factors do not prove their matrix product is nonzero, and changed file
+values do not establish an effective model update or improved predictions.
+
 ## Current gates
 
 - The slot lifecycle consumes a claimed slot before fixture execution. A
