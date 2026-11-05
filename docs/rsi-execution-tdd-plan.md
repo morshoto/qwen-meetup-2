@@ -616,3 +616,11 @@ and token usage with missing values represented as unknown. Build a notebook
 that reads recorded results and clearly distinguishes incomplete or fixture
 inputs. It must not launch a model, train, or turn this exploratory check into
 an RSI improvement or competitiveness claim.
+
+### Separate exploratory task proposal
+
+Test proposing 50 exploratory tasks from the provisional generation partition,
+excluding known prior exposures, the first 20 scheduled generation tasks, and
+all 200 later evaluation tasks. Remove them from the eligible generation manifest
+and bind the input proposal hash. Reject incomplete, overlapping or insufficient
+inputs; this is not an independently reviewed or execution-ready split.
