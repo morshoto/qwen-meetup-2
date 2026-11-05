@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 
 from src.arc.data import Task, validate_grid
+from src.arc.ast_fingerprint import stable_ast_sha256
 from src.arc.e5_selfplay import _safe_transform_code
 from src.arc.e6_curriculum import canonical, verify_oracle
 from src.arc.http_backend import BackendError
@@ -69,6 +70,8 @@ def inspect_candidate(task: Task, code: str, *, public_probes: list, private_pro
         return _failure('query_execution_rejected')
     return {'status': 'verified_candidate', 'eligible_for_training': False,
             'source_type': 'generator_distillation',
+            'source_sha256': hashlib.sha256(code.strip().encode()).hexdigest(),
+            'ast_sha256': stable_ast_sha256(code),
             'synthetic_task': {'parent_task_id': task.id, 'train': synthetic_train,
                                'query_inputs': list(task.test_inputs), 'query_outputs': query_outputs},
             'private_behavior_sha256': hashlib.sha256(canonical(hidden_outputs).encode()).hexdigest(),
