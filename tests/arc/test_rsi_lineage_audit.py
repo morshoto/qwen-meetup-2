@@ -35,7 +35,7 @@ class LineageTests(unittest.TestCase):
         second_prompt = task_repair_prompt(self.task, FAKE_PROGRAMS[2], 'visible_demonstration_mismatch')
         self.second = attempt(second_prompt, FAKE_PROGRAMS[1], 12001, 'r1')
 
-    def check(self, rows, *, private=None, expected_private=None):
+    def check(self, rows, *, private=None, expected_private=None, sandbox=None):
         selected_private = self.private if private is None else private
         return inspect_lineage(self.ids, self.task, generation=0, slot=0, attempts=rows,
                                expected_manifest_sha256=manifest_sha256(self.ids),
@@ -44,7 +44,7 @@ class LineageTests(unittest.TestCase):
                                private_probes=selected_private,
                                expected_public_probes_sha256=probes_sha256(self.public),
                                expected_private_probes_sha256=expected_private or probes_sha256(selected_private),
-                               sandbox=FakeE6Sandbox())
+                               sandbox=sandbox or FakeE6Sandbox())
 
     def test_replays_visible_failure_then_model_repair_without_claiming_training(self):
         result = self.check([self.first, self.second])
@@ -77,6 +77,31 @@ class LineageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'probe'):
             self.check([self.first], private=_quality_grids(44, 5),
                        expected_private=probes_sha256(self.private))
+
+    def test_syntax_failure_can_be_repaired_using_safe_category(self):
+        bad = 'def transform(grid):\n    return ('
+        first = attempt(task_prompt(self.task), bad, 12000, 'r0')
+        repair = attempt(task_repair_prompt(self.task, bad, 'syntax_error'), FAKE_PROGRAMS[1], 12001, 'r1')
+        result = self.check([first, repair])
+        self.assertEqual(result['attempt_statuses'], ['syntax_error', 'verified_candidate'])
+
+    def test_runtime_failure_can_be_repaired_without_exception_details(self):
+        class BrokenFirst(FakeE6Sandbox):
+            def run(self, code, grid):
+                if code == FAKE_PROGRAMS[2]:
+                    raise RuntimeError('sandbox execution failed:\nIndexError: private detail')
+                return super().run(code, grid)
+        prompt = task_repair_prompt(self.task, FAKE_PROGRAMS[2], 'runtime_exception')
+        second = attempt(prompt, FAKE_PROGRAMS[1], 12001, 'r1')
+        result = self.check([self.first, second], sandbox=BrokenFirst())
+        self.assertEqual(result['attempt_statuses'], ['runtime_exception', 'verified_candidate'])
+        self.assertNotIn('private detail', repr(result))
+
+    def test_prohibited_code_cannot_trigger_a_repair(self):
+        bad = 'import os\ndef transform(grid): return grid'
+        first = attempt(task_prompt(self.task), bad, 12000, 'r0')
+        with self.assertRaisesRegex(ValueError, 'after terminal'):
+            self.check([first, self.second])
 
 
 if __name__ == '__main__':
