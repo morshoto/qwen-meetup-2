@@ -24,6 +24,8 @@ _V1 = 'research/rsi/design-registration-v1.json'
 _V2_DOCUMENT = 'research/rsi/design-v2.md'
 _V2 = 'research/rsi/design-registration-v2.json'
 _V3_DOCUMENT = 'research/rsi/design-v3.md'
+_V3 = 'research/rsi/design-registration-v3.json'
+_V4_DOCUMENT = 'research/rsi/design-v4.md'
 _V1_FILES = {'configs/rsi-research-protocol.json', 'docs/rsi-research-protocol.md',
              'research/rsi/provisional-split.json'}
 
@@ -121,6 +123,22 @@ def _verify_design_chain(root: Path, design: dict, split_hash: str) -> dict[str,
             if hashlib.sha256(file_bytes(name)).hexdigest() != mapping[name]:
                 raise ValueError('design file hash differs: ' + name)
     amended_files = {}
+    if design.get('supersedes') == _V3:
+        if (design.get('kind') != 'design_only' or design.get('execution_ready') is not False or
+                type(design.get('competitive_target_percent')) not in (int,float) or
+                design.get('competitive_target_percent') != 42.4 or
+                design.get('canary_policy') != 'independent_synthetic_only_no_promotion' or
+                design.get('evaluation_policy') != 'separate_exploratory_50_then_development_200' or
+                design.get('oracle_policy') != 'new_only_pending_historical_decision'):
+            raise ValueError('invalid separate canary design')
+        check_files(design.get('files'), {_V3, _V4_DOCUMENT})
+        amended_files.update(design['files'])
+        try:
+            design = json.loads(file_bytes(_V3))
+        except (ValueError,UnicodeDecodeError) as exc:
+            raise ValueError('invalid prior design registration') from exc
+        if not isinstance(design,dict) or design.get('supersedes') != _V2:
+            raise ValueError('invalid prior design registration')
     if design.get('supersedes') == _V2:
         if (design.get('exposure_policy') != 'bounded_review_unknown_project_exposure' or
                 design.get('kind') != 'design_only' or design.get('execution_ready') is not False or
@@ -128,7 +146,7 @@ def _verify_design_chain(root: Path, design: dict, split_hash: str) -> dict[str,
                 design.get('competitive_target_percent') != 42.4):
             raise ValueError('invalid exposure amendment')
         check_files(design.get('files'), {_V2, _V3_DOCUMENT})
-        amended_files = dict(design['files'])
+        amended_files.update(design['files'])
         try:
             design = json.loads(file_bytes(_V2))
         except (ValueError, UnicodeDecodeError) as exc:
@@ -204,7 +222,7 @@ def prepare_draft_registration(root: str | Path, *, input_paths: dict, generatio
     if hashes != after_hashes or design_hashes != _verify_design_chain(root, design, hashes['split']):
         raise ValueError('registration inputs changed during capture')
     exposure_blocker = ('bounded exposure review not independently completed'
-                        if design.get('supersedes') == _V2 else 'split independence not established')
+                        if design.get('supersedes') in (_V2, _V3) else 'split independence not established')
     return {'status': 'draft_not_execution_ready', 'execution_ready': False,
             'generation': generation, 'input_paths': dict(input_paths), 'input_sha256': hashes,
             'design_file_sha256': design_hashes,
