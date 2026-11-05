@@ -322,9 +322,17 @@ demonstrations, and add generated query pairs as demonstrations. The completion
 is the generating program. Repeated inputs are recorded as mapping rejections
 to avoid revealing the held-out query in a demonstration. The resulting rows
 are in the local stage artifact with `training_allowed: false`; they are not
-connected to the current training preparation or registered as the experiment's
-method. The example and source bindings are locally supplied consistency checks,
+registered as the experiment's method. The example and source bindings are locally supplied consistency checks,
 not proof that a particular model generated the labels or that they are correct.
+
+A separate synthetic preparation now recomputes those rows from a digest-checked
+stage artifact, rejects conflicting identities and requires five mapped rows.
+It freezes the original and synthetic task hashes and can be passed through the
+existing format and mask precheck with the returned synthetic tasks. A fixture
+generation exercised nine rows and rejected an altered row and duplicate
+identity. The stage digest, tasks and generated labels are caller-supplied;
+this preparation remains quarantined and cannot authorize training. Independent
+audit, mapping registration, process containment and the other gates remain open.
 
 ### Local runtime identity observation
 
