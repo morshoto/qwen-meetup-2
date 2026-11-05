@@ -8,6 +8,7 @@ from src.arc.rsi_canary_containment import fork_restricted_command
 from src.arc.rsi_process_sampling import sample_baseline, sample_process
 from src.arc.rsi_training_resources import training_resource_decision
 from src.arc.rsi_training_stream import watch_training_stream
+from src.arc.rsi_reload_stream import watch_reload_stream
 
 
 def run_tiny_pipeline_fixture(*, root, python_executable):
@@ -65,12 +66,30 @@ for key,value in saved.items():
 print(json.dumps({'tiny_adapter_reloaded':True,'tiny_reloaded_factor_matches':len(saved)}))
 """
     reload_command = fork_restricted_command([python,'-B','-c',probe,str(model),str(adapter)])['argv']
-    reload_result = subprocess.run(reload_command, cwd=source, env=env, capture_output=True, text=True,
-                                   timeout=60, start_new_session=True)
+    reload_baseline = sample_baseline(root)
+    if training_resource_decision(reload_baseline, [reload_baseline]) is not None:
+        raise RuntimeError('host outside reload fixture resource limits')
+    reload_process = subprocess.Popen(reload_command, cwd=source, env=env, start_new_session=True,
+                                      stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     try:
-        parsed = json.loads(reload_result.stdout)
+        reload_result = watch_reload_stream(reload_process, baseline=reload_baseline,
+            sampler=lambda pid: sample_process(root,pid), timeout_seconds=60, interval_seconds=0.25,
+            sample_timeout_seconds=2, terminate_grace_seconds=1)
+    finally:
+        if reload_process.poll() is None:
+            os.killpg(reload_process.pid, 9)
+            reload_process.wait()
+        reload_process.stdout.close()
+    result.update(tiny_reload_stop_reason=reload_result['stop_reason'],
+                  tiny_reload_sample_count=len(reload_result['samples']),
+                  tiny_reload_elapsed_seconds=reload_result['elapsed_seconds'],
+                  tiny_reload_cleanup_verified=False)
+    try:
+        parsed = json.loads(reload_result['output'])
     except (ValueError, TypeError):
         parsed = None
-    if reload_result.returncode == 0 and parsed == {'tiny_adapter_reloaded':True, 'tiny_reloaded_factor_matches':28}:
+    if (reload_result['stop_reason'] == 'process_exited' and reload_result['exit_code'] == 0 and
+            reload_result['stream_complete'] and
+            parsed == {'tiny_adapter_reloaded':True, 'tiny_reloaded_factor_matches':28}):
         result.update(parsed)
     return result
