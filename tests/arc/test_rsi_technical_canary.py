@@ -149,7 +149,13 @@ class TechnicalBundleVerificationTests(TechnicalCanaryTests):
             result=verify_technical_canary_bundle(**args,expected_launch_sha256=digest)
             self.assertFalse(result['execution_ready']);self.assertFalse(result['training_allowed'])
             self.assertFalse(result['independently_verified'])
+            original_launch=path.read_bytes()
             altered=json.loads(path.read_text());altered['argv'][0]='/unexpected'
             path.write_text(json.dumps(altered))
             with self.assertRaises(ValueError):
                 verify_technical_canary_bundle(**args,expected_launch_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            path.write_bytes(original_launch)
+            config=path.parent/'mlx_lora.json'; value=json.loads(config.read_text()); value['iters']=2
+            config.write_text(json.dumps(value))
+            with self.assertRaises(ValueError):
+                verify_technical_canary_bundle(**args,expected_launch_sha256=digest)
