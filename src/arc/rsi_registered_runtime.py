@@ -11,7 +11,10 @@ def verify_registered_runtime(root, *, registration, python_executable):
     inputs, hashes = _read_inputs(root, registration['input_paths'])
     if hashes != registration['input_sha256']:
         raise ValueError('registration inputs changed during runtime check')
-    verify_runtime_identity(python_executable, inputs['runtime_manifest'])
+    manifest = inputs['runtime_manifest']
+    if set(manifest) == {'runtime_identity', 'environment_inventory'}:
+        manifest = manifest['runtime_identity']
+    verify_runtime_identity(python_executable, manifest)
     verify_draft_registration(root, registration)
     return {'status': 'draft_runtime_consistent', 'execution_ready': False,
             'runtime_manifest_sha256': hashes['runtime_manifest'],
