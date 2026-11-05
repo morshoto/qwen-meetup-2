@@ -55,7 +55,7 @@ limits. Recheck identities immediately before any proposed execution.
 ## Unresolved before a run can be claimed as verified
 
 - The local `sandbox-exec` fixture prevents ordinary fork and spawn, and a tiny
-  random model completed one restricted step. This does not prove containment
+  random model completed one restricted step and matched its reloaded factors. The tiny reload subprocess had a timeout but no resource sampling. This does not prove containment
   of escaped or externally created work, or establish Qwen model compatibility.
 - On this host, group signals returned `EPERM` for an exited unreaped leader.
   Group listings provide observations but do not prove cleanup. Agree and
