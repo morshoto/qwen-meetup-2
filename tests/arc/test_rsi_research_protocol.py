@@ -47,6 +47,14 @@ class ResearchProtocolTests(unittest.TestCase):
         self.assertTrue(evaluation['each_generation_compared_to_parent'])
         self.assertEqual(evaluation['recursive_transitions_required'], 2)
 
+    def test_development_manifest_excludes_known_prior_exposure(self):
+        split = self.protocol['development_split']
+        self.assertEqual(split['known_prior_exposure_registry'],
+                         'configs/p3c.exploration.exclusions.v1.json')
+        self.assertEqual(split['task_count'], 200)
+        self.assertTrue(split['requires_complete_history_audit'])
+        self.assertFalse(split['independence_established'])
+
 
 if __name__ == '__main__':
     unittest.main()
