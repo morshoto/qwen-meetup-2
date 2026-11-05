@@ -16,6 +16,12 @@ from src.arc.rsi_slot_lifecycle import _create, _directory, _identity, _read
 
 
 class CollectionBudget:
+    max_model_calls = 32
+    max_reserved_tokens = 200000
+    max_sandbox_runs = 300
+    max_wall_seconds = 3600
+    model_kinds = frozenset(('generation', 'canary'))
+
     def __init__(self, root, identity):
         self.root = root
         self.identity = identity
@@ -62,7 +68,8 @@ class CollectionBudget:
                 'last_monotonic', 'model_calls', 'reserved_tokens', 'sandbox_runs'}
         if set(state) != keys or any(state[k] != v or type(state[k]) is not type(v) for k, v in self.identity.items()):
             raise ValueError('budget identity differs from registration')
-        for key, limit in (('model_calls', 32), ('reserved_tokens', 200000), ('sandbox_runs', 300)):
+        for key, limit in (('model_calls', self.max_model_calls), ('reserved_tokens', self.max_reserved_tokens),
+                           ('sandbox_runs', self.max_sandbox_runs)):
             if type(state[key]) is not int or not 0 <= state[key] <= limit:
                 raise ValueError('invalid collection budget counter')
         for key in ('started_wall', 'last_wall', 'started_monotonic', 'last_monotonic'):
@@ -76,12 +83,11 @@ class CollectionBudget:
         with self._locked() as directory:
             return self._state(directory)
 
-    @staticmethod
-    def _remaining(state, wall, monotonic):
+    def _remaining(self, state, wall, monotonic):
         if (not math.isfinite(wall) or not math.isfinite(monotonic) or
                 wall < state['last_wall'] or monotonic < state['last_monotonic']):
             raise TimeoutError('collection budget expired or clock moved backwards')
-        remaining = 3600 - max(wall - state['started_wall'], monotonic - state['started_monotonic'])
+        remaining = self.max_wall_seconds - max(wall - state['started_wall'], monotonic - state['started_monotonic'])
         if remaining <= 0:
             raise TimeoutError('collection budget expired or clock moved backwards')
         return remaining
@@ -96,11 +102,11 @@ class CollectionBudget:
             wall, monotonic = time.time(), time.monotonic()
             self._remaining(state, wall, monotonic)
             if sandbox:
-                if state['sandbox_runs'] >= 300:
+                if state['sandbox_runs'] >= self.max_sandbox_runs:
                     raise TimeoutError('collection sandbox budget exhausted')
                 state['sandbox_runs'] += 1
             else:
-                if state['model_calls'] >= 32 or state['reserved_tokens'] + tokens > 200000:
+                if state['model_calls'] >= self.max_model_calls or state['reserved_tokens'] + tokens > self.max_reserved_tokens:
                     raise TimeoutError('collection call or token budget exhausted')
                 state['model_calls'] += 1
                 state['reserved_tokens'] += tokens
@@ -117,7 +123,7 @@ class CollectionBudget:
                     pass
 
     def reserve_model(self, tokens, *, kind):
-        if type(tokens) is not int or tokens <= 0 or kind not in ('generation', 'canary'):
+        if type(tokens) is not int or tokens <= 0 or kind not in self.model_kinds:
             raise ValueError('invalid model reservation')
         self._reserve(tokens=tokens)
 
