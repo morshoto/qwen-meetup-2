@@ -41,13 +41,17 @@ def inspect_candidate(task: Task, code: str, *, public_probes: list, private_pro
             if first != validate_grid(target):
                 return _failure('visible_demonstration_mismatch')
             synthetic_train.append({'input': grid, 'output': first})
-        verify_oracle(code, public, sandbox=sandbox)
+        public_outputs = verify_oracle(code, public, sandbox=sandbox)
+        if public_outputs == public:
+            return _failure('identity_only_rejected')
     except (BackendError, TimeoutError):
         raise
     except (ValueError, TypeError, RuntimeError):
         return _failure('public_validation_rejected')
     try:
         hidden_outputs = verify_oracle(code, private, sandbox=sandbox)
+        if hidden_outputs == private:
+            return _failure('private_acceptance_rejected')
     except (BackendError, TimeoutError):
         raise
     except (ValueError, TypeError, RuntimeError):
