@@ -25,6 +25,11 @@ def make_sft_draft(task: Task, code: str, candidate: dict, novelty: dict,
             not isinstance(provenance.get('raw_response_sha256'), str) or
             not _HASH.fullmatch(provenance['raw_response_sha256'])):
         raise ValueError('incomplete or mismatched generator provenance')
+    if provenance['execution_mode'] == 'unverified_capture':
+        if (not isinstance(provenance.get('slot_evidence_sha256'), str) or
+                not _HASH.fullmatch(provenance['slot_evidence_sha256']) or
+                type(provenance.get('slot')) is not int or not 0 <= provenance['slot'] < 10):
+            raise ValueError('capture provenance lacks slot evidence')
     if not isinstance(task, Task) or not isinstance(code, str) or not isinstance(candidate, dict):
         raise ValueError('invalid candidate source or task')
     source_hash = hashlib.sha256(code.strip().encode()).hexdigest()
@@ -54,6 +59,9 @@ def make_sft_draft(task: Task, code: str, candidate: dict, novelty: dict,
     safe_provenance = {key: provenance[key] for key in
                        ('source_type', 'model_id', 'model_revision', 'request_id',
                         'raw_response_sha256', 'execution_mode')}
+    if provenance['execution_mode'] == 'unverified_capture':
+        safe_provenance.update({'slot_evidence_sha256': provenance['slot_evidence_sha256'],
+                                'slot': provenance['slot']})
     return {'status': 'pending_independent_audit', 'eligible_for_training': False,
             'source_type': 'generator_distillation', 'parent_task_id': task.id,
             'generation': generation, 'parent_adapter': parent_adapter,

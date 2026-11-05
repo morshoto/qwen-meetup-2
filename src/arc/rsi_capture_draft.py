@@ -25,6 +25,7 @@ def make_capture_draft(*, parent_adapter, **evidence):
     event = _index(evidence['ledger_records'])[attempt['request_id']]
     provenance = {'source_type': 'generator_distillation', 'model_id': event['model'],
                   'model_revision': event['revision'], 'request_id': event['request_id'],
-                  'raw_response_sha256': event['response_sha256'], 'execution_mode': 'unverified_capture'}
+                  'raw_response_sha256': event['response_sha256'], 'execution_mode': 'unverified_capture',
+                  'slot_evidence_sha256': evidence['evidence_sha256'], 'slot': evidence['slot']}
     return make_sft_draft(task, code, candidate, novelty, provenance,
                           generation=evidence['generation'], parent_adapter=parent_adapter)
