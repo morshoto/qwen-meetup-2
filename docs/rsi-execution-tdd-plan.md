@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Preflight local identity verification cycle
+
+Test comparing the frozen preflight proposal's identity hashes with supplied
+model, runtime, environment and source inventory manifests, then rechecking
+the local files and tokenizer hashes through the existing read-only verifiers.
+Reject changed manifests, interpreter mismatch and proposal drift. Local
+consistency is not independent execution attestation or training authorization.
+
 ### Preflight generation lineage cycle
 
 Test requiring the replayed synthetic preparation and dataset markers before
