@@ -1,9 +1,13 @@
 import tempfile
+import json
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 from src.arc.http_backend import BackendError
+from src.arc.guarded_contract import AUDITED_GENERATE_STEP, source_fingerprints
 from src.arc.rsi_comparison_contract import ContractCheckedComparisonTransport
 from src.arc.rsi_comparison_transport import CapturedComparisonTransport
 
@@ -26,6 +30,60 @@ class ComparisonContractTests(unittest.TestCase):
         if kwargs['expected_adapter_sha256'] != expected or kwargs['required_thinking_modes'] != ('off',):
             raise BackendError('budget_unverified', 'wrong contract')
         return dict(self.states[url])
+
+    def test_real_contract_parser_checks_loopback_fixture(self):
+        model = 'mlx-community/Qwen3-14B-4bit'
+        revision = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                contract = {'contract': 'same_process_token_ids_v1', 'model': model, 'revision': revision,
+                    'thinking_mode': 'off', 'thinking_modes': ['off', 'on'],
+                    'thinking_canary': {'supported': True, 'different_token_ids': True,
+                                        'off_sha256': 'a' * 64, 'on_sha256': 'b' * 64},
+                    'adapter_sha256': self.server.adapter, 'hard_deadline': 'process_exit_v1',
+                    'max_request_seconds': 2, 'token_limit': 8000000, 'reserved_tokens': 0,
+                    'max_prompt_tokens': 4096, 'max_new_tokens': 512, 'prefetch_allowance': 1,
+                    'ledger_id': self.server.ledger_id, 'source_sha256': source_fingerprints(),
+                    'driver_type': 'src.arc.mlx_token_driver.MLXTokenDriver', 'driver_runtime_version': '0.30.7',
+                    'driver_source_sha256': AUDITED_GENERATE_STEP['0.30.7']}
+                raw = json.dumps(contract).encode()
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+            def do_POST(self):
+                self.server.posts += 1
+                self.rfile.read(int(self.headers['Content-Length']))
+                raw = json.dumps({'model': model, 'thinking_mode': 'off',
+                    'thinking_control': 'tokenizer_template_canary_passed',
+                    'choices': [{'message': {'role': 'assistant', 'content': 'def transform(grid): return grid'},
+                                 'finish_reason': 'stop'}]}).encode()
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+            def log_message(self, *args):
+                pass
+        servers = []
+        for adapter, ledger in (('none', '1' * 32), ('b' * 64, '2' * 32)):
+            server = HTTPServer(('127.0.0.1', 0), Handler)
+            server.adapter, server.ledger_id, server.posts = adapter, ledger, 0
+            worker = threading.Thread(target=server.serve_forever, daemon=True)
+            worker.start()
+            self.addCleanup(server.server_close)
+            self.addCleanup(worker.join)
+            self.addCleanup(server.shutdown)
+            servers.append(server)
+        urls = [f'http://127.0.0.1:{server.server_port}/v1' for server in servers]
+        transport = CapturedComparisonTransport(root=self.root, parent_url=urls[0], candidate_url=urls[1],
+            parent_adapter='none', candidate_adapter='b' * 64, max_request_seconds=2)
+        checked = ContractCheckedComparisonTransport(transport, expected_max_prompt_tokens=4096)
+        checked('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=2)
+        self.assertEqual(servers[0].posts, 1)
+        servers[1].adapter = 'c' * 64
+        with self.assertRaises(BackendError):
+            checked('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=2)
+        self.assertEqual(servers[0].posts, 1)
 
     @patch('src.arc.rsi_comparison_contract.verify_guarded_contract')
     def test_verifies_both_arms_before_each_dispatch(self, verify):
