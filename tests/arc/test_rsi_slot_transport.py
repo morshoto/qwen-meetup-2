@@ -10,7 +10,7 @@ from src.arc.data import Task
 from src.arc.e6_curriculum import _quality_grids
 from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
 from src.arc.rsi_collection_budget import CollectionBudget
-from src.arc.rsi_lineage_audit import probes_sha256
+from src.arc.rsi_lineage_audit import inspect_lineage, probes_sha256
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
 from src.arc.rsi_slot_collector import collect_slot
 from src.arc.rsi_slot_transport import CapturedSlotTransport
@@ -30,7 +30,7 @@ class SlotTransportTests(unittest.TestCase):
                 code = [FAKE_PROGRAMS[2], FAKE_PROGRAMS[1]][len(self.server.requests) - 1]
                 raw = json.dumps({'model': MODEL, 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
-                    'choices': [{'message': {'content': code}, 'finish_reason': 'stop'}]}).encode()
+                    'choices': [{'message': {'role': 'assistant', 'content': code}, 'finish_reason': 'stop'}]}).encode()
                 self.send_response(200)
                 self.send_header('Content-Length', str(len(raw)))
                 self.end_headers()
@@ -65,6 +65,19 @@ class SlotTransportTests(unittest.TestCase):
         captures = [json.loads(line) for line in (self.root / 'raw.jsonl').read_text().splitlines()]
         self.assertEqual([base64.b64decode(item['body_base64']) for item in captures], self.server.requests)
         self.assertEqual(budget.snapshot()['model_calls'], 2)
+        ledger = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
+        responses = [json.loads(line) for line in (self.root / 'llm_responses.jsonl').read_text().splitlines()]
+        evidence = json.loads((self.root / 'g0-slot-00.collection.json').read_text())
+        attempts = [{'code': attempt['source'], 'request_body': raw,
+                     'response_body': base64.b64decode(response['raw_http_body_base64']), 'ledger': event}
+                    for attempt, raw, response, event in zip(evidence['attempts'], self.server.requests, responses, ledger)]
+        replay = inspect_lineage(ids, task, generation=0, slot=0, attempts=attempts,
+            expected_manifest_sha256=manifest_sha256(ids), expected_task_sha256=task_sha256(task),
+            public_probes=public, private_probes=private,
+            expected_public_probes_sha256=probes_sha256(public), expected_private_probes_sha256=probes_sha256(private),
+            sandbox=FakeE6Sandbox())
+        self.assertEqual(replay['attempt_statuses'], ['visible_demonstration_mismatch', 'verified_candidate'])
+        self.assertFalse(replay['eligible_for_training'])
 
     def test_bad_seed_or_deadline_fails_before_dispatch(self):
         for seed, timeout in [(12030, 1), (11999, 1), (12000, 0), (True, 1)]:
