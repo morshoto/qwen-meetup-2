@@ -4,12 +4,14 @@ import json
 import os
 import re
 import stat
+from pathlib import Path
+from types import SimpleNamespace
 
 from src.arc.rsi_comparison_audit import _read
 from src.arc.data import Task, validate_grid
 from src.arc.e5_selfplay import solve_prompt
 from src.arc.prompting import FINAL_ANSWER_SYSTEM_PROMPT
-from src.arc.rsi_sft_format import audit_sft_format
+from src.arc.rsi_sft_format import _tokens, audit_sft_format
 from src.arc.rsi_sft_materialize import _write_dataset
 from src.arc.rsi_slot_audit import task_sha256
 from src.arc.rsi_slot_lifecycle import _create, _directory
@@ -115,3 +117,30 @@ def verify_canary_dataset(*, root, forbidden_tasks, tokenizer, render, expected_
     return {'status': 'canary_consistent_unverified', 'training_allowed': False,
             'row_count': expected_audit['row_count'], 'dataset_jsonl_sha256': expected_dataset_sha256,
             'evidence_type': 'caller_supplied_inventory_tokenizer_and_renderer'}
+
+
+def audit_canary_loader(*, root, forbidden_tasks, tokenizer, render, expected_dataset_sha256, load_local_dataset):
+    if not callable(load_local_dataset):
+        raise ValueError('canary dataset loader unavailable')
+    args = dict(root=root, forbidden_tasks=forbidden_tasks, tokenizer=tokenizer, render=render,
+                expected_dataset_sha256=expected_dataset_sha256)
+    verify_canary_dataset(**args)
+    raw, _ = _build_canary(forbidden_tasks=forbidden_tasks, tokenizer=tokenizer, render=render)
+    rows = [json.loads(line) for line in raw.splitlines()]
+    train, valid, test = load_local_dataset(Path(root) / 'preflight-canary.quarantine', tokenizer,
+                                           SimpleNamespace(mask_prompt=True))
+    if len(train) != len(rows) or len(valid) or len(test):
+        raise ValueError('canary dataset split differs')
+    for index, expected in enumerate(rows):
+        actual = train[index]
+        if actual != expected:
+            raise ValueError('loaded canary row differs')
+        actual_tokens, actual_offset = train.process(actual)
+        expected_tokens, expected_offset = render(expected)
+        if (_tokens(actual_tokens) != _tokens(expected_tokens) or type(actual_offset) is not int or
+                actual_offset != expected_offset):
+            raise ValueError('loaded canary mask differs')
+    verify_canary_dataset(**args)
+    return {'status': 'canary_loader_consistent_unverified', 'training_allowed': False,
+            'row_count': len(rows), 'dataset_jsonl_sha256': expected_dataset_sha256,
+            'evidence_type': 'caller_supplied_loader_tokenizer_and_inventory'}
