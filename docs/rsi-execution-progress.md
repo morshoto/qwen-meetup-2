@@ -565,6 +565,10 @@ It joins usage to raw responses and keeps partial or missing coverage explicit.
 Fixture runs covered complete and absent usage and rejected an altered ledger.
 These counts are not independently metered, monetary cost remains unknown, and
 the audit's sandbox replay is separate from the recorded collection budget.
+The report also retains budget counters before collection and after the stage.
+If setup calls were reserved before the slot loop, their reported usage is not
+in the slot capture and the full-stage reported token total remains unknown.
+The fixture reserved a setup call without issuing it; it did not run a canary.
 
 ### Comparison budget accounting
 
