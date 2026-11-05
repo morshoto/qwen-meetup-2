@@ -33,6 +33,8 @@ class EvaluationTests(unittest.TestCase):
             evaluate_task(self.task, generate=self.generate, sandbox=Mock(run=Mock(side_effect=TimeoutError('sandbox unavailable'))))
         with self.assertRaises(RuntimeError):
             evaluate_task(self.task, generate=self.generate, sandbox=Mock(run=Mock(side_effect=RuntimeError('daemon unavailable'))))
+        with self.assertRaises(ValueError):
+            evaluate_task(self.task, generate=Mock(return_value=FAKE_PROGRAMS[1]), sandbox=Mock(run=Mock(side_effect=ValueError('sandbox returned invalid JSON'))))
 
     def test_more_than_ten_sandbox_starts_aborts_task(self):
         task = Task('a', tuple(([[1]], [[1]]) for _ in range(10)), ([[1]],))
