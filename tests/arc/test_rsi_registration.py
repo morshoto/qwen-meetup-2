@@ -128,6 +128,11 @@ class DraftRegistrationTests(unittest.TestCase):
         self.assertIn('bounded exposure review not independently completed',result['blockers'])
         self.assertIn('research/rsi/design-v4.md',result['design_file_sha256'])
         verify_draft_registration(self.root,result)
+        altered=dict(v4,oracle_policy='include_historical')
+        path.write_text(json.dumps(altered))
+        with self.assertRaises(ValueError):
+            prepare_draft_registration(self.root,input_paths=self.paths,generation=0)
+        path.write_text(json.dumps(v4))
         (self.root / 'research/rsi/design-v4.md').write_text('changed')
         with self.assertRaisesRegex(ValueError,'design'):verify_draft_registration(self.root,result)
 
