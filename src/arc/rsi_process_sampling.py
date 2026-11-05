@@ -29,6 +29,8 @@ def process_tree_rss_bytes(listing: str, root_pid: int) -> int:
         if not added:
             break
         included.update(added)
+    if processes[root_pid][0] in included:
+        raise ValueError('cyclic process tree')
     return sum(processes[pid][1] for pid in included) * 1024
 
 
