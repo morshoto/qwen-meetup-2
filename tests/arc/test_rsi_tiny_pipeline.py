@@ -53,5 +53,8 @@ class TinyPipelineTests(unittest.TestCase):
             self.assertEqual(result['loss']['last_step'], 1)
             self.assertTrue(result['tiny_adapter_reloaded'])
             self.assertEqual(result['tiny_reloaded_factor_matches'],28)
+            self.assertEqual(result['tiny_reload_stop_reason'],'process_exited')
+            self.assertGreater(result['tiny_reload_sample_count'],0)
+            self.assertFalse(result['tiny_reload_cleanup_verified'])
             self.assertFalse(result['training_verified'])
             self.assertFalse(result['promotion_allowed'])
