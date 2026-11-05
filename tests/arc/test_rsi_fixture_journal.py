@@ -51,6 +51,21 @@ class FixtureJournalTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             self.run_slot()
 
+    def test_fixture_reserves_before_processing_each_attempt(self):
+        self.run_slot()
+        marker = self.root / 'g0-slot-00.call-0.json'
+        self.assertTrue(marker.exists())
+        self.assertEqual(json.loads(marker.read_text())['attempt'], 0)
+        self.assertFalse((self.root / 'g0-slot-00.call-1.json').exists())
+
+    def test_reservation_failure_leaves_slot_uncertain(self):
+        with patch('src.arc.rsi_fixture_journal.reserve_call', side_effect=OSError('disk failure')):
+            with self.assertRaisesRegex(OSError, 'disk failure'):
+                self.run_slot()
+        self.assertEqual(observe_slot(self.root, registration_sha256=REG, generation=0, slot=0)['status'],
+                         'started_outcome_uncertain')
+        self.assertFalse((self.root / 'g0-slot-00.fixture.json').exists())
+
     def test_evidence_tampering_is_detected(self):
         self.run_slot()
         (self.root / 'g0-slot-00.fixture.json').write_text('{}')
