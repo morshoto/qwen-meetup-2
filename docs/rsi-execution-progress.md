@@ -45,6 +45,17 @@ missing loss, bad exit, resource limits and incomplete streams. A consistent
 observation remains unverified and does not clear the independent adapter
 reload, containment, provenance, registration or training authorization gates.
 
+### Adapter structural precheck
+
+A read-only precheck validates a proposed rank-8, two-layer Qwen3-14B adapter
+against the expected 28 F32 LoRA tensor names and dimensions, contiguous
+safetensors data, finite values and a caller-supplied digest. Synthetic fixtures
+cover malformed files and non-finite values; the installed safetensors reader
+also opened the 28-tensor fixture. The expected layout is derived from the
+local model configuration and MLX-LM source, and has not been validated against
+an actual trained adapter. A structural match does not prove weights changed,
+that the adapter loads into the model, or that its origin is authentic.
+
 ## Current gates
 
 - The slot lifecycle consumes a claimed slot before fixture execution. A
