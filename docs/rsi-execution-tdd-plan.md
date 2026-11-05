@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Training loss watchdog cycle
+
+Test a bounded, incremental parser for pinned MLX train-loss report lines and
+an optional timed health sampler in the owned-process monitor. A non-finite
+loss, malformed report, unavailable sampler or sampler timeout stops the owned
+fixture process group. Empty loss history does not establish a successful
+training step, and local stream and process evidence remains unauthenticated.
+
 ### MLX configuration preview cycle
 
 Test a pure preview of the proposed one-step preflight and 20-step generation
