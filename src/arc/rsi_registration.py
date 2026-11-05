@@ -150,6 +150,7 @@ def prepare_draft_registration(root: str | Path, *, input_paths: dict, generatio
                                        ('model_manifest', 'runtime_manifest', 'sandbox_identity', 'design_registration'))
     if (not isinstance(model, dict) or model.get('model_id') != _MODEL or model.get('revision') != _REVISION or
             model.get('quantization') != {'bits': 4, 'group_size': 64} or
+            any(type(model['quantization'][key]) is not int for key in ('bits', 'group_size')) or
             not isinstance(model.get('chat_template_sha256'), str) or not _HASH.fullmatch(model['chat_template_sha256']) or
             not isinstance(model.get('files_sha256'), dict) or not model['files_sha256'] or
             any(not isinstance(k, str) or not k or not isinstance(v, str) or not _HASH.fullmatch(v)
