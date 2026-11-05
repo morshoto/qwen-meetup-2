@@ -345,6 +345,14 @@ Replay depends on locally
 supplied captures, task data and sandbox behavior, and is not independent
 attestation of model, execution or label provenance.
 
+The replayed synthetic preparation can now be materialized into the existing
+quarantined MLX JSONL format. The wrapper checks its preparation marker and
+hashes, replays the generation before and after writing, reads the dataset
+back, and writes a separate local completion marker. A fixture exercised nine
+synthetic rows and an interrupted post-write replay; interruption left no
+dataset completion marker. All inputs, including the sandbox and tokenizer,
+remain caller supplied. The dataset is still ineligible for training.
+
 ### Local runtime identity observation
 
 A read-only probe on 2026-11-05 recorded the local arm64 Python interpreter,
