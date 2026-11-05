@@ -282,6 +282,15 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### Adapter structural precheck cycle
+
+Test a bounded, read-only check of a proposed Qwen3-14B MLX adapter: pinned
+rank, scale and layer count; complete expected LoRA tensor names and dimensions;
+safe tensor offsets and finite values; and an unchanged adapter digest. Reject
+truncation, missing or unexpected tensors, invalid data and mismatched settings.
+Use synthetic adapter fixtures only. Structural consistency is not an independent
+model reload, execution provenance or permission to train or evaluate.
+
 ### One-step preflight evidence review cycle
 
 Test a fail-closed local review of a completed one-step process observation.
