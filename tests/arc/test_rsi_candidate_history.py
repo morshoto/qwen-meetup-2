@@ -27,7 +27,7 @@ class CandidateHistoryTests(unittest.TestCase):
 
     def test_rejects_malformed_and_duplicate_keys(self):
         p = self.root / 'artifacts/a/budget.json'
-        for keys in (['A:deadbeef:0', 'A:deadbeef:0'], ['A:broken'], ['C:deadbeef:1'], None):
+        for keys in (['A:deadbeef:0', 'A:deadbeef:0'], ['A:broken'], ['D:deadbeef:1'], None):
             p.write_text(json.dumps({'candidate_keys': keys}))
             with self.assertRaises(ValueError):
                 audit_candidate_journals(self.root, {'deadbeef'})
