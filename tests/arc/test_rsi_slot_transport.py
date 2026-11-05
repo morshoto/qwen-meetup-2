@@ -14,6 +14,8 @@ from src.arc.rsi_collection_budget import CollectionBudget
 from src.arc.rsi_lineage_audit import inspect_lineage, probes_sha256
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
 from src.arc.rsi_collected_slot_audit import audit_collected_slot
+from src.arc.rsi_capture_draft import make_capture_draft
+from src.arc.rsi_batch_precheck import precheck_batch
 from src.arc.rsi_slot_collector import collect_slot
 from src.arc.rsi_slot_transport import CapturedSlotTransport
 
@@ -92,6 +94,17 @@ class SlotTransportTests(unittest.TestCase):
         checked = audit_collected_slot(**kwargs)
         self.assertEqual(checked['status'], 'captured_slot_consistent')
         self.assertFalse(checked['eligible_for_training'])
+        draft = make_capture_draft(**kwargs, parent_adapter='none')
+        self.assertEqual(draft['status'], 'pending_independent_audit')
+        self.assertEqual(draft['provenance']['execution_mode'], 'unverified_capture')
+        self.assertEqual(draft['provenance']['request_id'], evidence['attempts'][-1]['request_id'])
+        self.assertEqual(draft['provenance']['raw_response_sha256'], ledger[-1]['response_sha256'])
+        self.assertFalse(draft['eligible_for_training'])
+        self.assertNotIn('query_outputs', json.dumps(draft))
+        with self.assertRaises(ValueError):
+            precheck_batch([draft], generation=0, parent_adapter='none', allowed_tasks={task.id})
+        with self.assertRaises(ValueError):
+            make_capture_draft(**{**kwargs, 'evidence_sha256': 'b' * 64}, parent_adapter='none')
         with self.assertRaises(ValueError):
             audit_collected_slot(**{**kwargs, 'evidence_sha256': 'b' * 64})
         with self.assertRaises(ValueError):
