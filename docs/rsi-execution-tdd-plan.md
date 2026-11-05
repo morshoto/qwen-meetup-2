@@ -251,3 +251,12 @@ Test that the guarded comparison transport is bound to its stage budget and
 requires an exact local reservation before consulting either server. Reject
 unreserved, duplicate, mismatched and over-budget dispatches while preserving
 server-contract and adapter checks. These checks remain local protocol evidence.
+
+### Historical duplicate reference cycle
+
+Test building duplicate-only fingerprints from bounded historical source
+records and the registered private probes, with ancestry confined to the
+generation partition and explicit sandbox-start limits. Reject missing ancestry,
+source-hash conflicts, probe failures and development overlap rather than
+silently omitting references. Caller-supplied source origins and history
+completeness remain unverified; reference records never become training data.
