@@ -52,11 +52,12 @@ class AdapterStructureTests(unittest.TestCase):
         self.assertFalse(result['training_allowed'])
 
     def test_missing_shape_overlap_and_wrong_config_are_rejected(self):
-        mutations = ('missing', 'shape', 'offset', 'config', 'truncated')
+        mutations = ('missing', 'shape', 'offset', 'config', 'boolean_dropout', 'truncated')
         for mutation in mutations:
             with self.subTest(mutation=mutation):
                 self.header, self.size = fixture_header()
                 self.config['num_layers'] = 2
+                self.config['lora_parameters']['dropout'] = 0.0
                 first = next(iter(self.header))
                 if mutation == 'missing':
                     del self.header[first]
@@ -66,6 +67,8 @@ class AdapterStructureTests(unittest.TestCase):
                     self.header[first]['data_offsets'][0] = 1
                 elif mutation == 'config':
                     self.config['num_layers'] = 3
+                elif mutation == 'boolean_dropout':
+                    self.config['lora_parameters']['dropout'] = False
                 self.write_fixture()
                 if mutation == 'truncated':
                     with (self.root / 'adapters.safetensors').open('r+b') as stream:
