@@ -198,3 +198,10 @@ Test stage-wide replay of all ten slot journals and captured request records,
 reconstructing the novelty pool in order and checking the stage counts and
 completion markers. Reject altered, missing or duplicate slot evidence. The
 replay remains local and does not authenticate server, model or sandbox origin.
+
+### Generation draft batch cycle
+
+Test stage replay followed by slot-ordered draft derivation using the evolving
+reference pool. Record the provisional draft count and the five-record
+threshold without marking any draft independently audited or training eligible.
+Reject altered captures and preserve private probe and query-output boundaries.
