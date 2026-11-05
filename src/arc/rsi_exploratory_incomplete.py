@@ -29,8 +29,10 @@ def read_incomplete_exploratory(*, root, registration, registration_sha256, task
                 'arms':{name:{'adapter':adapter, 'settings':settings, 'results':[]}
                         for name,adapter in (('base','none'),('trained',candidate_adapter))}}
         with _directory(root) as directory:
-            if _exists(directory, 'exploratory.completed.json') or _exists(directory, 'exploratory-results.json'):
+            if _exists(directory, 'exploratory.completed.json'):
                 raise ValueError('partial view requires an incomplete run')
+            result_raw, saved_result = (_read(directory, 'exploratory-results.json')
+                                        if _exists(directory, 'exploratory-results.json') else (None, None))
             _, started = _read(directory, 'exploratory.started.json')
             incomplete_raw, incomplete = _read(directory, 'exploratory.incomplete.json')
             counts = incomplete.get('completed')
@@ -59,12 +61,17 @@ def read_incomplete_exploratory(*, root, registration, registration_sha256, task
                         raise ValueError('partial exploratory row differs')
                     recorded[name] = record_raw
                     data['arms'][arm]['results'].append(record['row'])
+            if saved_result is not None and saved_result != data:
+                raise ValueError('partial exploratory results differ from rows')
             summary = summarize_exploratory(data)
             row_coverage_complete = summary['complete']
             # All rows can exist even when finalization fails; stage completion is still false.
             summary['complete'] = False
-            if _read(directory, 'exploratory.incomplete.json')[0] != incomplete_raw or any(
-                    _read(directory, name)[0] != value for name, value in recorded.items()):
+            if (_exists(directory, 'exploratory.completed.json') or
+                    (result_raw is None and _exists(directory, 'exploratory-results.json')) or
+                    (result_raw is not None and _read(directory, 'exploratory-results.json')[0] != result_raw) or
+                    _read(directory, 'exploratory.incomplete.json')[0] != incomplete_raw or any(
+                    _read(directory, name)[0] != value for name, value in recorded.items())):
                 raise ValueError('partial exploratory evidence changed')
     except (KeyError, TypeError, AttributeError, IndexError) as exc:
         raise ValueError('invalid partial exploratory inputs') from exc
