@@ -91,6 +91,21 @@ class ResearchProtocolTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(hashlib.sha256(Path(path).read_bytes()).hexdigest(), expected)
 
+    def test_second_design_version_uses_verified_open_weight_qwen_reference(self):
+        registration = json.loads(Path('research/rsi/design-registration-v2.json').read_text())
+        self.assertEqual(registration['kind'], 'design_only')
+        self.assertFalse(registration['execution_ready'])
+        self.assertEqual(registration['supersedes'], 'research/rsi/design-registration-v1.json')
+        self.assertEqual(registration['competitive_target_percent'], 42.4)
+        self.assertEqual(registration['reference']['model'], 'Qwen3.8-27B')
+        self.assertEqual(registration['reference']['split'], 'ARC-AGI-2 semi-private')
+        self.assertEqual(registration['reference']['reasoning_effort'], 'xhigh')
+        self.assertEqual(registration['reference']['estimated_cost_usd_per_task'], 0.4469)
+        self.assertFalse(registration['reference']['matched_compute'])
+        for path, expected in registration['files'].items():
+            with self.subTest(path=path):
+                self.assertEqual(hashlib.sha256(Path(path).read_bytes()).hexdigest(), expected)
+
 
 if __name__ == '__main__':
     unittest.main()
