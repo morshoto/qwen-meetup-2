@@ -89,6 +89,8 @@ class GenerationAuditTests(unittest.TestCase):
         saved = json.loads((self.root / 'g0.stage.drafts.json').read_text())
         self.assertEqual(len(saved['drafts']), 9)
         self.assertEqual(len(saved['synthetic_examples']), 9)
+        self.assertEqual(len(saved['proposed_sft_rows']), 9)
+        self.assertEqual(saved['mapping_rejections'], [])
         for draft, record in zip(saved['drafts'], saved['synthetic_examples']):
             self.assertEqual(record['parent_task_id'], draft['parent_task_id'])
             self.assertEqual(record['source_sha256'], draft['source_sha256'])
@@ -96,6 +98,9 @@ class GenerationAuditTests(unittest.TestCase):
             self.assertEqual(record['slot_evidence_sha256'], draft['provenance']['slot_evidence_sha256'])
             self.assertEqual(len(record['examples']), 1)
             self.assertFalse(record['training_allowed'])
+        for row in saved['proposed_sft_rows']:
+            self.assertEqual(row['mapping'], 'generated_demos_holdout_first_visible_v1')
+            self.assertFalse(row['training_allowed'])
         self.assertTrue(all(row['provenance']['execution_mode'] == 'unverified_capture' for row in saved['drafts']))
         self.assertNotIn('query_outputs', json.dumps(saved))
         with self.assertRaises(ValueError):
