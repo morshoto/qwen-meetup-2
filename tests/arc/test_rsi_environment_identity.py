@@ -31,6 +31,13 @@ class EnvironmentIdentityTests(unittest.TestCase):
         (self.root / 'new.pyc').write_bytes(b'bytecode')
         self.assertEqual(inventory(self.root, self.python)['file_count'], 4)
 
+    def test_empty_directory_changes_inventory(self):
+        first = inventory(self.root, self.python)
+        (self.root / 'new_package').mkdir()
+        second = inventory(self.root, self.python)
+        self.assertNotEqual(first['inventory_sha256'], second['inventory_sha256'])
+        self.assertEqual(second['directory_count'], first['directory_count'] + 1)
+
     def test_external_symlinks_are_rejected_except_interpreter(self):
         external = Path(self.tmp.name) / 'outside'
         external.write_bytes(b'outside')
