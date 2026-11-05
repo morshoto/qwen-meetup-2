@@ -126,3 +126,13 @@ run marker. A 200-task fake run exercised both arms and the full 800-call count;
 the supplied generators, sandbox, verifier and registration are not
 authenticated. This is not evidence of a real model comparison or authorization
 to run one.
+
+### Comparison outcome replay
+
+Task-arm records now retain bounded program sources. The replay precheck
+re-executes all 400 records with supplied tasks, sandbox and verifier, compares
+predictions and scores with the frozen outcomes, and checks task-content hashes
+bound into the frozen record. A 200-task fixture replay passed; altered task
+content, missing records and changed scores were rejected. The replay inputs,
+model emissions and local digest remain unauthenticated, so this is not an
+independent provenance audit or evidence of a model improvement.
