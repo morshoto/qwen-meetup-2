@@ -8,7 +8,8 @@ from src.arc.rsi_sft_draft import make_sft_draft
 from src.arc.rsi_task_generation import task_prompt, task_repair_prompt
 
 
-def run_fixture_slot(task, replies: list[str], *, public_probes: list, private_probes: list) -> dict:
+def run_fixture_slot(task, replies: list[str], *, public_probes: list, private_probes: list,
+                     before_attempt=None) -> dict:
     if (not isinstance(replies, list) or not 1 <= len(replies) <= 3 or
             any(not isinstance(code, str) or code not in FAKE_PROGRAMS for code in replies)):
         raise ValueError('fixtures require one to three known fake programs')
@@ -16,6 +17,8 @@ def run_fixture_slot(task, replies: list[str], *, public_probes: list, private_p
     prompts, seen = [], set()
     prompt = task_prompt(task)
     for index, code in enumerate(replies):
+        if before_attempt is not None:
+            before_attempt(index)
         prompts.append(prompt)
         code_hash = hashlib.sha256(code.strip().encode()).hexdigest()
         if code_hash in seen:

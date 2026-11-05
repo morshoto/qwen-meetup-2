@@ -4,6 +4,7 @@ import json
 import os
 import stat
 
+from src.arc.rsi_call_reservations import reserve_call
 from src.arc.rsi_fixture import run_fixture_slot
 from src.arc.rsi_slot_lifecycle import _create, _directory, claim_slot, complete_slot, observe_slot
 
@@ -16,7 +17,12 @@ def run_fixture_journaled(root, *, registration_sha256: str, slot: int, task, re
                           public_probes: list, private_probes: list) -> dict:
     """Claim before fixture execution; any interruption consumes the slot."""
     claim = claim_slot(root, registration_sha256=registration_sha256, generation=0, slot=slot)
-    result = run_fixture_slot(task, replies, public_probes=public_probes, private_probes=private_probes)
+    def before_attempt(attempt):
+        reserve_call(root, registration_sha256=registration_sha256, generation=0, slot=slot,
+                     attempt=attempt, claim_token=claim['claim_token'])
+
+    result = run_fixture_slot(task, replies, public_probes=public_probes, private_probes=private_probes,
+                              before_attempt=before_attempt)
     raw = (json.dumps(result, sort_keys=True, separators=(',', ':')) + '\n').encode()
     if len(raw) > 1024 * 1024:
         raise ValueError('fixture evidence exceeds size limit')
