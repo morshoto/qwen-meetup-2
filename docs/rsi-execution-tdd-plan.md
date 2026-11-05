@@ -191,3 +191,10 @@ Test ten scheduled slots with a single stage budget and a reference pool that
 incorporates earlier provisionally novel slots. Bind the task, probe, parent and
 reference identities before starting. Stop on infrastructure failure, preserve
 completed slot outcomes, and never authorize training from local results.
+
+### Generation capture replay cycle
+
+Test stage-wide replay of all ten slot journals and captured request records,
+reconstructing the novelty pool in order and checking the stage counts and
+completion markers. Reject altered, missing or duplicate slot evidence. The
+replay remains local and does not authenticate server, model or sandbox origin.
