@@ -39,6 +39,11 @@ class ReloadStreamTests(unittest.TestCase):
         self.assertEqual(checked['status'],'reload_observation_consistent_unverified')
         self.assertFalse(checked['reload_verified']);self.assertFalse(checked['training_allowed'])
         self.assertFalse(result['escaped_processes_excluded'])
+        for flag in ('reload_verified', 'training_allowed', 'promotion_allowed'):
+            altered = dict(output, **{flag: 0})
+            changed = dict(review_fixture, output=json.dumps(altered))
+            self.assertEqual(review_reload_observation(baseline=baseline,observation=changed,model_key='14b',
+                             adapter_sha256='a'*64)['status'],'reload_observation_rejected')
         self.assertEqual(review_reload_observation(baseline=baseline,observation=review_fixture,model_key='32b',
                          adapter_sha256='a'*64)['status'],'reload_observation_rejected')
 
