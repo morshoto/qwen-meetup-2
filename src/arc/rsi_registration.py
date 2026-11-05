@@ -118,12 +118,18 @@ def prepare_draft_registration(root: str | Path, *, input_paths: dict, generatio
             len({canonical(grid) for grid in private}) != len(private) or
             {canonical(grid) for grid in public} & {canonical(grid) for grid in private}):
         raise ValueError('probe sets must be distinct and disjoint')
+    slots = generation_slots(inputs['split']['partitions']['generation'], generation)
+    source_inputs = {canonical(example['input'])
+                     for slot in slots
+                     for section in ('train', 'test')
+                     for example in inputs['challenges'][slot['task_id']][section]}
+    if source_inputs & {canonical(grid) for grid in public + private}:
+        raise ValueError('scheduled source inputs overlap verifier probes')
     screen_novelty('def transform(grid): return grid', '0' * 64, private_hash, inputs['reference_pool'])
     inventory = build_source_inventory(root)
     _, after_hashes = _read_inputs(root, input_paths)
     if hashes != after_hashes:
         raise ValueError('registration inputs changed during capture')
-    slots = generation_slots(inputs['split']['partitions']['generation'], generation)
     return {'status': 'draft_not_execution_ready', 'execution_ready': False,
             'generation': generation, 'input_paths': dict(input_paths), 'input_sha256': hashes,
             'local_sources': inventory, 'public_probe_sha256': public_hash,
