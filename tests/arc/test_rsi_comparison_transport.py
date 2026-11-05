@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import json
 import tempfile
 import threading
@@ -78,6 +79,17 @@ class ComparisonTransportTests(unittest.TestCase):
         capture.write_text('\n'.join(reversed(lines)) + '\n')
         audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
                                   sandbox=FakeE6Sandbox(), verifier=verifier)
+        corrupted = json.loads(lines[0])
+        wire = json.loads(base64.b64decode(corrupted['body_base64']))
+        wire['seed'] += 1
+        changed = json.dumps(wire).encode()
+        corrupted['body_base64'] = base64.b64encode(changed).decode()
+        corrupted['body_sha256'] = hashlib.sha256(changed).hexdigest()
+        altered_lines = [json.dumps(corrupted), *lines[1:]]
+        capture.write_text('\n'.join(altered_lines) + '\n')
+        with self.assertRaises(ValueError):
+            audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
+                                      sandbox=FakeE6Sandbox(), verifier=verifier)
         capture.write_text('\n'.join(lines[:-1]) + '\n')
         with self.assertRaises(ValueError):
             audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
