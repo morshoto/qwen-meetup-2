@@ -78,7 +78,18 @@ class ComparisonTransportTests(unittest.TestCase):
         report = audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
                                            sandbox=FakeE6Sandbox(), verifier=verifier)
         self.assertEqual(report['checked_requests'], 800)
+        self.assertEqual(report['budget_usage']['model_calls'], 800)
+        self.assertGreater(report['budget_usage']['reserved_tokens'], 0)
         self.assertFalse(report['independently_verified'])
+        ledger_path = self.root / 'parent.responses' / 'requests.jsonl'
+        ledger_lines = ledger_path.read_text().splitlines()
+        changed = json.loads(ledger_lines[0])
+        changed['token_reservation'] += 1
+        ledger_path.write_text('\n'.join([json.dumps(changed), *ledger_lines[1:]]) + '\n')
+        with self.assertRaises(ValueError):
+            audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
+                                      sandbox=FakeE6Sandbox(), verifier=verifier)
+        ledger_path.write_text('\n'.join(ledger_lines) + '\n')
         capture = self.root / 'parent.capture.jsonl'
         lines = capture.read_text().splitlines()
         capture.write_text('\n'.join(reversed(lines)) + '\n')

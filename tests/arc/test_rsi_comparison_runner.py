@@ -35,6 +35,9 @@ class ComparisonRunnerTests(unittest.TestCase):
         self.assertEqual(result['status'], 'frozen_unverified')
         report = summarize_frozen_comparison(self.root, expected_sha256=result['sha256'])
         self.assertEqual((report['base_solved'], report['candidate_solved']), (200, 200))
+        self.assertEqual(report['budget_usage']['model_calls'], 800)
+        self.assertGreater(report['budget_usage']['reserved_tokens'], 0)
+        self.assertEqual(report['budget_usage']['sandbox_runs'], 1600)
         self.assertEqual(self.budget.snapshot()['model_calls'], 800)
         self.assertEqual(self.budget.snapshot()['sandbox_runs'], 1600)
         calls = self.generate.call_args_list
@@ -73,6 +76,7 @@ class ComparisonRunnerTests(unittest.TestCase):
         self.assertEqual(result['status'], 'incomplete')
         self.assertFalse(result['improvement_claim_supported'])
         self.assertEqual(self.budget.snapshot()['model_calls'], 1)
+        self.assertEqual(result['budget_usage']['model_calls'], 1)
         self.assertTrue((self.root / 'comparison.incomplete.json').exists())
         self.assertFalse((self.root / 'comparison.frozen.json').exists())
         with self.assertRaises(FileExistsError):
