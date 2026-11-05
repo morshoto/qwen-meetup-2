@@ -1,0 +1,144 @@
+{
+  "audit_code_sha256": "c1c7c2a1f96734645770e02b6ad5c1284ea44a6df0c30e0a05371321c18f0a80",
+  "independently_verified": false,
+  "limitations": [
+    "slot categories are not correctness or generalization evidence",
+    "duplicate flags may overlap",
+    "missing or unverifiable history is not admitted to training",
+    "the decision to count existing records is not made"
+  ],
+  "runs": {
+    "e8-original-14b": {
+      "ast_duplicate_slots": 1,
+      "attempt_categories": {
+        "passed": 3,
+        "static_safety_rejected": 7
+      },
+      "duplicate_flags_may_overlap": true,
+      "evidence_type": "supplied_historical_metadata",
+      "limitation": "original protocol omitted an execution dependency",
+      "raw_duplicate_slots": 1,
+      "root_seal_sha256": "013f9c316979113688b12b44c2a4aae7b68221ea608941ab004db35f1bd3faa2",
+      "slot_statuses": {
+        "passed": 3,
+        "static_safety_rejected": 7
+      },
+      "slots": 10,
+      "slots_sha256": "3ec1825a1aa9793daa26faa93dcdba5b8bd253a3a29b6fac34d2fb97c9a5ab6c",
+      "source": "artifacts/e8/full-20261102/14b",
+      "strict_count_provisional": true,
+      "strict_new": 1,
+      "training_eligible": false,
+      "valid_candidates": 3
+    },
+    "e8-original-32b": {
+      "ast_duplicate_slots": 3,
+      "attempt_categories": {
+        "passed": 6,
+        "private_acceptance_rejected": 4
+      },
+      "duplicate_flags_may_overlap": true,
+      "evidence_type": "supplied_historical_metadata",
+      "limitation": "original protocol omitted an execution dependency",
+      "raw_duplicate_slots": 3,
+      "root_seal_sha256": "90b3fed6627b79f326584ed312c9cd13e0dbb6d368080742c621695b8563e5b9",
+      "slot_statuses": {
+        "passed": 6,
+        "private_acceptance_rejected": 4
+      },
+      "slots": 10,
+      "slots_sha256": "28483f16cc8a880d40e1ea1e423cdc717cba187d2c8d6c982c65223457eeaed5",
+      "source": "artifacts/e8/full-20261102/32b",
+      "strict_count_provisional": true,
+      "strict_new": 1,
+      "training_eligible": false,
+      "valid_candidates": 6
+    },
+    "e8-rerun-14b": {
+      "ast_duplicate_slots": 5,
+      "attempt_categories": {
+        "passed": 6,
+        "static_safety_rejected": 4
+      },
+      "duplicate_flags_may_overlap": true,
+      "evidence_type": "supplied_historical_metadata",
+      "raw_duplicate_slots": 5,
+      "root_seal_sha256": "2858d0bb1c4aaaae34cb78765f77eeaa166b16a6be49901cc298d966c17473de",
+      "slot_statuses": {
+        "passed": 6,
+        "static_safety_rejected": 4
+      },
+      "slots": 10,
+      "slots_sha256": "1133af5f050c7ab741427bf5f43f3b08f94706c37d734a790be26f3f5e82ea54",
+      "source": "artifacts/e8/full-rerun-preregistered-20261102/14b",
+      "strict_new": 1,
+      "training_eligible": false,
+      "valid_candidates": 6
+    },
+    "e8-rerun-32b": {
+      "ast_duplicate_slots": 2,
+      "attempt_categories": {
+        "passed": 4,
+        "private_acceptance_rejected": 6
+      },
+      "duplicate_flags_may_overlap": true,
+      "evidence_type": "supplied_historical_metadata",
+      "raw_duplicate_slots": 2,
+      "root_seal_sha256": "a155f9fe50637baa4aaf50b35c09c69ec0d9594008fa7b770f14504182c12426",
+      "slot_statuses": {
+        "passed": 4,
+        "private_acceptance_rejected": 6
+      },
+      "slots": 10,
+      "slots_sha256": "33543a7909743024f82121b6b445265aababdefd96f89d045afb339430a734a4",
+      "source": "artifacts/e8/full-rerun-preregistered-20261102/32b",
+      "strict_new": 1,
+      "training_eligible": false,
+      "valid_candidates": 4
+    },
+    "e9-14b": {
+      "ast_duplicate_slots": 14,
+      "attempt_categories": {
+        "passed": 15,
+        "static_safety_rejected": 15
+      },
+      "duplicate_flags_may_overlap": true,
+      "evidence_type": "supplied_historical_metadata",
+      "raw_duplicate_slots": 14,
+      "root_seal_sha256": "11a69a1cd2d4a6b9d7f3d62573932a2b051cc21d6e459e929f00b457ee3c5e65",
+      "slot_statuses": {
+        "passed": 15,
+        "static_safety_rejected": 15
+      },
+      "slots": 30,
+      "slots_sha256": "1533b35f2bcc92a72496c8c4b4892aaceb4d1a18f0503bb58905889bd7d6f8b5",
+      "source": "artifacts/e9/14b/extra30-20261105",
+      "strict_new": 0,
+      "training_eligible": false,
+      "valid_candidates": 15
+    },
+    "e9-32b": {
+      "ast_duplicate_slots": 5,
+      "attempt_categories": {
+        "passed": 6,
+        "private_acceptance_rejected": 4
+      },
+      "duplicate_flags_may_overlap": true,
+      "evidence_type": "supplied_historical_metadata",
+      "raw_duplicate_slots": 5,
+      "root_seal_sha256": "f299d6f949e6e5a23b70568102d28a07a8e9af65478a1439f2407039cd585e2e",
+      "slot_statuses": {
+        "passed": 6,
+        "private_acceptance_rejected": 4
+      },
+      "slots": 10,
+      "slots_sha256": "3959cea509a385400c8aab3301eb2b2c8c69abb82dc9b79b0969383fe515b18f",
+      "source": "artifacts/e9/32b/initial-20261105",
+      "strict_new": 0,
+      "training_eligible": false,
+      "valid_candidates": 6
+    }
+  },
+  "status": "local_historical_failure_inventory_unverified",
+  "training_eligible": false
+}
