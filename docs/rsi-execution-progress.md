@@ -314,6 +314,11 @@ launching it. A fixture proposal using local identity observations produced a
 bundle; the fixture used synthetic data and did not execute the command. This
 does not clear strict-oracle provenance, containment, registration, independent
 reload or the separate authorization required for preflight.
+Bundle creation now replays the complete proposal and checks the synthetic
+generation and canary datasets before and after local identity verification.
+Fixtures reject changed datasets and a modified learning rate even with a
+recomputed proposal digest. A synthetic fixture also produced the bundle after
+local model and runtime identity checks; it did not execute the command.
 
 ### RSI chat format and mask precheck
 
