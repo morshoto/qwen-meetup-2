@@ -71,8 +71,7 @@ class OpenAICompatibleBackend:
                  reserve: Callable[[int], None] | None = None, api_style: str = 'openai_compatible', guarded: bool = False,
                  remaining: Callable[[], float] | None = None,
                  event_callback: Callable[[dict[str, Any]], None] | None = None,
-                 analysis_prompt_mode: bool = False,
-                 request_capture_path: Path | None = None):
+                 analysis_prompt_mode: bool = False):
         parsed = urllib.parse.urlsplit(base_url)
         if parsed.scheme not in ('http', 'https') or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise ValueError('invalid backend base_url')
@@ -83,20 +82,12 @@ class OpenAICompatibleBackend:
         if thinking not in {'server_default', 'off', 'on'} or (thinking != 'server_default' and not guarded and
                                                                not (thinking == 'off' and api_style == 'ollama_native')):
             raise ValueError('thinking mode control is unsupported by this backend')
-        if request_capture_path is not None:
-            if not guarded or api_style != 'openai_compatible' or log_path is None:
-                raise ValueError('request capture requires guarded mode and a request log')
-            capture = Path(request_capture_path).expanduser().resolve()
-            log = Path(log_path).expanduser().resolve()
-            if capture in {log, log.with_name('llm_responses.jsonl')}:
-                raise ValueError('request capture requires a distinct private log')
         self.api_style, self.thinking = api_style, thinking
         self.model, self.revision, self.url = model, revision, base_url.rstrip('/') + ('/api/chat' if api_style == 'ollama_native' else '/chat/completions')
         self.temperature, self.max_tokens, self.seed, self.timeout = temperature, max_tokens, seed, timeout
         self.log_path, self.reserve, self.guarded, self.remaining = log_path, reserve, guarded, remaining
         self.event_callback = event_callback
         self.analysis_prompt_mode = analysis_prompt_mode
-        self.request_capture_path = Path(request_capture_path) if request_capture_path is not None else None
 
     def generate(self, prompt: str, *, kind: str, candidate: int) -> str:
         messages = [{'role': 'system', 'content': system_prompt_for_kind(
@@ -126,13 +117,6 @@ class OpenAICompatibleBackend:
             'thinking_control': 'requested_' + self.thinking,
             'usage': None, 'finish_reason': None, 'stop_reason': None, 'diagnostic_category': None,
             'token_reservation': token_reservation, 'elapsed_seconds': None, 'error': None}
-        if self.request_capture_path is not None:
-            request_body_sha256 = hashlib.sha256(data).hexdigest()
-            _append_private_jsonl(self.request_capture_path, {
-                'request_id': request_id, 'body_base64': base64.b64encode(data).decode('ascii'),
-                'body_sha256': request_body_sha256,
-            })
-            entry['request_body_sha256'] = request_body_sha256
         response_capture: dict[str, Any] | None = None
         output_format = 'json' if kind == 'direct' else 'code' if kind == 'code' else 'text'
         start = time.monotonic()
