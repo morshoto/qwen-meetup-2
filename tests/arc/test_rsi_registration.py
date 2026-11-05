@@ -1,5 +1,6 @@
 """Draft registration binds inputs without authorizing live execution."""
 import json
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -39,6 +40,27 @@ class DraftRegistrationTests(unittest.TestCase):
             relative = f'inputs/{key}.json'
             (self.root / relative).write_text(json.dumps(value))
             self.paths[key] = relative
+        for directory in ('docs', 'research/rsi'):
+            (self.root / directory).mkdir(parents=True, exist_ok=True)
+        (self.root / 'docs/rsi-research-protocol.md').write_text('v1 design')
+        (self.root / 'configs/rsi-research-protocol.json').write_text('{}')
+        (self.root / 'research/rsi/provisional-split.json').write_bytes(
+            (self.root / self.paths['split']).read_bytes())
+        digest = lambda path: hashlib.sha256((self.root / path).read_bytes()).hexdigest()
+        v1paths = ('configs/rsi-research-protocol.json', 'docs/rsi-research-protocol.md',
+                   'research/rsi/provisional-split.json')
+        v1 = {'kind': 'design_only', 'execution_ready': False,
+              'files': {name: digest(name) for name in v1paths}}
+        (self.root / 'research/rsi/design-registration-v1.json').write_text(json.dumps(v1))
+        (self.root / 'research/rsi/design-v2.md').write_text('v2 design')
+        v2paths = ('research/rsi/design-registration-v1.json', 'research/rsi/design-v2.md')
+        v2 = {'kind': 'design_only', 'execution_ready': False, 'competitive_target_percent': 42.4,
+              'supersedes': 'research/rsi/design-registration-v1.json',
+              'reference': {'model': 'Qwen3.8-27B', 'split': 'ARC-AGI-2 semi-private',
+                            'reasoning_effort': 'xhigh', 'matched_compute': False},
+              'files': {name: digest(name) for name in v2paths}}
+        (self.root / 'research/rsi/design-registration-v2.json').write_text(json.dumps(v2))
+        self.paths['design_registration'] = 'research/rsi/design-registration-v2.json'
 
     def test_draft_binds_inputs_schedule_and_remains_non_authorizing(self):
         result = prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
@@ -91,6 +113,12 @@ class DraftRegistrationTests(unittest.TestCase):
         (self.root / 'src/main.py').write_text('changed')
         with self.assertRaisesRegex(ValueError, 'differs'):
             verify_draft_registration(self.root, result)
+
+    def test_rejects_forged_or_changed_design_registration_chain(self):
+        v1 = self.root / 'research/rsi/design-registration-v1.json'
+        v1.write_text('{}')
+        with self.assertRaisesRegex(ValueError, 'design'):
+            prepare_draft_registration(self.root, input_paths=self.paths, generation=0)
 
 
 if __name__ == '__main__':
