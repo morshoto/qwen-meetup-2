@@ -7,7 +7,7 @@ import stat
 
 from src.arc.data import Task
 from src.arc.rsi_comparison_freeze import _hash, _validate
-from src.arc.rsi_evaluation import evaluate_task, score_task
+from src.arc.rsi_evaluation import InvalidModelOutput, evaluate_task, score_task
 from src.arc.rsi_slot_lifecycle import _directory, _exists
 from src.arc.rsi_slot_audit import task_sha256
 
@@ -81,7 +81,7 @@ def replay_comparison(root, *, expected_sha256, tasks, sandbox, verifier):
                         seen_requests.add(request_id)
                 sources = result['sample_sources']
                 def generate(_prompt, *, sample):
-                    return sources[sample]
+                    return InvalidModelOutput() if result['sample_statuses'][sample] == 'invalid_model_output' else sources[sample]
                 replayed = evaluate_task(tasks[task_id], generate=generate, sandbox=sandbox)
                 replayed['sample_request_ids'] = requests
                 if replayed != result:

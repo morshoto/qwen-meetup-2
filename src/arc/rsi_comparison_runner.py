@@ -12,7 +12,7 @@ from src.arc.prompting import system_prompt_for_kind
 from src.arc.rsi_budget_adapters import BudgetedSandbox
 from src.arc.rsi_comparison_budget import ComparisonBudget
 from src.arc.rsi_comparison_freeze import _SETTINGS, _validate, comparison_coverage, freeze_comparison
-from src.arc.rsi_evaluation import evaluate_task, score_task
+from src.arc.rsi_evaluation import InvalidModelOutput, evaluate_task, score_task
 from src.arc.rsi_slot_lifecycle import _create, _directory
 from src.arc.rsi_slot_audit import task_sha256
 
@@ -56,14 +56,17 @@ def run_comparison(*, root, registration_sha256, generation, task_ids, tasks, se
                                         seed=seeds[task_id][sample], timeout=budget.remaining())
                     request_id = None
                     if isinstance(response, dict):
-                        if set(response) != {'code', 'request_id'}:
+                        if set(response) not in ({'code', 'request_id'}, {'code', 'request_id', 'failure'}):
                             raise ValueError('invalid comparison transport response')
+                        invalid = 'failure' in response
+                        if invalid and (response['failure'] != 'invalid_model_output' or response['code'] is not None):
+                            raise ValueError('invalid comparison failure marker')
                         request_id = response['request_id']
                         if (not isinstance(request_id, str) or not re.fullmatch(r'[0-9a-f]{32}', request_id)
                                 or request_id in seen_request_ids):
                             raise ValueError('invalid or duplicate comparison request ID')
                         seen_request_ids.add(request_id)
-                        response = response['code']
+                        response = InvalidModelOutput() if invalid else response['code']
                     request_ids.append(request_id)
                     return response
                 result = evaluate_task(task, generate=call, sandbox=metered)
