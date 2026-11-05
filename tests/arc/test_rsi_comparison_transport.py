@@ -29,7 +29,7 @@ class ComparisonTransportTests(unittest.TestCase):
                 self.server.requests.append(self.rfile.read(int(self.headers['Content-Length'])))
                 raw = json.dumps({'model': MODEL, 'thinking_mode': 'off',
                     'thinking_control': 'tokenizer_template_canary_passed',
-                    'choices': [{'message': {'role': 'assistant', 'content': CODE}, 'finish_reason': 'stop'}]}).encode()
+                    'choices': [{'message': {'role': 'assistant', 'content': self.server.content}, 'finish_reason': self.server.finish_reason}]}).encode()
                 self.send_response(200)
                 self.send_header('Content-Length', str(len(raw)))
                 self.end_headers()
@@ -38,6 +38,7 @@ class ComparisonTransportTests(unittest.TestCase):
                 pass
         self.server = HTTPServer(('127.0.0.1', 0), Handler)
         self.server.requests = []
+        self.server.content, self.server.finish_reason = CODE, 'stop'
         self.worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.worker.start()
         self.addCleanup(self.server.server_close)
@@ -98,6 +99,18 @@ class ComparisonTransportTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             audit_comparison_captures(self.root, expected_sha256=result['sha256'], tasks=tasks,
                                       sandbox=FakeE6Sandbox(), verifier=verifier)
+
+    def test_truncated_and_malformed_completions_are_captured_invalid(self):
+        self.server.finish_reason = 'length'
+        first = self.transport('prompt', arm='parent', adapter='none', task_id='task', sample=0, seed=1, timeout=1)
+        self.assertEqual(first['failure'], 'invalid_model_output')
+        self.assertIsNone(first['code'])
+        self.server.finish_reason, self.server.content = 'stop', '<think>unterminated'
+        second = self.transport('prompt', arm='parent', adapter='none', task_id='task', sample=1, seed=2, timeout=1)
+        self.assertEqual(second['failure'], 'invalid_model_output')
+        self.assertIsNone(second['code'])
+        self.assertNotEqual(first['request_id'], second['request_id'])
+        self.assertEqual(len((self.root / 'parent.responses' / 'llm_responses.jsonl').read_text().splitlines()), 2)
 
     def test_invalid_route_or_seed_fails_before_dispatch(self):
         with self.assertRaises(ValueError):
