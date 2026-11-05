@@ -4,6 +4,10 @@ from src.arc.e5_selfplay import solve_prompt
 from src.arc.e6f_repair import _static_failure, classify_failure
 
 
+class InvalidModelOutput:
+    """A captured invalid completion, distinct from a transport failure."""
+
+
 class _InvalidOutput(Exception):
     pass
 
@@ -20,6 +24,10 @@ def evaluate_task(task, *, generate, sandbox):
     predictions, statuses, sources = [], [], []
     for sample in range(2):
         code = generate(prompt, sample=sample)
+        if isinstance(code, InvalidModelOutput):
+            sources.append(None)
+            statuses.append('invalid_model_output')
+            continue
         if not isinstance(code, str) or len(code.encode('utf-8')) > 65536:
             code = None
         sources.append(code)
@@ -66,7 +74,7 @@ def evaluate_task(task, *, generate, sandbox):
 def score_task(task, result, verifier):
     """Score up to two guesses per input using the verifier's isolated labels."""
     allowed = {'accepted', 'static_rejected', 'visible_demonstration_mismatch',
-               'invalid_output', 'runtime_exception'}
+               'invalid_output', 'invalid_model_output', 'runtime_exception'}
     if (not isinstance(task, Task) or not isinstance(result, dict) or result.get('status') != 'complete'
             or result.get('task_id') != task.id or not isinstance(result.get('sample_statuses'), list)
             or len(result['sample_statuses']) != 2 or any(status not in allowed for status in result['sample_statuses'])
