@@ -23,3 +23,15 @@ class ExploratoryNotebookTests(unittest.TestCase):
             self.assertEqual(env['data'],{'fixture':'data'})
             self.assertFalse(env['summary']['complete'])
             self.assertEqual(read.call_args.kwargs['candidate_adapter'],'a'*64)
+
+    def test_default_results_branch_rejects_incomplete_marker(self):
+        notebook=json.loads(Path('nb/13_rsi_exploratory_50.ipynb').read_text())
+        code=''.join(notebook['cells'][3]['source'])
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); results=root/'exploratory-results.json';results.write_text('{}')
+            (root/'exploratory.incomplete.json').write_text('{}')
+            env={'RESULTS_PATH':results,'PARTIAL_RUN_PATH':None,'json':json,
+                 'summarize_exploratory':Mock(return_value={'complete':True}),
+                 'display':lambda x:None,'Markdown':lambda x:x}
+            with self.assertRaises(ValueError): exec(compile(code,'notebook-cell','exec'),env)
+            env['summarize_exploratory'].assert_not_called()

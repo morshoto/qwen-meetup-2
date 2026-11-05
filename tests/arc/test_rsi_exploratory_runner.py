@@ -88,6 +88,26 @@ class ExploratoryRunnerTests(unittest.TestCase):
         self.assertFalse(view['summary']['complete'])
         self.assertFalse(view['claim_eligible'])
 
+    def test_results_written_but_completion_failed_stays_incomplete(self):
+        from src.arc.rsi_slot_lifecycle import _create as real_create
+        def fail_completion(directory, name, value):
+            if name == 'exploratory.completed.json': raise OSError('fixture failure')
+            return real_create(directory, name, value)
+        with patch('src.arc.rsi_exploratory_runner._create',side_effect=fail_completion):
+            result = self.run_trial()
+        self.assertEqual(result['status'],'exploratory_incomplete')
+        self.assertTrue((self.root/'exploratory-results.json').exists())
+        args=dict(root=self.root,registration=self.reg,registration_sha256=self.reg_sha,
+                  task_ids=self.ids,confirmatory_task_ids=self.final,candidate_adapter='b'*64)
+        view=read_incomplete_exploratory(**args)
+        self.assertTrue(view['row_coverage_complete'])
+        self.assertFalse(view['summary']['complete'])
+        self.assertFalse(view['claim_eligible'])
+        path=self.root/'exploratory-results.json'
+        changed=json.loads(path.read_text());changed['arms']['base']['results'][0]['solved']=False
+        path.write_text(json.dumps(changed))
+        with self.assertRaises(ValueError): read_incomplete_exploratory(**args)
+
     def test_changed_manifest_fails_before_dispatch(self):
         self.final[0]=self.ids[0]
         with self.assertRaises(ValueError): self.run_trial()
