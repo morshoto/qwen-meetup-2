@@ -88,6 +88,7 @@ class GenerationAuditTests(unittest.TestCase):
             expected_public_probes_sha256=probes_sha256(self.public), expected_private_probes_sha256=probes_sha256(self.private),
             reference_pool=self.pool, expected_reference_pool_sha256=self.pool_hash)
         budget = CollectionBudget.create(self.root, registration_sha256='a' * 64, generation=0)
+        budget.reserve_model(1000, kind='canary')
         result = collect_generation(**common, transport=self.transport, sandbox=Sandbox(), budget=budget)
         self.assertEqual(result['counts'], {'novel_unverified': 9, 'repeated_code': 1})
         capture = [json.loads(line) for line in (self.root / 'capture.jsonl').read_text().splitlines()]
@@ -98,6 +99,12 @@ class GenerationAuditTests(unittest.TestCase):
         self.assertEqual(usage['reported']['request_count'], len(ledger))
         self.assertEqual(usage['reported']['total_tokens_if_complete'], 15 * len(ledger))
         self.assertEqual(usage['reserved_tokens'], result['budget_usage']['reserved_tokens'])
+        self.assertEqual(usage['setup_reservations']['model_calls'], 1)
+        self.assertEqual(usage['setup_reservations']['reserved_tokens'], 1000)
+        self.assertEqual(usage['stage_reservations_total']['reserved_tokens'],
+                         1000 + result['budget_usage']['reserved_tokens'])
+        self.assertIsNone(usage['stage_reported_total_tokens_if_complete'])
+        self.assertEqual(usage['reported_scope'], 'captured_slot_attempts_only')
         self.assertIsNone(usage['monetary_cost'])
         altered_ledger = [dict(event) for event in ledger]
         altered_ledger[0]['usage'] = dict(altered_ledger[0]['usage'], prompt_tokens=11)
@@ -257,6 +264,8 @@ class GenerationAuditTests(unittest.TestCase):
         usage = audit_generation_usage(**audit_args)
         self.assertEqual(usage['reported']['total_tokens_missing_requests'], 19)
         self.assertIsNone(usage['reported']['total_tokens_if_complete'])
+        self.assertEqual(usage['setup_reservations']['model_calls'], 0)
+        self.assertIsNone(usage['stage_reported_total_tokens_if_complete'])
         self.assertEqual(audit['status'], 'generation_replay_consistent')
         self.assertEqual(audit['checked_slots'], 10)
         self.assertEqual(audit['attempt_counts'], {'novel_unverified': 1, 'duplicate_source': 9, 'repeated_code': 9})
