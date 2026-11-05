@@ -282,6 +282,14 @@ A failed or interrupted write must not be silently reused. This artifact is
 quarantined and cannot bypass provenance, preflight, trainer or authorization
 gates.
 
+### One-step preflight evidence review cycle
+
+Test a fail-closed local review of a completed one-step process observation.
+Require clean exit, complete output, exactly one finite loss report, valid
+resource samples and no observed resource or time limit. Explicitly preserve
+unverified process containment, adapter reload and provenance as separate gates;
+the review must never authorize training.
+
 ### Owned training stream cycle
 
 Test a bounded stdout reader connected to the loss watchdog and owned-process
