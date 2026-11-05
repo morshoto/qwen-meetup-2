@@ -19,7 +19,7 @@ from src.arc.rsi_generation_stage import collect_generation
 from src.arc.rsi_lineage_audit import probes_sha256
 from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
 from src.arc.rsi_slot_transport import CapturedSlotTransport
-from src.arc.rsi_synthetic_preparation import prepare_synthetic_training
+from src.arc.rsi_synthetic_preparation import prepare_replayed_synthetic_training, prepare_synthetic_training
 from src.arc.rsi_sft_format import audit_sft_format
 
 
@@ -147,8 +147,9 @@ class GenerationAuditTests(unittest.TestCase):
             prepare_synthetic_training(**{**args, 'stage_bytes': altered_raw,
                 'expected_stage_sha256': hashlib.sha256(altered_raw).hexdigest()})
         self.assertFalse((self.root / 'synthetic.training.preparation.json').exists())
-        prepared = prepare_synthetic_training(**args)
+        prepared = prepare_replayed_synthetic_training(**kwargs, expected_stage_sha256=report['sha256'], seed=42)
         self.assertFalse(prepared['training_allowed'])
+        self.assertEqual(prepared['evidence_type'], 'caller_supplied_capture_and_sandbox')
         plan = json.loads((self.root / 'synthetic.training.preparation.json').read_text())
         self.assertEqual(plan['stage_sha256'], report['sha256'])
         self.assertEqual(len(plan['generation_training']['records']), 9)
