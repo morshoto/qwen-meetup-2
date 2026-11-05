@@ -43,6 +43,24 @@ class CollectionContractTests(unittest.TestCase):
             generation=0, parent_adapter='none', expected_max_prompt_tokens=4096,
             expected_ledger_id='1' * 32, expected_initial_reserved_tokens=0)
 
+    @patch('src.arc.rsi_collection_contract.verify_guarded_contract')
+    def test_32b_contract_binds_transport_and_rejects_model_drift(self, verify):
+        verify.side_effect = self.check_contract
+        self.transport = CapturedSlotTransport(base_url='http://127.0.0.1:10001/v1',
+            log_path=self.root/'requests.jsonl', request_capture_path=self.root/'raw.jsonl',
+            max_request_seconds=2, model_key='32b')
+        args = dict(budget=self.budget, registration_sha256='a'*64, generation=0, parent_adapter='none',
+                    expected_max_prompt_tokens=4096, expected_ledger_id='1'*32, expected_initial_reserved_tokens=0)
+        wrapped = ContractCheckedSlotTransport(self.transport, model_key='32b', **args)
+        self.assertEqual(verify.call_args.args[1:3], ('mlx-community/Qwen3-32B-4bit',
+                         'bcaaf7f538adf166c1080a2befdb4f6019f66639'))
+        with self.assertRaises(ValueError): ContractCheckedSlotTransport(self.transport, model_key='14b', **args)
+        self.transport.options['model'] = 'mlx-community/Qwen3-14B-4bit'
+        self.budget.reserve_model(self.reservation, kind='generation')
+        with patch.object(CapturedSlotTransport, '__call__') as dispatch:
+            with self.assertRaises(ValueError): wrapped('prompt', seed=12000, timeout=1)
+            dispatch.assert_not_called()
+
     def test_real_contract_parser_gates_fixture_slot(self):
         model = 'mlx-community/Qwen3-14B-4bit'
         revision = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
