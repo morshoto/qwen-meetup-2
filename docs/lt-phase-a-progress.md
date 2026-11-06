@@ -335,3 +335,22 @@ those reservations or the development subset. The audit marks the supplied
 training inventory unverified: it cannot establish that the list includes all
 Phase B examples. This command has only been exercised with synthetic tasks;
 no real 200-task proposal has been created or frozen.
+
+### Process start-time observations
+
+The macOS `proc_pidinfo` BSD record exposes process start seconds and
+microseconds. In a synthetic control, an owned sleep process returned the same
+start time on repeated reads and became unavailable after it exited. The Metal
+probe now samples those fields for the child and newly listed compiler-service
+PIDs, retaining missing observations and conflicting start times rather than
+assuming a PID is stable.
+
+At commit `5d7a936`, one synthetic run observed child PID 22197 with start
+`1793962620.029253` and newly listed compiler-service PID 22208 with start
+`1793962620.934878`. The latter had parent PID 1, its own process group and
+the same unverified responsible PID as the child; it was not listed in the
+final snapshot. This is an observation of those samples only. Start times do
+not identify unobserved helpers, prove which run requested a shared service,
+or establish that all delegated work is complete. The probe continues to
+report `ownership_verified: false`, `cleanup_verified: false` and
+`execution_ready: false`.
