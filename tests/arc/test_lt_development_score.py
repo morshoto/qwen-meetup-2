@@ -53,6 +53,12 @@ class DevelopmentScoringTests(unittest.TestCase):
             failed = subprocess.run(command, capture_output=True, text=True)
             self.assertNotEqual(failed.returncode, 0)
             self.assertEqual(failed.stdout, '')
+            (root / 'receipt').write_bytes(files['receipt'])
+            prediction['task_id'] = 't000'
+            (root / 'results').write_bytes(raw(prediction) + b'\n')
+            excluded = subprocess.run(command, capture_output=True, text=True)
+            self.assertNotEqual(excluded.returncode, 0)
+            self.assertEqual(excluded.stdout, '')
 
 
 if __name__ == '__main__': unittest.main()
