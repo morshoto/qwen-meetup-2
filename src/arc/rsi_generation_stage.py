@@ -58,6 +58,7 @@ def collect_generation(*, root, registration_sha256, generation, parent_adapter,
             Path(budget.root).resolve() != Path(root).resolve() or
             manifest_sha256(task_ids) != expected_manifest_sha256 or
             not isinstance(tasks, dict) or not isinstance(expected_task_hashes, dict) or
+            not set(tasks).issubset(task_ids) or
             set(expected_task_hashes) != set(selected) or
             any(not isinstance(tasks.get(key), Task) or tasks[key].id != key or
                 task_sha256(tasks[key]) != expected_task_hashes[key] for key in selected)):

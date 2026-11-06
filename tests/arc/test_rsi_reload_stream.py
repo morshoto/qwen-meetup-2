@@ -15,6 +15,20 @@ def child(script):
 
 
 class ReloadStreamTests(unittest.TestCase):
+    def test_identity_failure_stops_reload_fixture(self):
+        process = child('import time; time.sleep(10)')
+        try:
+            result = watch_reload_stream(process, baseline=state(), sampler=lambda _: state(),
+                identity_sampler=lambda _: None, timeout_seconds=3, interval_seconds=0.05,
+                sample_timeout_seconds=0.2, terminate_grace_seconds=0.1)
+            self.assertEqual(result['stop_reason'], 'identity_monitor_unavailable')
+            self.assertFalse(result['reload_verified'])
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+            process.stdout.close()
+
     def watch(self, script, *, sampler=None, limits=None):
         process=child(script)
         self.addCleanup(process.stdout.close)

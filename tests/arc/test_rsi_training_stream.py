@@ -19,6 +19,20 @@ def child(script):
 
 
 class TrainingStreamTests(unittest.TestCase):
+    def test_stream_watch_stops_when_identity_sampling_fails(self):
+        process = child('import time; time.sleep(10)')
+        try:
+            result = watch_training_stream(process, baseline=state(), sampler=lambda _: state(),
+                identity_sampler=lambda _: None, timeout_seconds=3, interval_seconds=0.05,
+                sample_timeout_seconds=0.2, terminate_grace_seconds=0.1)
+            self.assertEqual(result['stop_reason'], 'identity_monitor_unavailable')
+            self.assertFalse(result['training_verified'])
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+            process.stdout.close()
+
     def run_child(self, script):
         process = child(script)
         try:

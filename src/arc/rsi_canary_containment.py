@@ -5,7 +5,7 @@ other processes cannot act for the child, nor that a model workload will run.
 """
 import os
 
-_PROFILE = '(version 1) (allow default) (deny process-fork)'
+_PROFILE = '(version 1) (allow default) (deny process-fork) (deny network*)'
 
 
 def fork_restricted_command(argv):

@@ -97,7 +97,8 @@ def _timed_sample(sampler, pid: int, timeout: float):
 def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
                         timeout_seconds: float, interval_seconds: float = 1.0,
                         sample_timeout_seconds: float = 1.0,
-                        terminate_grace_seconds: float = 1.0, health_sampler=None, resource_limits=None) -> dict:
+                        terminate_grace_seconds: float = 1.0, health_sampler=None, resource_limits=None,
+                        identity_sampler=None, identity_processor=None) -> dict:
     """Monitor a child that is its own session leader, stopping its process group.
 
     The function requires POSIX waitid/WNOWAIT to retain the child's identity
@@ -107,6 +108,8 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
     numeric = (timeout_seconds, interval_seconds, sample_timeout_seconds, terminate_grace_seconds)
     if (not isinstance(process, subprocess.Popen) or process.returncode is not None or not callable(sampler) or
             (health_sampler is not None and not callable(health_sampler)) or
+            (identity_sampler is not None and not callable(identity_sampler)) or
+            (identity_processor is not None and (identity_sampler is None or not callable(identity_processor))) or
             any(type(x) not in (int, float) or not math.isfinite(x) or x <= 0 for x in numeric) or
             interval_seconds > 5 or sample_timeout_seconds > 5 or terminate_grace_seconds > 5 or
             (resource_limits is not None and (not valid_resource_limits(resource_limits) or
@@ -123,6 +126,7 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
         raise ValueError('process ownership could not be verified') from exc
     start = time.monotonic()
     samples = []
+    identity_observations = []
     stop_reason = None
     try:
         baseline_reason = training_resource_decision(baseline, [baseline], limits=resource_limits)
@@ -149,6 +153,30 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
             stop_reason = training_resource_decision(baseline, samples, limits=resource_limits)
             if stop_reason is not None:
                 break
+            if identity_sampler is not None:
+                remaining = timeout_seconds - (time.monotonic() - start)
+                if remaining <= 0:
+                    stop_reason = 'wall_clock_limit'
+                    break
+                identity = _timed_sample(identity_sampler, process.pid, min(sample_timeout_seconds, remaining))
+                if identity is not None and identity_processor is not None:
+                    try:
+                        identity = identity_processor(identity)
+                    except Exception:
+                        identity = None
+                keys = ('live_observed_pids', 'zombie_observed_pids', 'missing_observed_pids', 'reused_pids')
+                if (not isinstance(identity, dict) or
+                        any(not isinstance(identity.get(key), list) or
+                            any(type(pid) is not int or pid <= 0 for pid in identity[key]) for key in keys) or
+                        identity.get('cleanup_verified') is not False or
+                        identity.get('escaped_processes_excluded') is not False):
+                    stop_reason = 'identity_monitor_unavailable'
+                    break
+                identity_observations.append({key: identity[key] for key in (*keys, 'cleanup_verified',
+                                                                              'escaped_processes_excluded')})
+                if identity['reused_pids']:
+                    stop_reason = 'identity_reuse_ambiguous'
+                    break
             if health_sampler is not None:
                 remaining = timeout_seconds - (time.monotonic() - start)
                 if remaining <= 0:
@@ -174,6 +202,7 @@ def watch_owned_process(process: subprocess.Popen, *, baseline: dict, sampler,
         raise
     exit_code, group_signals_confirmed, cleanup_observation = _stop_group(process, terminate_grace_seconds)
     return {'stop_reason': stop_reason, 'exit_code': exit_code, 'samples': samples,
+            'identity_observations': identity_observations,
             'elapsed_seconds': time.monotonic() - start,
             'training_verified': False, 'group_signals_confirmed': group_signals_confirmed,
             'cleanup_observation': cleanup_observation,

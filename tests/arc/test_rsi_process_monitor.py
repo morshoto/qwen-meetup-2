@@ -22,6 +22,76 @@ def child(seconds=30, *, session=True):
 
 
 class OwnedMonitorTests(unittest.TestCase):
+    def test_timed_out_raw_identity_sample_never_updates_tracker(self):
+        process = child()
+        finished = threading.Event()
+        applied = []
+        def slow_raw(_):
+            time.sleep(0.3)
+            finished.set()
+            return ['late rows']
+        try:
+            result = watch_owned_process(process, baseline=state(), sampler=lambda _: state(),
+                identity_sampler=slow_raw, identity_processor=lambda rows: applied.append(rows),
+                timeout_seconds=3, interval_seconds=0.05, sample_timeout_seconds=0.05,
+                terminate_grace_seconds=0.1)
+            self.assertEqual(result['stop_reason'], 'identity_monitor_unavailable')
+            self.assertTrue(finished.wait(2))
+            self.assertEqual(applied, [])
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+
+    def test_owned_fixture_process_is_sampled_by_tracker(self):
+        from src.arc.rsi_descendant_tracking import begin_owned_observation, sample_process_rows
+        process = child(0.8)
+        try:
+            tracker, initial = begin_owned_observation(process)
+            result = watch_owned_process(process, baseline=state(), sampler=lambda _: state(),
+                identity_sampler=lambda _: sample_process_rows(), identity_processor=tracker.observe, timeout_seconds=3,
+                interval_seconds=0.05, sample_timeout_seconds=1, terminate_grace_seconds=0.1)
+            self.assertIn(process.pid, initial['live_observed_pids'])
+            self.assertIn(result['stop_reason'], ('process_exited', 'identity_monitor_unavailable'))
+            self.assertGreater(len(result['identity_observations']), 0)
+            self.assertFalse(result['cleanup_observation']['group_cleanup_verified'])
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+
+    def test_identity_sampler_failure_stops_owned_fixture(self):
+        process = child()
+        try:
+            result = watch_owned_process(process, baseline=state(), sampler=lambda _: state(),
+                identity_sampler=lambda _: None, timeout_seconds=3, interval_seconds=0.05,
+                sample_timeout_seconds=0.2, terminate_grace_seconds=0.1)
+            self.assertEqual(result['stop_reason'], 'identity_monitor_unavailable')
+            self.assertIsNotNone(process.returncode)
+            self.assertFalse(result['escaped_processes_excluded'])
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+
+    def test_identity_sampler_records_evidence_but_cannot_claim_cleanup(self):
+        process = child(0.2)
+        observation = {'live_observed_pids': [process.pid], 'zombie_observed_pids': [],
+                       'missing_observed_pids': [], 'reused_pids': [],
+                       'cleanup_verified': False, 'escaped_processes_excluded': False}
+        try:
+            result = watch_owned_process(process, baseline=state(), sampler=lambda _: state(),
+                identity_sampler=lambda _: observation, timeout_seconds=3, interval_seconds=0.05,
+                sample_timeout_seconds=0.2, terminate_grace_seconds=0.1)
+            self.assertEqual(result['stop_reason'], 'process_exited')
+            self.assertGreater(len(result['identity_observations']), 0)
+            self.assertFalse(result['identity_observations'][0]['cleanup_verified'])
+            self.assertFalse(result['escaped_processes_excluded'])
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, 9)
+                process.wait()
+
     def test_streamed_nonfinite_loss_stops_running_fixture(self):
         script = 'import time; print("Iter 1: Train loss nan, Learning Rate 1e-4", flush=True); time.sleep(30)'
         process = subprocess.Popen([sys.executable, '-c', script], start_new_session=True,

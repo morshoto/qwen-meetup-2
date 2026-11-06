@@ -157,3 +157,10 @@ class GenerationStageTests(unittest.TestCase):
                 self.run_stage(**changes)
         self.transport.assert_not_called()
         self.assertFalse((self.root / 'g0.stage.started.json').exists())
+
+    def test_extra_non_generation_task_is_rejected_before_dispatch(self):
+        extra = Task('heldout', (([[1]], [[2]]),), ([[3]],))
+        with self.assertRaises(ValueError):
+            self.run_stage(tasks={**self.tasks, extra.id: extra})
+        self.transport.assert_not_called()
+        self.assertFalse((self.root / 'g0.stage.started.json').exists())
