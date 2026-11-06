@@ -14,6 +14,7 @@ class MLXBackend:
         from mlx_lm import load, stream_generate
         from mlx_lm.sample_utils import make_sampler
         self.mx, self.stream_generate, self.make_sampler = mx, stream_generate, make_sampler
+        mx.set_memory_limit(48 * 1024**3)
         self.model, self.tokenizer = load(str(model_path))
         self.seed, self.max_tokens, self.temperature = seed, max_tokens, temperature
         self.raw = self.stats = None
