@@ -15,7 +15,33 @@ from typing import Any
 
 from src.arc.lt_comparison import budget_for_model, run_bounded_task, verify_manifest
 from src.arc.lt_public import load_public_export
+from src.arc.http_backend import BackendError
+from src.arc.sandbox import FakeSandbox, IDENTITY_CODE
 from src.arc.rsi_slot_lifecycle import _create, _directory, _read
+
+
+class FixtureBackend:
+    """Deterministic synthetic replies; never invokes a model or transport."""
+    def __init__(self, *, fail_at: int | None = None, interrupt_at: int | None = None,
+                 tokens_per_call: int | None = None):
+        if (any(value is not None and (type(value) is not int or value <= 0)
+                for value in (fail_at, interrupt_at)) or
+                (tokens_per_call is not None and (type(tokens_per_call) is not int or tokens_per_call < 0))):
+            raise ValueError('invalid fixture settings')
+        self.fail_at, self.interrupt_at, self.tokens_per_call = fail_at, interrupt_at, tokens_per_call
+        self.calls = 0
+        self.event_callback = None
+
+    def generate(self, prompt: str, *, kind: str, candidate: int) -> str:
+        self.calls += 1
+        if self.event_callback:
+            usage = None if self.tokens_per_call is None else {'total_tokens': self.tokens_per_call}
+            self.event_callback({'usage': usage})
+        if self.calls == self.interrupt_at:
+            raise KeyboardInterrupt()
+        if self.calls == self.fail_at:
+            raise BackendError('fixture_unavailable', 'synthetic failure')
+        return 'copy input' if kind == 'analysis' else IDENTITY_CODE
 
 
 def _usage_total(events: list, reserved_calls: int) -> int | None:
@@ -46,6 +72,8 @@ def _usage_total(events: list, reserved_calls: int) -> int | None:
 
 def run_fixture_model(root: Path, frozen: dict, receipt: dict, public_export: dict,
                       model: str, backend: Any, sandbox: Any) -> dict:
+    if type(backend) is not FixtureBackend or type(sandbox) is not FakeSandbox:
+        raise ValueError('fixture journal requires synthetic components')
     verify_manifest(frozen)
     if model not in ('14b', '32b') or receipt.get('comparison_sha256') != frozen['sha256']:
         raise ValueError('model or comparison identity differs')

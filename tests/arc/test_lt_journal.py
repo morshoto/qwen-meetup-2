@@ -4,9 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.arc.http_backend import BackendError
 from src.arc.lt_comparison import freeze_manifest, make_manifest
-from src.arc.lt_journal import run_fixture_model, audit_fixture_run, _usage_total
+from src.arc.lt_journal import FixtureBackend, run_fixture_model, audit_fixture_run, _usage_total
 from src.arc.lt_public import build_public_export
 from src.arc.sandbox import FakeSandbox, IDENTITY_CODE
 
@@ -37,13 +36,7 @@ class JournalTests(unittest.TestCase):
         self.export = build_public_export(self.tasks, self.receipt)
 
     def test_records_completed_and_aborted_tasks_without_retry(self):
-        class Backend:
-            def __init__(self): self.calls = 0
-            def generate(self, prompt, *, kind, candidate):
-                self.calls += 1
-                if self.calls == 5: raise BackendError('unavailable', 'fixture')
-                return 'copy input' if kind == 'analysis' else IDENTITY_CODE
-        backend = Backend()
+        backend = FixtureBackend(fail_at=5)
         result = run_fixture_model(self.root, self.frozen, self.receipt, self.export,
                                    '14b', backend, FakeSandbox())
         self.assertEqual(result['status'], 'incomplete')
@@ -69,26 +62,15 @@ class JournalTests(unittest.TestCase):
         self.assertIsNone(_usage_total([{'usage': {'prompt_tokens': 8, 'total_tokens': 3}}], 1))
 
     def test_journal_records_observed_per_task_usage(self):
-        class Backend:
-            event_callback = None
-            def __init__(self): self.calls = 0
-            def generate(self, prompt, *, kind, candidate):
-                self.calls += 1
-                if self.event_callback: self.event_callback({'usage': {'total_tokens': 7}})
-                if self.calls == 5: raise BackendError('unavailable', 'fixture')
-                return 'copy input' if kind == 'analysis' else IDENTITY_CODE
         result = run_fixture_model(self.root, self.frozen, self.receipt, self.export,
-                                   '14b', Backend(), FakeSandbox())
+                                   '14b', FixtureBackend(fail_at=5, tokens_per_call=7), FakeSandbox())
         rows = [json.loads(line) for line in (self.root / '14b.results.jsonl').read_text().splitlines()]
         self.assertEqual([r['tokens'] for r in rows], [28, 7])
         self.assertEqual(result['status'], 'incomplete')
 
     def test_model_manifest_binds_journal_and_detects_tampering(self):
-        class Backend:
-            def generate(self, prompt, *, kind, candidate):
-                raise BackendError('unavailable', 'fixture')
         terminal = run_fixture_model(self.root, self.frozen, self.receipt, self.export,
-                                     '14b', Backend(), FakeSandbox())
+                                     '14b', FixtureBackend(fail_at=1), FakeSandbox())
         self.assertEqual(terminal['model_revision'], '1' * 40)
         self.assertEqual(terminal['model_files_sha256'], 'd' * 64)
         self.assertEqual(terminal['runtime_sha256'], 'f' * 64)
@@ -107,15 +89,9 @@ class JournalTests(unittest.TestCase):
     def test_fixture_journal_feeds_two_model_offline_scorer(self):
         from src.arc.data import Verifier
         from src.arc.lt_scoring import score_comparison
-        class Backend:
-            def __init__(self): self.calls = 0
-            def generate(self, prompt, *, kind, candidate):
-                self.calls += 1
-                if self.calls == 5: raise BackendError('unavailable', 'fixture')
-                return 'copy input' if kind == 'analysis' else IDENTITY_CODE
         rows = []
         for model in ('14b', '32b'):
-            run_fixture_model(self.root, self.frozen, self.receipt, self.export, model, Backend(), FakeSandbox())
+            run_fixture_model(self.root, self.frozen, self.receipt, self.export, model, FixtureBackend(fail_at=5), FakeSandbox())
             rows.extend(json.loads(line) for line in (self.root / f'{model}.results.jsonl').read_text().splitlines())
         verifier = Verifier({task_id: [[[2]]] for task_id in self.ids})
         report = score_comparison(self.ids, rows, verifier)
@@ -127,12 +103,9 @@ class JournalTests(unittest.TestCase):
             self.assertEqual(report['models'][model]['pass_at_2'], 1)
 
     def test_interrupt_leaves_started_and_incomplete_records(self):
-        class Backend:
-            def generate(self, prompt, *, kind, candidate):
-                raise KeyboardInterrupt()
         with self.assertRaises(KeyboardInterrupt):
             run_fixture_model(self.root, self.frozen, self.receipt, self.export,
-                              '14b', Backend(), FakeSandbox())
+                              '14b', FixtureBackend(interrupt_at=1), FakeSandbox())
         self.assertTrue((self.root / '14b.task-000.started.json').exists())
         failure = json.loads((self.root / '14b.incomplete.json').read_text())
         self.assertEqual(failure['failure_type'], 'KeyboardInterrupt')
@@ -140,13 +113,31 @@ class JournalTests(unittest.TestCase):
         self.assertFalse((self.root / '14b.terminal.json').exists())
         self.assertEqual((self.root / '14b.results.jsonl').read_text(), '')
 
+    def test_fixture_entrypoint_rejects_real_transport_before_dispatch(self):
+        from unittest.mock import patch
+        from src.arc.lt_components import prepare_components
+        backend, sandbox = prepare_components(self.frozen, '14b')
+        with patch.object(backend, 'generate') as generate, patch.object(sandbox, 'run') as run:
+            with self.assertRaises(ValueError):
+                run_fixture_model(self.root, self.frozen, self.receipt, self.export,
+                                  '14b', backend, sandbox)
+        generate.assert_not_called()
+        run.assert_not_called()
+        self.assertFalse((self.root / '14b.started.json').exists())
+        class UnknownBackend:
+            def generate(self, *args, **kwargs): raise AssertionError('must not run')
+        with self.assertRaises(ValueError):
+            run_fixture_model(self.root, self.frozen, self.receipt, self.export,
+                              '14b', UnknownBackend(), FakeSandbox())
+        with self.assertRaises(ValueError):
+            run_fixture_model(self.root, self.frozen, self.receipt, self.export,
+                              '14b', FixtureBackend(), sandbox)
+
     def test_changed_public_task_is_rejected_before_any_call(self):
-        class Backend:
-            def generate(self, *args, **kwargs): raise AssertionError('must not call')
         self.export['tasks'][self.ids[0]]['test'][0]['input'] = [[9]]
         with self.assertRaises(ValueError):
             run_fixture_model(self.root, self.frozen, self.receipt, self.export,
-                              '14b', Backend(), FakeSandbox())
+                              '14b', FixtureBackend(interrupt_at=1), FakeSandbox())
         self.assertFalse((self.root / '14b.started.json').exists())
 
 
