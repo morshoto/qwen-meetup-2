@@ -109,9 +109,20 @@ class JournalTests(unittest.TestCase):
         self.assertTrue((self.root / '14b.task-000.started.json').exists())
         failure = json.loads((self.root / '14b.incomplete.json').read_text())
         self.assertEqual(failure['failure_type'], 'KeyboardInterrupt')
-        self.assertEqual(failure['attempted'], 0)
+        self.assertEqual(failure['attempted'], 1)
         self.assertFalse((self.root / '14b.terminal.json').exists())
-        self.assertEqual((self.root / '14b.results.jsonl').read_text(), '')
+        rows = [json.loads(line) for line in (self.root / '14b.results.jsonl').read_text().splitlines()]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]['task_id'], rows[0]['status'], rows[0]['candidates']),
+                         (self.ids[0], 'aborted', []))
+        self.assertIsNone(rows[0]['tokens'])
+        from src.arc.data import Verifier
+        from src.arc.lt_scoring import score_comparison
+        report = score_comparison(self.ids, rows, Verifier({task_id: [[[2]]] for task_id in self.ids}))
+        self.assertEqual(report['models']['14b']['attempted'], 1)
+        self.assertEqual(report['models']['14b']['status'], 'incomplete')
+        self.assertEqual(report['rows'][0]['status'], 'aborted')
+        self.assertEqual(report['rows'][1]['status'], 'not_attempted')
 
     def test_fixture_entrypoint_rejects_real_transport_before_dispatch(self):
         from unittest.mock import patch
