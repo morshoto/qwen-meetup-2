@@ -34,7 +34,10 @@ def main():
     thinking = os.environ.get('LT_THINKING', 'off')
     if thinking not in ('on', 'off'): raise ValueError('invalid thinking setting')
     max_tokens = 4096
-    model, tokenizer = load(MODEL)
+    model_key = os.environ.get('LT_MODEL', '14b')
+    if model_key not in ('14b', '32b'): raise ValueError('invalid model')
+    model_path = MODEL if model_key == '14b' else str(Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-32B-4bit/snapshots/bcaaf7f538adf166c1080a2befdb4f6019f66639')
+    model, tokenizer = load(model_path)
 
     class Backend:
         def generate(self, prompt, *, kind, candidate):
@@ -73,7 +76,7 @@ def main():
                               'raw': backend.raw, 'usage': backend.stats})
             usage = [c['usage'] for c in calls]
             tokens = sum(x['prompt_tokens'] + x['completion_tokens'] for x in usage) if all(usage) else None
-            row = {'model': '14b', 'task_id': task_id, 'status': 'complete', 'candidates': candidates,
+            row = {'model': model_key, 'task_id': task_id, 'status': 'complete', 'candidates': candidates,
                    'development_manifest_sha256': receipt['development_manifest_sha256'], 'tokens': tokens,
                    'runtime_seconds': time.monotonic() - start,
                    'peak_memory_bytes': int(max(x['peak_memory_gb'] for x in usage) * 1e9) if all(usage) else None,
