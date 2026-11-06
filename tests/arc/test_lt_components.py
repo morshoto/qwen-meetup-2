@@ -3,7 +3,7 @@ from copy import deepcopy
 from unittest.mock import patch
 
 from src.arc.lt_comparison import budget_for_model, freeze_manifest, make_manifest, run_bounded_task
-from src.arc.lt_components import prepare_components
+from src.arc.lt_components import prepare_components, check_guarded_metadata
 
 
 class ComponentTests(unittest.TestCase):
@@ -68,6 +68,23 @@ class ComponentTests(unittest.TestCase):
         self.assertEqual(backend.timeout, original_timeout)
         self.assertEqual(sandbox.timeout, original_sandbox_timeout)
         self.assertIsNone(sandbox.remaining)
+
+    def test_guarded_metadata_must_match_model_and_budget(self):
+        frozen = freeze_manifest(self.proposal, self.config)
+        metadata = {'model': 'model14', 'revision': 'revision14', 'token_limit': 20000000,
+                    'reserved_tokens': 0, 'max_prompt_tokens': 5000, 'max_new_tokens': 1000,
+                    'contract': 'same_process_token_ids_v1', 'hard_deadline': 'process_exit_v1',
+                    'thinking_mode': 'off', 'thinking_modes': ['off', 'on'],
+                    'thinking_canary': {'supported': True, 'different_token_ids': True},
+                    'max_request_seconds': 60, 'adapter_sha256': 'none'}
+        report = check_guarded_metadata(frozen, '14b', metadata)
+        self.assertEqual(report['status'], 'metadata_consistent_unverified')
+        self.assertFalse(report['execution_ready'])
+        for change in ({'model': 'model32'}, {'revision': 'wrong'}, {'token_limit': 20000001},
+                       {'reserved_tokens': 1}, {'thinking_canary': {'supported': True, 'different_token_ids': False}},
+                       {'max_request_seconds': 61}, {'adapter_sha256': 'unexpected'}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                check_guarded_metadata(frozen, '14b', {**metadata, **change})
 
     def test_registration_rejects_remote_url_and_unpinned_sandbox(self):
         for key, value in [('backend_url', 'https://example.com/v1'),
