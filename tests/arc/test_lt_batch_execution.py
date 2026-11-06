@@ -30,3 +30,14 @@ class BatchExecutionTests(unittest.TestCase):
             journal=BatchJournal(Path(d), ['a'], 'frozen')
             with self.assertRaises(KeyboardInterrupt): run_batch(journal, {'a':task}, Backend(), '14b', 1)
             with self.assertRaises(ValueError): journal.pending(1)
+    def test_timeout_is_recorded_without_fabricating_prediction(self):
+        task=Task('a', (([[1]], [[1]]),), ([[2]],))
+        class Backend:
+            def generate(self, *args, **kwargs): raise TimeoutError('deadline')
+        with tempfile.TemporaryDirectory() as d:
+            journal=BatchJournal(Path(d), ['a'], 'frozen')
+            self.assertEqual(run_batch(journal, {'a':task}, Backend(), '32b', 1), 1)
+            import json
+            row=json.loads((Path(d)/'a.result.json').read_text())
+            self.assertEqual(row['candidates'], ['timeout','timeout'])
+            self.assertIsNone(row['tokens'])
