@@ -129,3 +129,11 @@ The same command with `--part paths` supplies the path map consumed by the
 offline preparation and scoring tools. Recapture and compare the inventory
 before any future use: this local snapshot does not prove the loaded runtime,
 external dependencies, or execution readiness.
+
+At commit `d9c4d21`, the same observation contains 276 files and code SHA-256
+`2f88415a970b78f491f167a36893b6b7c9ecdb8d60301d1f883bebfbc24da07f`.
+The prior digest above is historical, not a current freeze. The preparation
+and scoring commands accept `--source-root ROOT --source-inventory INVENTORY`
+together to recheck the whole recorded tree, including newly added files. A
+receipt produced without those options is labeled `caller_supplied_files`.
+Neither scope authenticates external packages or proves model-server identity.
