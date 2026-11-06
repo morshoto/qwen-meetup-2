@@ -6,7 +6,7 @@ import tempfile
 import time
 
 
-def run_worker(argv, *, timeout):
+def run_worker(argv, *, timeout, on_start=None):
     if not isinstance(argv, list) or not argv or timeout <= 0:
         raise ValueError('invalid worker settings')
     with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as error:
@@ -14,6 +14,7 @@ def run_worker(argv, *, timeout):
         proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=output, stderr=error, start_new_session=True)
         status = 'complete'
         try:
+            if on_start is not None: on_start(proc.pid)
             try:
                 proc.wait(timeout=timeout)
             except subprocess.TimeoutExpired:

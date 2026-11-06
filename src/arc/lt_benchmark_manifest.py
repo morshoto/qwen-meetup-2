@@ -8,7 +8,7 @@ from src.arc.lt_live_backend import PROMPT
 SOURCE_FILES = ('src/arc/agent.py','src/arc/data.py','src/arc/scoring.py','src/arc/lt_scoring.py',
                 'src/arc/lt_direct_format.py','src/arc/lt_live_backend.py','src/arc/lt_worker.py',
                 'src/arc/lt_public.py','src/arc/lt_batch_journal.py','src/arc/lt_supervised_batch.py',
-                'src/arc/lt_task_supervisor.py','src/arc/lt_benchmark_manifest.py','src/arc/http_backend.py',
+                'src/arc/lt_task_supervisor.py','src/arc/lt_batch_recovery.py','src/arc/lt_benchmark_manifest.py','src/arc/http_backend.py',
                 'src/arc/sandbox.py','src/arc/lt_allocation.py','src/arc/lt_comparison.py',
                 'src/arc/lt_attestation.py','src/arc/lt_development.py','src/arc/rsi_exploratory_split.py',
                 'src/cli/lt_batch_worker.py','src/cli/lt_benchmark.py','src/cli/lt_benchmark_score.py')

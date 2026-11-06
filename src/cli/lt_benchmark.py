@@ -11,6 +11,7 @@ from src.arc.lt_benchmark_manifest import build, canonical, sha, verify
 from src.arc.lt_public import build_public_export, load_public_export
 from src.arc.lt_supervised_batch import supervised_batch
 from src.arc.lt_task_supervisor import run_worker
+from src.arc.lt_batch_recovery import reconcile
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -65,7 +66,9 @@ def run(directory, model):
                   '--with','mlx-lm==0.30.7','python','-m','src.cli.lt_batch_worker',
                   '--export',str(directory/'export.json'),'--receipt',str(directory/'receipt.json'),
                   '--output',str(output),'--task',task,'--model',model,'--model-path',str(model_path)]
-            return run_worker(argv,timeout=manifest['task_timeout_seconds'])
+            def record_process(pid):
+                _create(journal.root/(task+'.process.json'),{'task_id':task,'identity':journal.identity,'pid':pid})
+            return run_worker(argv,timeout=manifest['task_timeout_seconds'],on_start=record_process)
         def progress(task,status):
             print(json.dumps({'model':model,'task_id':task,'status':status}),flush=True)
         return supervised_batch(journal,model,manifest['batch_size'],worker,on_result=progress)
@@ -75,14 +78,24 @@ def run(directory, model):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('operation',choices=('prepare','run'))
+    parser.add_argument('operation',choices=('prepare','run','reconcile'))
     parser.add_argument('--directory',required=True,type=Path)
     parser.add_argument('--model',choices=('14b','32b'))
+    parser.add_argument('--task')
     args=parser.parse_args();directory=args.directory.resolve()
     if args.operation=='prepare': print(prepare(directory))
-    else:
+    elif args.operation=='run':
         if not args.model: parser.error('--model is required for run')
         print(json.dumps({'completed_this_batch':run(directory,args.model)}))
+    else:
+        if not args.model or not args.task: parser.error('--model and --task are required for reconcile')
+        manifest=json.loads((directory/'manifest.json').read_bytes());verify(ROOT,manifest)
+        lockfd=os.open(directory/'run.lock',os.O_CREAT|os.O_RDWR|os.O_NOFOLLOW,0o600)
+        try:
+            fcntl.flock(lockfd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+            journal=BatchJournal(directory/args.model,manifest['task_ids'],manifest['sha256']+':'+args.model)
+            print(json.dumps({'status':reconcile(journal,args.task)}))
+        finally: os.close(lockfd)
 
 
 if __name__=='__main__': main()
