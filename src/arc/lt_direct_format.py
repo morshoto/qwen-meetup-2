@@ -23,3 +23,12 @@ def normalize_direct(raw: str, count: int) -> list:
             item = item['output']
         grids.append(validate_grid(item))
     return grids
+
+
+def extract_final(raw: str, thinking: bool) -> str:
+    """Extract a single explicit Qwen thinking block; preserve all other text."""
+    value = raw.strip()
+    if (thinking and value.startswith('<think>') and value.count('<think>') == 1 and
+            value.count('</think>') == 1):
+        return value.split('</think>', 1)[1].strip()
+    return raw

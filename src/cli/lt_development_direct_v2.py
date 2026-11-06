@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 from src.arc.agent import direct
-from src.arc.lt_direct_format import normalize_direct
+from src.arc.lt_direct_format import extract_final, normalize_direct
 from src.arc.lt_development_export import build_development_export, load_development_export
 
 MODEL = str(Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4')
@@ -56,9 +56,9 @@ def main():
                               'peak_memory_gb': response.peak_memory, 'finish_reason': response.finish_reason}
             self.raw = text
             try:
-                return json.dumps(normalize_direct(text, count), separators=(',', ':'))
+                return json.dumps(normalize_direct(extract_final(text, thinking == 'on'), count), separators=(',', ':'))
             except ValueError:
-                return text
+                return extract_final(text, thinking == 'on')
 
     backend = Backend()
     with (out / 'results.jsonl').open('x') as stream:
