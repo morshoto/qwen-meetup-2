@@ -197,3 +197,23 @@ and these controls do not rule out other local or Mach-service access.
 
 All six controls passed locally. This narrows the earlier allowlist startup
 failure but does **not** clear the live-run blocker.
+
+A follow-up synthetic check imported MLX-LM and evaluated a randomly
+initialized, one-layer Qwen3-shaped model with a 16-element hidden size; it
+produced finite logits of shape `[1, 2, 32]` on the GPU. It used no downloaded
+model weights or ARC inputs. The initial profile denied Metal compiler cache
+writes. Setting `HOME`, `TMPDIR`, `XDG_CACHE_HOME` and compiler-cache environment
+variables did not redirect the compiler. The host sandbox log then showed a
+`file-issue-extension` denial followed by `MTLCompilerService` cache denials.
+A test-only rule granting an extension and read/write access to the user's
+`org.python.python/com.apple.metalfe` cache allowed the synthetic forward pass.
+The check used an allowed temporary working directory because importing
+MLX-LM from the repository working directory was denied by the profile.
+
+This shows that denying child `fork` does not establish that no external
+service participates: Metal compilation delegates to `MTLCompilerService`.
+The test touches a shared system cache, and its extension, contents, aliases,
+service identity and service lifetime are not independently controlled or
+verified. The test-only extension and listener rules are not in the profile
+builder or a live launcher. The user-data isolation and complete cleanup
+requirements remain open.
