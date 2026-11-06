@@ -1,6 +1,6 @@
 # LT Phase A: exploratory ARC comparison
 
-Status: **incomplete; no model calls or ARC evaluation performed**. This is a
+Status: **incomplete; a three-task 14B development run has been scored**. See the [development results](lt-phase-a-summary.md). This is a
 separate protocol from the strict RSI experiment in issue #2. No frozen task
 manifest, model-specific run manifests, real predictions, or comparison score
 exists yet. The comparison, attestation and scoring utilities are offline scaffolding,
