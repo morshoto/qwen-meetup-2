@@ -88,6 +88,47 @@ class DockerBoundaryTests(unittest.TestCase):
             server.server_close()
             thread.join()
 
+    def test_interrupt_stops_owned_synthetic_container(self):
+        import signal
+        import sys
+        import time
+        identifier = uuid.uuid4()
+        name = 'arc-' + identifier.hex
+        script = r"""import os,uuid
+from unittest.mock import patch
+from src.arc.sandbox import DockerSandbox
+with patch('src.arc.sandbox.uuid.uuid4', return_value=uuid.UUID(os.environ['LT_TEST_UUID'])):
+ try:
+  DockerSandbox(image=os.environ['LT_SANDBOX_IMAGE'],timeout=30).run('def transform(grid):\n while True: pass', [[1]])
+ except KeyboardInterrupt:
+  print('interrupted', flush=True)
+"""
+        env = dict(os.environ, LT_TEST_UUID=str(identifier))
+        child = subprocess.Popen([sys.executable, '-c', script], env=env,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                 start_new_session=True)
+        def exists():
+            return subprocess.run(['docker', 'inspect', name], stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL, timeout=5).returncode == 0
+        try:
+            deadline = time.monotonic() + 15
+            while not exists() and child.poll() is None and time.monotonic() < deadline:
+                time.sleep(.1)
+            self.assertTrue(exists(), 'synthetic container never appeared')
+            child.send_signal(signal.SIGINT)
+            output, error = child.communicate(timeout=15)
+            self.assertEqual(child.returncode, 0, error)
+            self.assertIn('interrupted', output)
+            self.assertFalse(exists(), 'interrupted container still exists')
+        finally:
+            if child.poll() is None:
+                child.kill()
+                child.wait(timeout=5)
+            subprocess.run(['docker', 'rm', '-f', name], stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL, timeout=5, check=False)
+            if child.stdout: child.stdout.close()
+            if child.stderr: child.stderr.close()
+
     def test_synthetic_timeout_is_recorded_and_containers_are_absent(self):
         from src.arc.search import SearchBudget
         from src.arc.sandbox import DockerSandbox
