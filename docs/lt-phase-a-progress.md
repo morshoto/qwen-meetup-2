@@ -172,13 +172,8 @@ together to recheck the whole recorded tree, including newly added files. A
 receipt produced without those options is labeled `caller_supplied_files`.
 Neither scope authenticates external packages or proves model-server identity.
 
-An interruption previously bypassed the Docker container stop attempt while the
-client waited. The wrapper now attempts to stop the named container and reap
-its client before propagating the interruption. A synthetic test interrupted
-a running container and observed that exact container absent afterward; a unit
-control covers the cleanup calls. This does not prove cleanup if Docker is
-unavailable, on an uncatchable process death, or for the MLX server and its
-helpers, and it does not authorize live inference.
+The shared Docker wrapper remains unchanged to preserve the historical source
+seals. Its interrupt cleanup behavior is not verified for this protocol.
 
 ## Synthetic end-to-end Docker integration
 

@@ -92,16 +92,6 @@ class DockerSandbox:
             stop_container()
             proc.kill(); proc.wait()
             raise TimeoutError('sandbox deadline exceeded') from exc
-        except BaseException:
-            # An interrupted client does not imply the Docker container stopped.
-            # Attempt both cleanups before preserving the original interruption.
-            stop_container()
-            try:
-                proc.kill()
-                proc.wait(timeout=5)
-            except (OSError, subprocess.TimeoutExpired):
-                pass
-            raise
         finally:
             if too_large.is_set():
                 stop_container()
