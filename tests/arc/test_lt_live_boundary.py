@@ -12,9 +12,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from src.arc.data import Task
+from src.arc.data import Task, Verifier
 from src.arc.lt_comparison import budget_for_model, freeze_manifest, make_manifest, run_bounded_task
 from src.arc.lt_components import prepare_components
+from src.arc.lt_scoring import score_comparison
 from src.arc.sandbox import IDENTITY_CODE
 
 
@@ -65,6 +66,7 @@ class DockerBoundaryTests(unittest.TestCase):
             frozen = freeze_manifest(proposal, config)
             task = Task('t000', (([[1]], [[1]]),), ([[2]],))
             iterator = iter(identifiers)
+            rows = []
             with patch('src.arc.sandbox.uuid', SimpleNamespace(uuid4=lambda: next(iterator))):
                 for model in ('14b', '32b'):
                     backend, sandbox = prepare_components(frozen, model)
@@ -72,9 +74,15 @@ class DockerBoundaryTests(unittest.TestCase):
                                            max_tokens=1000, max_repairs=0)
                     self.assertEqual(row['status'], 'complete')
                     self.assertEqual(row['candidates'], [[[[2]]], [[[2]]]])
+                    rows.append({**row, 'model': model, 'tokens': None, 'runtime_seconds': None,
+                                 'peak_memory_bytes': None, 'peak_swap_bytes': None})
             self.assertEqual([item['seed'] for item in requests], [42, 42, 43, 43] * 2)
             self.assertEqual([item['model'] for item in requests], ['model14'] * 4 + ['model32'] * 4)
             self.assertFalse(present())
+            report = score_comparison(['t000'], rows, Verifier({'t000': [[[2]]]}))
+            for model in ('14b', '32b'):
+                self.assertEqual(report['models'][model]['pass_at_1'], 1)
+                self.assertEqual(report['models'][model]['pass_at_2'], 1)
         finally:
             server.shutdown()
             server.server_close()
