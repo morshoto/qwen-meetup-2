@@ -1,0 +1,25 @@
+{
+  "agent_code_sha256": "07222772a9d01be7a145bfa32aad448e2a3705b3bb111af1084ad52fb1872c84",
+  "builder_sha256": "66af679f30c7474adf189fb370b4060e4c2681052287917bd5525444796fffb8",
+  "dataset_sha256": "779eaba89790ebad9af02514a7efc0aefaf2cf8236f046a31bbf8b9ec48f20f5",
+  "file_count": 6762,
+  "formats": [
+    "direct",
+    "analysis",
+    "wire_messages"
+  ],
+  "independence_established": false,
+  "inventory_sha256": "592cf357335282add4e196fa247440ad99e6e9ce5dc49cccac90334036be1b56",
+  "limitations": [
+    "current reconstructions of direct and analysis prompt and wire formats only",
+    "retained JSON and JSONL string values only",
+    "hash matches do not independently prove dispatch",
+    "missing files, other prompts and pretraining remain unexamined"
+  ],
+  "matches": {},
+  "prompting_code_sha256": "4b372d309d64908ef5ff1c22d6a24f4910d203f54aea853826b856237703c72b",
+  "scanner_sha256": "c2d79ff3abe483a9758453d04964da0d08eaeab7fc86a9a698f4e36a17fb3c0f",
+  "split_sha256": "5a3f55299ac1988a40680d1510cffe62650bb537462d94c6b024534c707102e6",
+  "status": "bounded_historical_prompt_hash_review_only",
+  "task_count": 200
+}

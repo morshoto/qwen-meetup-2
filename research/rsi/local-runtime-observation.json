@@ -1,0 +1,17 @@
+{
+  "generate_module_sha256": "7b29d640f7ffaa0bb78c60782ba980538064ad0210878230f6d6ad178ab85dbc",
+  "generate_step_sha256": "1aee463145a78556a66604ace7b6d85dc10035226aa4f909cbefccfa81b49de6",
+  "interpreter_realpath": "/opt/homebrew/Cellar/python@3.12/3.12.9/Frameworks/Python.framework/Versions/3.12/bin/python3.12",
+  "interpreter_sha256": "2bf9f73bce307190aa9298edd1ba8f7e86500126df8d845cf6d2bedb05968d59",
+  "machine": "arm64",
+  "packages": {
+    "huggingface-hub": "2.4.0",
+    "jinja2": "3.1.6",
+    "mlx": "0.32.4",
+    "mlx-lm": "0.30.7",
+    "numpy": "2.5.4",
+    "tokenizers": "0.23.3",
+    "transformers": "5.22.1"
+  },
+  "python_version": "3.12.9"
+}

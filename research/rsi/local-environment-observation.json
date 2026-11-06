@@ -1,0 +1,10 @@
+{
+  "directory_count": 959,
+  "environment_root": "/private/tmp/qwen-p3a-mlx-venv",
+  "file_count": 6249,
+  "interpreter_realpath": "/opt/homebrew/Cellar/python@3.12/3.12.9/Frameworks/Python.framework/Versions/3.12/bin/python3.12",
+  "interpreter_sha256": "2bf9f73bce307190aa9298edd1ba8f7e86500126df8d845cf6d2bedb05968d59",
+  "inventory_sha256": "74e57df99561e22ee4fe9c69cc5ba90f2a7be1d40346af6db925c29186afb9e6",
+  "scope": "venv_files_only",
+  "total_bytes": 368135904
+}

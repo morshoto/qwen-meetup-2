@@ -1,0 +1,108 @@
+"""Task-conditioned verification remains provisional until provenance audit."""
+import hashlib
+import unittest
+
+from src.arc.data import Task
+from src.arc.e6_curriculum import _quality_grids
+from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
+from src.arc.rsi_candidate import inspect_candidate
+from src.arc.ast_fingerprint import stable_ast_sha256
+
+
+class RecordingSandbox(FakeE6Sandbox):
+    def __init__(self):
+        self.inputs = []
+
+    def run(self, code, grid):
+        self.inputs.append(grid)
+        return super().run(code, grid)
+
+
+class CandidateTests(unittest.TestCase):
+    def setUp(self):
+        self.code = FAKE_PROGRAMS[1]
+        self.task = Task('parent', (([[1, 2]], [[2, 1]]),), ([[3, 4]],))
+        self.public = _quality_grids(42, 5)
+        self.private = _quality_grids(43, 5)
+        self.sandbox = RecordingSandbox()
+
+    def test_generates_labels_only_through_sandbox_and_stays_provisional(self):
+        result = inspect_candidate(self.task, self.code, public_probes=self.public,
+                                   private_probes=self.private, sandbox=self.sandbox)
+        self.assertEqual(result['status'], 'verified_candidate')
+        self.assertFalse(result['eligible_for_training'])
+        self.assertEqual(result['source_type'], 'generator_distillation')
+        self.assertEqual(result['synthetic_task']['train'][0]['output'], [[2, 1]])
+        self.assertEqual(result['synthetic_task']['query_outputs'], [[[4, 3]]])
+        self.assertIn([[3, 4]], self.sandbox.inputs)
+        self.assertNotIn('private_probes', repr(result))
+        self.assertNotIn(str(self.private[0]), repr(result))
+
+    def test_visible_mismatch_rejects_before_private_probes(self):
+        task = Task('parent', (([[1, 2]], [[8, 8]]),), ([[3, 4]],))
+        result = inspect_candidate(task, self.code, public_probes=self.public,
+                                   private_probes=self.private, sandbox=self.sandbox)
+        self.assertEqual(result['status'], 'visible_demonstration_mismatch')
+        self.assertFalse(result['eligible_for_training'])
+        self.assertFalse(any(grid in self.private for grid in self.sandbox.inputs))
+
+    def test_overlapping_private_inputs_rejected_before_sandbox_execution(self):
+        with self.assertRaisesRegex(ValueError, 'overlap'):
+            inspect_candidate(self.task, self.code, public_probes=self.public,
+                              private_probes=self.public, sandbox=self.sandbox)
+        self.assertEqual(self.sandbox.inputs, [])
+
+    def test_private_failure_exposes_no_probe_details(self):
+        class HiddenFailure(RecordingSandbox):
+            def run(inner, code, grid):
+                if grid in self.private:
+                    raise ValueError('private secret output')
+                return super().run(code, grid)
+        result = inspect_candidate(self.task, self.code, public_probes=self.public,
+                                   private_probes=self.private, sandbox=HiddenFailure())
+        self.assertEqual(result['status'], 'private_acceptance_rejected')
+        self.assertNotIn('secret', repr(result))
+        self.assertFalse(result['eligible_for_training'])
+
+    def test_identity_only_program_is_rejected_before_private_probes(self):
+        task = Task('parent', (([[1, 2]], [[1, 2]]),), ([[3, 4]],))
+        result = inspect_candidate(task, FAKE_PROGRAMS[0], public_probes=self.public,
+                                   private_probes=self.private, sandbox=self.sandbox)
+        self.assertEqual(result['status'], 'identity_only_rejected')
+        self.assertFalse(any(grid in self.private for grid in self.sandbox.inputs))
+
+    def test_candidate_records_private_probe_identity_without_exposing_inputs(self):
+        result = inspect_candidate(self.task, self.code, public_probes=self.public,
+                                   private_probes=self.private, sandbox=self.sandbox)
+        self.assertEqual(len(result['private_probe_set_sha256']), 64)
+        other = inspect_candidate(self.task, self.code, public_probes=self.public,
+                                  private_probes=_quality_grids(44, 5), sandbox=RecordingSandbox())
+        self.assertNotEqual(result['private_probe_set_sha256'], other['private_probe_set_sha256'])
+
+    def test_passed_candidate_binds_exact_source_and_ast(self):
+        result = inspect_candidate(self.task, self.code, public_probes=self.public,
+                                   private_probes=self.private, sandbox=self.sandbox)
+        self.assertEqual(result['source_sha256'], hashlib.sha256(self.code.strip().encode()).hexdigest())
+        self.assertEqual(result['ast_sha256'], stable_ast_sha256(self.code))
+
+    def test_syntax_and_prohibited_code_receive_distinct_safe_categories(self):
+        invalid = inspect_candidate(self.task, 'def transform(grid):\n    return (',
+                                    public_probes=self.public, private_probes=self.private, sandbox=self.sandbox)
+        forbidden = inspect_candidate(self.task, 'import os\ndef transform(grid): return grid',
+                                      public_probes=self.public, private_probes=self.private, sandbox=self.sandbox)
+        self.assertEqual(invalid['status'], 'syntax_error')
+        self.assertEqual(forbidden['status'], 'prohibited_operation')
+        self.assertEqual(self.sandbox.inputs, [])
+
+    def test_public_runtime_failure_is_sanitized_for_repair(self):
+        class BrokenSandbox:
+            def run(self, code, grid):
+                raise RuntimeError('sandbox execution failed:\nIndexError: secret detail')
+        result = inspect_candidate(self.task, self.code, public_probes=self.public,
+                                   private_probes=self.private, sandbox=BrokenSandbox())
+        self.assertEqual(result['status'], 'runtime_exception')
+        self.assertNotIn('secret', repr(result))
+
+
+if __name__ == '__main__':
+    unittest.main()

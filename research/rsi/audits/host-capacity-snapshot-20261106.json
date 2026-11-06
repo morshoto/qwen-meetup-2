@@ -1,0 +1,39 @@
+{
+  "feasibility_established": false,
+  "independently_verified": false,
+  "limitations": [
+    "Files on disk do not predict peak training memory or transient allocations.",
+    "Free disk and swap change with system activity; no available-memory baseline or concurrent process inventory was collected.",
+    "File sizes and locally supplied registration identities do not authenticate model weights or prove model compatibility.",
+    "This observation does not establish cleanup, execution authorization, or suitability of the resource limits."
+  ],
+  "model_weights_loaded": false,
+  "models": {
+    "14b": {
+      "model_directory_present": true,
+      "model_id": "mlx-community/Qwen3-14B-4bit",
+      "model_revision": "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+      "proposed_rss_limit_gib": 32,
+      "registration": "research/rsi/technical-canary-registration-14b-v22.json",
+      "registration_sha256": "12f9215104e4a1f91e52fb7fbba31c5c7d26361ac5d943c09b78b230414ac717",
+      "weight_file_bytes": 8307898514,
+      "weight_file_count": 2
+    },
+    "32b": {
+      "model_directory_present": true,
+      "model_id": "mlx-community/Qwen3-32B-4bit",
+      "model_revision": "bcaaf7f538adf166c1080a2befdb4f6019f66639",
+      "proposed_rss_limit_gib": 32,
+      "registration": "research/rsi/technical-canary-registration-32b-v22.json",
+      "registration_sha256": "56ad72708b8212f1decf0c2385b131492082781f11e7a703672728a5074fe327",
+      "weight_file_bytes": 18429850874,
+      "weight_file_count": 4
+    }
+  },
+  "observed_at_utc": "2026-11-05T16:14:14.048509+00:00",
+  "physical_memory_bytes": 68719476736,
+  "status": "local_host_capacity_snapshot_unverified",
+  "swap_observation": "total = 0.00M  used = 0.00M  free = 0.00M  (encrypted)",
+  "training_started": false,
+  "workspace_free_bytes": 68481060864
+}

@@ -1,0 +1,210 @@
+{
+  "distinct_from": "E9",
+  "execution_ready": false,
+  "experiment": "task_conditioned_oracle_pilot_v1",
+  "gate_policy": "five_independently_audited_new_same_model_oracles",
+  "generation": 0,
+  "generation_content_manifest_sha256": "b6e48da59bbccc499c0d24f855383661ad118d934b19de435e9ddba3e4be3d2c",
+  "generation_id_manifest_sha256": "811147b2fbcb79886d5d9b256e5fdf50eeb25966df86ee12ea931149a8c882c1",
+  "historical_behavior_on_proposed_probes": "local_preparation_unverified",
+  "historical_candidate_policy": "duplicate_reference_only_pending_decision",
+  "historical_static_reference": "research/rsi/audits/historical-candidates/14b-static-reference.json",
+  "independent_review_completed": false,
+  "limitations": [
+    "provisional task selection may change after independent review",
+    "file hashes and local fixtures do not authenticate execution or provenance",
+    "requested seeds do not establish deterministic model inference",
+    "historical synthetic task IDs are not source ARC generation task IDs; ancestry requires independent review"
+  ],
+  "limits": {
+    "attempts_per_slot": 3,
+    "model_calls_including_setup": 32,
+    "reserved_tokens": 200000,
+    "sandbox_starts": 300,
+    "slots": 10,
+    "wall_seconds": 3600
+  },
+  "max_new_tokens_per_call": 512,
+  "model_id": "mlx-community/Qwen3-14B-4bit",
+  "model_key": "14b",
+  "model_revision": "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+  "outcome_reporting": "provisional new, duplicate or sampled behavior match, invalid; complete and interrupted records",
+  "outstanding": [
+    "independent split and task content review and freeze",
+    "independently review and freeze exact probe files and sandbox runtime",
+    "freeze full source runtime model and reference pool dependencies",
+    "bind and independently audit model specific run and budget",
+    "separate execution authorization",
+    "independently audit reference preparation and account its ten sandbox starts against the generation cap"
+  ],
+  "parent_adapter": "none",
+  "provisional_behavior_reference": {
+    "accounting": "initialize generation zero budget with the indexed ten starts and recorded elapsed seconds; require matching model, setup digest and reference pool at collection and replay",
+    "eligible_for_training": false,
+    "independently_verified": false,
+    "local_result_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-legacy-reference-preparation-20261106-v1/14b/result.json",
+    "local_result_sha256": "b72c9c717c274f25f2bf57a418497533809ba8fa5718fdd39b51be84d32b1a94",
+    "pool_sha256": "4f1b866af08cbfcdf2376aa608606a27bfd8d2dbfa8902649a37bf787a41f5cc",
+    "review_index": "research/rsi/audits/historical-candidates/14b-behavior-reference.json",
+    "sandbox_starts_in_preparation": 10
+  },
+  "provisional_legacy_reference_method": "build_legacy_duplicate_reference; synthetic identity retained; local behavior reference prepared, independent review pending",
+  "provisional_probe_candidates": {
+    "private": {
+      "canonical_probe_sha256": "8fecded49dbbc5af8a242a0764e61951972b3e1f2c4bbb37684b55b272525239",
+      "file_sha256": "87d94138d12b9f91e00e3cde8a386e9048ac5a2162e1fb5b70489891abe8a0d1",
+      "grid_count": 5,
+      "local_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-oracle-probe-candidates-20261106-v1/14b/private.json"
+    },
+    "public": {
+      "canonical_probe_sha256": "460ea330f69d335b3acd1f40a3f7bf7b3388d62282cb61a58a0947cdf80f5396",
+      "file_sha256": "f34c0365d92113fd8bfa0d660037686e15975e2f425cc1122f66a6622e57e34f",
+      "grid_count": 5,
+      "local_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-oracle-probe-candidates-20261106-v1/14b/public.json"
+    }
+  },
+  "provisional_sandbox": {
+    "image_id": "sha256:a3013c6339a68a667aa9a5f26377693a1f4357a7f7a12db6470a8f06732b91f1",
+    "image_runner_sha256": "d5087f5f6bffbd467069aa33c6552055f6ee4e4d689a896e141185b80deb6b32",
+    "image_tag": "arc-sandbox:local",
+    "independently_verified": false
+  },
+  "repair_feedback_categories": [
+    "duplicate_ast",
+    "duplicate_source",
+    "parse_or_contract_error",
+    "runtime_exception",
+    "shape_or_color_violation",
+    "syntax_error",
+    "visible_demonstration_mismatch"
+  ],
+  "slots": [
+    {
+      "attempt_seeds": [
+        12000,
+        12001,
+        12002
+      ],
+      "slot": 0,
+      "task_id": "00576224"
+    },
+    {
+      "attempt_seeds": [
+        12003,
+        12004,
+        12005
+      ],
+      "slot": 1,
+      "task_id": "007bbfb7"
+    },
+    {
+      "attempt_seeds": [
+        12006,
+        12007,
+        12008
+      ],
+      "slot": 2,
+      "task_id": "009d5c81"
+    },
+    {
+      "attempt_seeds": [
+        12009,
+        12010,
+        12011
+      ],
+      "slot": 3,
+      "task_id": "00d62c1b"
+    },
+    {
+      "attempt_seeds": [
+        12012,
+        12013,
+        12014
+      ],
+      "slot": 4,
+      "task_id": "00dbd492"
+    },
+    {
+      "attempt_seeds": [
+        12015,
+        12016,
+        12017
+      ],
+      "slot": 5,
+      "task_id": "017c7c7b"
+    },
+    {
+      "attempt_seeds": [
+        12018,
+        12019,
+        12020
+      ],
+      "slot": 6,
+      "task_id": "025d127b"
+    },
+    {
+      "attempt_seeds": [
+        12021,
+        12022,
+        12023
+      ],
+      "slot": 7,
+      "task_id": "03560426"
+    },
+    {
+      "attempt_seeds": [
+        12024,
+        12025,
+        12026
+      ],
+      "slot": 8,
+      "task_id": "045e512c"
+    },
+    {
+      "attempt_seeds": [
+        12027,
+        12028,
+        12029
+      ],
+      "slot": 9,
+      "task_id": "0520fde7"
+    }
+  ],
+  "source_sha256": {
+    "research/rsi/audits/allocation-review.json": "435db21430293e904f4c0074468a6bcfc953cfb4ad49beeb6bbaebc87468b024",
+    "research/rsi/audits/historical-candidates/14b-behavior-reference.json": "6d032c770a28a6db4a25d2941fc1b3c26c172fe179c66f6a57000d3152f88148",
+    "research/rsi/audits/historical-candidates/14b-static-reference.json": "3344002bfd31d77566db11a96079b3e36919a1bb21f43d6beef185561f7d7c4d",
+    "research/rsi/audits/historical-candidates/14b.json": "a7d46234ec80fc1c1997d5bd64ce7bc21d303dc1ee7c196ac45b38c26aeec7a5",
+    "research/rsi/audits/oracle-probe-candidates-20261106-v1.json": "dc3e2f7349b41a4fd32d5106fd21580b59aae5818ef60ba3c53765242414750e",
+    "research/rsi/audits/oracle-sandbox-observation-20261106-v1.json": "8aa2b072dd28bf5915b79e68977527603159ec3fc3e9f782943bc6719868005f",
+    "research/rsi/design-registration-v4.json": "86ebb145f2c2b7842163768e38241a9a457af034cecbda8c1827db077905bfd7",
+    "research/rsi/exploratory-split-proposal.json": "68ef1fc9c0c081d8f90e08506a4fcbdd795715315e01736da277314c216892de",
+    "research/rsi/oracle-generation-proposal-v1.md": "941896a41cadd6c647c88a85de501995284d63c6ed248c4ec023d4321bd438ef",
+    "src/arc/rsi_candidate.py": "8f44ccf239bc2af79fde0583eae3bcdd8efc9c189f19f8e0643524b3cbd0cce6",
+    "src/arc/rsi_collection_budget.py": "902807196aaf44b18e0b5b2a258276af0c0cbb17fa93abbb4a8ff83775be32d3",
+    "src/arc/rsi_collection_contract.py": "a33e725e9c73c659ab5e9ba0637edb65caca8ef841eeedb155a423c16e54d711",
+    "src/arc/rsi_generation_audit.py": "146c52ede52467fdc83960cc66a0c58a0496a36425f00f91ff55457c20863ba8",
+    "src/arc/rsi_generation_budget_draft.py": "ffb16e68625129f7aa642d06dd37da895e3242eee93cadaa8b5acc971180c1be",
+    "src/arc/rsi_generation_drafts.py": "39077b48dd4fd818b2281b8cd55beba4704d96c399031a1f717f7e0871d51f90",
+    "src/arc/rsi_generation_outcomes.py": "3a6c4d907186139721d491bbe4b534dc491c26817adaddb68e60c30bb5483f85",
+    "src/arc/rsi_generation_stage.py": "75e1a6f87a4c6fa2250901b343b005a0cd31f76e6b790a6169c843b67e9d4faa",
+    "src/arc/rsi_novelty.py": "13bdad6911d1dc0f33eae6ad6dc9c1bad80f66b67befaeb1c8bd2d7f945a92f0",
+    "src/arc/rsi_reference_pool.py": "161ef213bca5b1ce0b2e182d9e046257b4f21f1fdcd60e83933311c38ded36e2",
+    "src/arc/rsi_slot_collector.py": "8c1c933e1e1f42aab7fe0033c5b79ead395344fb2c9e5556a72e3830fd973360",
+    "src/arc/rsi_slot_transport.py": "3fb13e228aa6a67c5b9a1bdc55cb5a25c130cb8641823a55c44bf891434646ee",
+    "src/arc/rsi_task_generation.py": "97f8e430b3c5677128f50d7d1d986ff31d0599ec9fd0b8836ae26028a57c1c0d",
+    "src/arc/rsi_transport_audit.py": "55416ef4b106f4d5099e7815268b06418e3b987bb099922de5710455ac6206aa"
+  },
+  "status": "draft_generation_registration_unverified",
+  "temperature": 0.2,
+  "terminal_without_repair": [
+    "prohibited_operation",
+    "private_acceptance_rejected",
+    "sampled_behavior_match",
+    "nondeterministic_output_rejected",
+    "repeated_code",
+    "infrastructure_failure"
+  ],
+  "thinking_mode": "off",
+  "training_allowed": false
+}

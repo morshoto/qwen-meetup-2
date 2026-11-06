@@ -1,0 +1,16 @@
+{
+  "artifact_file_count": 6762,
+  "artifact_inventory_sha256": "592cf357335282add4e196fa247440ad99e6e9ce5dc49cccac90334036be1b56",
+  "development_count": 200,
+  "execution_ready": false,
+  "independent_review_completed": false,
+  "proposal_sha256": "67b421802ffd521b18e8170b7f79b11f03ba2822879a49a17898a0fc67706512",
+  "reconciliation_code_sha256": "42602d3095a847c62c6c8005e49b0b127afc0612db39696df33611f91fbdec69",
+  "reviews_sha256": {
+    "exact": "3194e003390c8d6623f5a6c772ddc33fd7819f518fe5f9513a5c21c3af1966d0",
+    "hash": "f09a9e13287b5cf8e1312b319bfdac90bc2d0908492671570e3082abb29ca406",
+    "text": "3da1f3436c1a1451d80b7e85e665f0968e2a32951c6f7498755376ce81b4a2f5"
+  },
+  "split_sha256": "5a3f55299ac1988a40680d1510cffe62650bb537462d94c6b024534c707102e6",
+  "status": "prompt_reviews_replayed_unverified"
+}

@@ -1,0 +1,898 @@
+{
+  "database_count": 220,
+  "files": [
+    {
+      "path": "artifacts/e2-full-token-ledger.sqlite3",
+      "sha256": "61bf9728e5707d84b80ce865ee947a3f44f609f2ffe6522f41ebb384c08d3186"
+    },
+    {
+      "path": "artifacts/e2-smoke-token-ledger.sqlite3",
+      "sha256": "6509b21cf3a7457042ad3a3dc8598bdb71fd1f062ec124cf7628b4d6ccded911"
+    },
+    {
+      "path": "artifacts/e2-smoke-v2-token-ledger.sqlite3",
+      "sha256": "3a6ffaaef6bf75602701baf5e05046bc6d8bd5cce2d9d7ca9d65251327aac358"
+    },
+    {
+      "path": "artifacts/e3-collection-token-ledger-20261101.sqlite3",
+      "sha256": "dffc35cc7c09a46dc8c6ef62e0bdb2b59ded7a1d191afb7ed65f0427615cf20d"
+    },
+    {
+      "path": "artifacts/e3-smoke-token-ledger.sqlite3",
+      "sha256": "edb42b32df01942295d2ec69844a3406167c43bda593c7e5dda9c5a26dc31852"
+    },
+    {
+      "path": "artifacts/e4-synthetic-20261101/token-ledger-structured.sqlite3",
+      "sha256": "40a67d1a4a11689d62bacd30db55e849dcbd466daff51b3f9c4da3033e5a6c61"
+    },
+    {
+      "path": "artifacts/e4-synthetic-20261101/token-ledger-v2.sqlite3",
+      "sha256": "dcf59ddde386600a782b334879ca350ff5175b64f8bbcbfb47ce9877cc2b1eda"
+    },
+    {
+      "path": "artifacts/e4-synthetic-20261101/token-ledger.sqlite3",
+      "sha256": "475fd7d96af07e3e062aaf267b8c63591f8c913a9a3f36f73cd4987678e2d1bd"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101/checkpoints/e5/gen-0-c1-ledger.sqlite",
+      "sha256": "526c5ac42b86a6e6b7534146a3ce413729c4a67f74ca07f257d166a7a43c0265"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101/checkpoints/e5/gen-0-monitor-b-ledger.sqlite",
+      "sha256": "06768bb9f4551795763dfcd881bd53b2193c0721a71f57f533f995175b3f4fb6"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101/checkpoints/e5/gen-0-monitor-c1-ledger.sqlite",
+      "sha256": "522e119cd7c8f95f3f21c6ce0785265d1ce6b31e85e8ffa539bb07a958a98d8a"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-bounded-retry-final/checkpoints/e5/gen-0-c1-ledger.sqlite",
+      "sha256": "95109382128cff597bca12ca78b848f0d8a374a63eb5a0cc475fb6c41dba1c08"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-bounded-retry-final/checkpoints/e5/gen-0-monitor-b-ledger.sqlite",
+      "sha256": "011b4588b7384a57dc418b046c55c72e9dc54cd186180e16e9a72cf595d5f95e"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-candidates3/checkpoints/e5/gen-0-c1-ledger.sqlite",
+      "sha256": "07eb6b8c1ab20ef6994c1dd728769c4411bf842238523039f11f17a6badefc37"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-candidates3/checkpoints/e5/gen-0-monitor-b-ledger.sqlite",
+      "sha256": "346f1c9edcdbd58c4008e6bbf4c7645fb58a040dcc352f9e66140bd93c5c737b"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-candidates3/checkpoints/e5/gen-0-monitor-c1-ledger.sqlite",
+      "sha256": "9b3e77e43717a380fa30fde53e6d8d3c34d1fd1878b42f3e150e727ff03aedcf"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-compact-feedback-final/checkpoints/e5/gen-0-c1-ledger.sqlite",
+      "sha256": "f60bae9151a9950d7e27f4a2d0d53252ff555c173e49526513de6d6f055b6ca4"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-compact-feedback-final/checkpoints/e5/gen-0-monitor-b-ledger.sqlite",
+      "sha256": "eb526aaeaf18e9725c5ca51e7c5525bf91f757ade0667b34e3f7903bd141cd19"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-compact-feedback-final/checkpoints/e5/gen-0-monitor-c1-ledger.sqlite",
+      "sha256": "94e25a57d44720bc436ddd4b0cb9d2234189d42ca0a0ad17b79f16f13f6490d5"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-final-verified/checkpoints/e5/gen-0-c1-ledger.sqlite",
+      "sha256": "e356af5564105c6b302a95777fda6c612bc6585eb27de0e4d4ce4e69902b44e4"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-final-verified/checkpoints/e5/gen-0-monitor-b-ledger.sqlite",
+      "sha256": "9613c8afef2e5a108bb7b6e9e4cbb081d17385dac08afb8a0699a19ea112841b"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-final-verified/checkpoints/e5/gen-0-monitor-c1-ledger.sqlite",
+      "sha256": "82ea7ecdb1ba86ee31381b870b13ca39e922067a64aa4a35198c7bbf8b59ed57"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-indexing-feedback/checkpoints/e5/gen-0-c1-ledger.sqlite",
+      "sha256": "ea7c6125f74b8d67b54dcf1ff9f3f03dc781f65a0a52de647864ed333153f396"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-indexing-feedback/checkpoints/e5/gen-0-monitor-b-ledger.sqlite",
+      "sha256": "a0b6141a10a456440b311a4a43dec1bc47e849a750535dbb3db8f32f351a2026"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-indexing-feedback/checkpoints/e5/gen-0-monitor-c1-ledger.sqlite",
+      "sha256": "9f084060773665dea1eba9ad26820a79fc6d10cb85bda9be547199a7465f8e14"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-rectangular/checkpoints/e5/gen-0-c1-ledger.sqlite",
+      "sha256": "b0d3366a5e0393b445fe9bc8b3aa84b93c74ff99028b82f1198b5e810371df70"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-rectangular/checkpoints/e5/gen-0-monitor-b-ledger.sqlite",
+      "sha256": "2202f342025fd91d6d4052ba25e9fbc98f9dfe1fc53e0220655c4bb127fb7139"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-rectangular/checkpoints/e5/gen-0-monitor-c1-ledger.sqlite",
+      "sha256": "18bbfa3e8ac1f6990203c59bfaf817652d664bb7467ee91f8a7d351f7e9a31ee"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-selfrepair/checkpoints/e5/gen-0-c1-ledger.sqlite",
+      "sha256": "c7721c6795bba0c6a831d2a9c526092f7ddb372c5a68dd7f70af094003b71abc"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-selfrepair/checkpoints/e5/gen-0-monitor-b-ledger.sqlite",
+      "sha256": "264ca7830ac693b86f9cf227698c6289c51130c950e40250dd1d5e2fa2310647"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-selfrepair/checkpoints/e5/gen-0-monitor-c1-ledger.sqlite",
+      "sha256": "9bd64fa2fe662bc0b3c98661947750442ce5d95b1c9540e08dc78422095f9b3c"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-selfsolve-3attempts/checkpoints/e5/gen-0-c1-ledger.sqlite",
+      "sha256": "0080ace5263a60353594192c705b8eb774947d49ae54cf740265dfe3faed045a"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-selfsolve-3attempts/checkpoints/e5/gen-0-monitor-b-ledger.sqlite",
+      "sha256": "0fc166b0df93d5b2745ca329b1771ba991b413f665c9b1efca82fa18ef7e2114"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-shape-feedback/checkpoints/e5/gen-0-c1-ledger.sqlite",
+      "sha256": "cf1e4eb9615dfb00d30a8fb4e44fd235de89007b55adf6486cc6894b1d32e72f"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-shape-feedback/checkpoints/e5/gen-0-monitor-b-ledger.sqlite",
+      "sha256": "984937a8d2f58bef029d773d95510023812982de45df334d3d431b5d4157ad38"
+    },
+    {
+      "path": "artifacts/e5-live-smoke-20261101-shape-feedback/checkpoints/e5/gen-0-monitor-c1-ledger.sqlite",
+      "sha256": "3f7d06aca03bee89f39caac940ec6cad3936e9b94dfc33897a33a27ff252e9f3"
+    },
+    {
+      "path": "artifacts/e6/e6-local-bootstrap-e526bae72f/checkpoints/e6/e6-gen0-ledger.sqlite",
+      "sha256": "20e19846d81358961866933eb0f8ac186c2eee5a2cdbe70a98b076c0fd7ec003"
+    },
+    {
+      "path": "artifacts/e6/e6-local-smoke-fa35c09b83/checkpoints/e6/e6-gen0-ledger.sqlite",
+      "sha256": "10b5d474b5aa0e59732fe259446a5cbcf8fb5f2c038f87b4d734531e7d6a2d79"
+    },
+    {
+      "path": "artifacts/e6f/live-collection/checkpoints/e6/e6f-913114565b-ledger.sqlite",
+      "sha256": "5ebd1c8686234a66927d13099127b7a7c3e6f899cc7c10d8d9b84bc5f52de525"
+    },
+    {
+      "path": "artifacts/e6f/live-smoke/checkpoints/e6/e6f-6030f8c678-ledger.sqlite",
+      "sha256": "039f43134b743cd004402756736e2a2e93611c56965119cd7ada372bc4ac43b1"
+    },
+    {
+      "path": "artifacts/e6g/live-smoke/conditions/G0_baseline/checkpoints/e6/e6g-c85d9e2071-ledger.sqlite",
+      "sha256": "962461ce223407075c673cd0ef6953a85b52704510c2228dc0edde44cd96f82b"
+    },
+    {
+      "path": "artifacts/e6g/live-smoke/conditions/G1_novelty_feedback/checkpoints/e6/e6g-194eae6b32-ledger.sqlite",
+      "sha256": "8d1f86bbd7d09f4b42d4a26ba72b90f47f02e1d09a582bb032b287830ce021f1"
+    },
+    {
+      "path": "artifacts/e7/live-smoke-20261101-e7a/conditions/G0_baseline/slot-0/checkpoints/e6/e7-G0_baseline-0-ledger.sqlite",
+      "sha256": "a500fcc06e58f20294d70bfae9f0d0e174037fbfe24b839d91b15b75f5747196"
+    },
+    {
+      "path": "artifacts/e7/live-smoke-20261101-e7a/conditions/G0_baseline/slot-1/checkpoints/e6/e7-G0_baseline-1-ledger.sqlite",
+      "sha256": "5fd7899fd339687c53f8151875c79f451667c872e56036a29f8ad5a20cf9df7b"
+    },
+    {
+      "path": "artifacts/e7/live-smoke-20261101-e7a/conditions/G1_novelty_feedback/slot-0/checkpoints/e6/e7-G1_novelty_feedback-0-ledger.sqlite",
+      "sha256": "465bf1c493a27e8a354b2d464a27d617019004f766e701906888c0887907d3d5"
+    },
+    {
+      "path": "artifacts/e7/live-smoke-20261101-e7a/conditions/G1_novelty_feedback/slot-1/checkpoints/e6/e7-G1_novelty_feedback-1-ledger.sqlite",
+      "sha256": "85e636fbf7a2f97d2ec3473cfa4fb4edc4dca384716308b15cf7b7d9eefabaed"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "80778cce1d4fa5a317dc0e443030b6734d033c422f0dc6c69d6e80d5065f97b4"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/slots/10/checkpoints/e6/e7-G0_baseline-10-ledger.sqlite",
+      "sha256": "727df96fb4fac56e39cbf5651ee0eaf8656f24e41e7b598f5d922e72ea519136"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/slots/11/checkpoints/e6/e7-G0_baseline-11-ledger.sqlite",
+      "sha256": "829290043f645d45b6f57aaca440437e7a1d3da357076f6e945bd79496da412d"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/slots/12/checkpoints/e6/e7-G0_baseline-12-ledger.sqlite",
+      "sha256": "c58197c696e80a59d64c6015936ec7e0e9c2e34170ae653095831a43306bdf35"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/slots/13/checkpoints/e6/e7-G0_baseline-13-ledger.sqlite",
+      "sha256": "368aa197ab361bf0181f6cd86c9a72c75d90625989fd49a566286e4f09b36278"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/slots/14/checkpoints/e6/e7-G0_baseline-14-ledger.sqlite",
+      "sha256": "ab669b6e51ce2d91f46dccccc4be1c7b9425e2f6ca2c528f7d891735745bb190"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/slots/15/checkpoints/e6/e7-G0_baseline-15-ledger.sqlite",
+      "sha256": "b34575d157c3c9d073ce02da072fe461436a248534a20bf7ff94c229f5631151"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/slots/16/checkpoints/e6/e7-G0_baseline-16-ledger.sqlite",
+      "sha256": "5c4ddc22e6846f0e8b38a3a05f136ad44882af7a14baca41b3ec05c5a044adfb"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/slots/17/checkpoints/e6/e7-G0_baseline-17-ledger.sqlite",
+      "sha256": "4021da7de5c08a8cbd6ed79709a3e3cdd17ee0184eb2fa38ed3020c5eb337930"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/slots/18/checkpoints/e6/e7-G0_baseline-18-ledger.sqlite",
+      "sha256": "6d637d11dad65937ba45bd86df42494bb317382af54f0b173cc1a7a4af5eea23"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/14b/slots/19/checkpoints/e6/e7-G0_baseline-19-ledger.sqlite",
+      "sha256": "eea55edc4236f165f20315b0fc5af8185db3b7e8a9dc8bbf75455235f8446823"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "57aa1c27d379bf6b69e2d72a63a89dc1fde2f8a49a44537db601d6b54c0655ed"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/slots/10/checkpoints/e6/e7-G0_baseline-10-ledger.sqlite",
+      "sha256": "04a74a3db09c9a5fafe69630be92744c13632baf6f936efa352f2ad28dc4d16f"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/slots/11/checkpoints/e6/e7-G0_baseline-11-ledger.sqlite",
+      "sha256": "0fbbeb18e9e8443790ba09a2bf5a49937622e3aeb7a9f65b6f9ae68a280ecbc3"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/slots/12/checkpoints/e6/e7-G0_baseline-12-ledger.sqlite",
+      "sha256": "16a9abcffe11ebc70b82fd844b07ab0132e79feffa46730daffc77e03d568240"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/slots/13/checkpoints/e6/e7-G0_baseline-13-ledger.sqlite",
+      "sha256": "aef7d96da988ce482389629d9b530cbffd0bbd05957833183d606f2f2339ef73"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/slots/14/checkpoints/e6/e7-G0_baseline-14-ledger.sqlite",
+      "sha256": "23cb6c77361a2ebf4bae617f55354af100f919a6cb0cd4fa6fb41021ff96f23d"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/slots/15/checkpoints/e6/e7-G0_baseline-15-ledger.sqlite",
+      "sha256": "1dbb8b90c6f2dc8be1cdff056176c05389100fcf7239aeb4e7b52229f305ba1f"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/slots/16/checkpoints/e6/e7-G0_baseline-16-ledger.sqlite",
+      "sha256": "97eb0cb651830277e17808a9c58719f4cf8c1d2f955456d4acc7a1a52a318465"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/slots/17/checkpoints/e6/e7-G0_baseline-17-ledger.sqlite",
+      "sha256": "e32cd806439b0a172b318d4986296fabf67d8b2dddb41ec037afc957834363e1"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/slots/18/checkpoints/e6/e7-G0_baseline-18-ledger.sqlite",
+      "sha256": "3f03b25672068de77cdab9fe17d4da78e745adbd005777c46809008a39f2bc4c"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/32b/slots/19/checkpoints/e6/e7-G0_baseline-19-ledger.sqlite",
+      "sha256": "1930aceebe18dddb220bb9ed05599b956317c9bf03e1a5701df3a12053a7848c"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "2d5b06cf70219ce5d50fa4a605b3a56d21706e8ef7f3cfe9cf36eb3a40b2566f"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/slots/10/checkpoints/e6/e7-G0_baseline-10-ledger.sqlite",
+      "sha256": "ab35a458b94c28f7c067ca4f80879194412a4b762498e89a7ccd0ff492790f22"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/slots/11/checkpoints/e6/e7-G0_baseline-11-ledger.sqlite",
+      "sha256": "dcc636df9b023db732552050d6ede3551793340a3e7cd7a0a42f0c8ba2d45240"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/slots/12/checkpoints/e6/e7-G0_baseline-12-ledger.sqlite",
+      "sha256": "3cf13f1da8afe45212043625748e1bcde4ebe594d9f09f259e76fa2beda9036b"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/slots/13/checkpoints/e6/e7-G0_baseline-13-ledger.sqlite",
+      "sha256": "3d5735e3c8eacd1d22c7a58c53cad237720f5ed256fac95e20cd415e07e6ddf5"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/slots/14/checkpoints/e6/e7-G0_baseline-14-ledger.sqlite",
+      "sha256": "d7d510c2f16af12bf6b7f7d723cac07fb18e1c0eab5f7c540d9e0c91b63f6f1f"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/slots/15/checkpoints/e6/e7-G0_baseline-15-ledger.sqlite",
+      "sha256": "d247c35723e9a9647a982023fc32d19b195b8d7e1be55bd30945630daf906910"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/slots/16/checkpoints/e6/e7-G0_baseline-16-ledger.sqlite",
+      "sha256": "0af6d498f69b76e80dc32f8413799b050c296591b24191eb3aae38a00d719d48"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/slots/17/checkpoints/e6/e7-G0_baseline-17-ledger.sqlite",
+      "sha256": "0e94bc792bfd0701d2543bd2982d25745b907c85d5af7109b4657db8307dd638"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/slots/18/checkpoints/e6/e7-G0_baseline-18-ledger.sqlite",
+      "sha256": "59f858ea5445b4dd693f5103fd3d4b5c5d93445766594a60a88e00da1df175b3"
+    },
+    {
+      "path": "artifacts/e8/full-20261102/8b/slots/19/checkpoints/e6/e7-G0_baseline-19-ledger.sqlite",
+      "sha256": "262f78c02a104734ab7d23b571470cb43d6e68d90b17b3ad571cc72f69d86cd2"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "056dfe9777373da7b27a5ce64b72890218bc48e6d4b69b72e4bd30b7cfd2dc5d"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/slots/20/checkpoints/e6/e7-G0_baseline-20-ledger.sqlite",
+      "sha256": "f1948aee0bef8881cf77f232895606978ebeb8ab76bbc6520ff45d16181f0e60"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/slots/21/checkpoints/e6/e7-G0_baseline-21-ledger.sqlite",
+      "sha256": "63e25b83d0c359501a3df1d6e25ebca518ba5fc337db4fba42553a0be1a5b72d"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/slots/22/checkpoints/e6/e7-G0_baseline-22-ledger.sqlite",
+      "sha256": "c254bc2a62208e5ad7784f085a07b8dc8194521db4ce56a08117b676f505ca57"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/slots/23/checkpoints/e6/e7-G0_baseline-23-ledger.sqlite",
+      "sha256": "1f8dfd4c812470fdead9dc99b908edad209e8ff72a8ef8a7ba77e411475a43c8"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/slots/24/checkpoints/e6/e7-G0_baseline-24-ledger.sqlite",
+      "sha256": "b26f7c382790597024b92788c9df1564b19fe502a6eebce4bf6660778aef72ab"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/slots/25/checkpoints/e6/e7-G0_baseline-25-ledger.sqlite",
+      "sha256": "4dd44391ffe9dbb64fd7cc75ff1c07249883730e042713949eef93caa8f205d0"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/slots/26/checkpoints/e6/e7-G0_baseline-26-ledger.sqlite",
+      "sha256": "c3e63f3d45af219948d371bf6a822b6cc92ffa77834b688b99adc9a2dc781663"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/slots/27/checkpoints/e6/e7-G0_baseline-27-ledger.sqlite",
+      "sha256": "7292115bbd5aa45d75b60773da75687333ae4316441d713f1124b36b758a75da"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/slots/28/checkpoints/e6/e7-G0_baseline-28-ledger.sqlite",
+      "sha256": "1f4d9c7e5dd97d4d7b3b864fb40c7f9e48e22293750deda5679d2ab8514560a4"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/14b/slots/29/checkpoints/e6/e7-G0_baseline-29-ledger.sqlite",
+      "sha256": "1cd5376a49fa32443a1af07a5877d334bf0b59d9efa7ccd84ce8a5a22c077863"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "d4578ee2f76c81d0429c9064131c22b2c2065d0aea9f79663b224edf3c9daac0"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/slots/20/checkpoints/e6/e7-G0_baseline-20-ledger.sqlite",
+      "sha256": "2aa8f78ca4bb9b040d7b2cfe3c0ec294768e9cd0287e7070fe0f734f0a3035b1"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/slots/21/checkpoints/e6/e7-G0_baseline-21-ledger.sqlite",
+      "sha256": "ad39b61b0bb6b13a1e21e1b6936f7e19237a6305f712e39b72d6cdc7cd520015"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/slots/22/checkpoints/e6/e7-G0_baseline-22-ledger.sqlite",
+      "sha256": "e48de5a5e238b72605e5c94dae774c998cd19895af6a786c9d9a1fb7a73351ac"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/slots/23/checkpoints/e6/e7-G0_baseline-23-ledger.sqlite",
+      "sha256": "daceef7f4c1064e45047cae3ca70ebc08a982d9df529c5d4a8f585d820beef4c"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/slots/24/checkpoints/e6/e7-G0_baseline-24-ledger.sqlite",
+      "sha256": "c6f5ae79a505535a088dbf4fba458a86fe32eda999f340432780e08ef7c4682d"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/slots/25/checkpoints/e6/e7-G0_baseline-25-ledger.sqlite",
+      "sha256": "6eea1705fcd4f89ee4334757a8d0955461366fbe3dc30730d08fc0b1afe4907e"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/slots/26/checkpoints/e6/e7-G0_baseline-26-ledger.sqlite",
+      "sha256": "69b3ab6e556312ad7633f36494ef2873003d15a775c0e9d75fcde73f1b99c491"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/slots/27/checkpoints/e6/e7-G0_baseline-27-ledger.sqlite",
+      "sha256": "df96f9bb77e4a3f5d520ce4d310b798d7ed460c6e647b1e6e2de62de5a612bc7"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/slots/28/checkpoints/e6/e7-G0_baseline-28-ledger.sqlite",
+      "sha256": "9bfdd438b1ec263075d20865cb668567a967e70260ef034f476a997331c06f04"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/32b/slots/29/checkpoints/e6/e7-G0_baseline-29-ledger.sqlite",
+      "sha256": "4873dee092c88af279a2d3f04067a52f6b8643c13c1948a7a9c75f71c418c327"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "6fa26c10c65c21d03e11a116acc3c8ca825c6fd2e17d4437b780698802ed7454"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/slots/20/checkpoints/e6/e7-G0_baseline-20-ledger.sqlite",
+      "sha256": "981a47bcfa25bac70ff6603e1b83cbbcd9d109914728858ff0a3d207432a4704"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/slots/21/checkpoints/e6/e7-G0_baseline-21-ledger.sqlite",
+      "sha256": "dacc678d6d2cadb69b101f220aa8a22a536a2819a65001365a743d40f6fc8ce5"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/slots/22/checkpoints/e6/e7-G0_baseline-22-ledger.sqlite",
+      "sha256": "f5e77aba101bab91678f68926ac68de2781a94bfd324ba6ba37b132aea17eed9"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/slots/23/checkpoints/e6/e7-G0_baseline-23-ledger.sqlite",
+      "sha256": "f9a9019bbd67e841163299c10584ef5453d62132f2c3b2695200e360120fadf2"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/slots/24/checkpoints/e6/e7-G0_baseline-24-ledger.sqlite",
+      "sha256": "8b050008479b12a4f1a77ec56b6c1db6fd07cb6c4dbf29aad407fec25172a746"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/slots/25/checkpoints/e6/e7-G0_baseline-25-ledger.sqlite",
+      "sha256": "85f0899851b7bdd0e4f434f78f3cec091564d7c912d706c78116fa40d8df17c5"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/slots/26/checkpoints/e6/e7-G0_baseline-26-ledger.sqlite",
+      "sha256": "5a23b67dcf3924d39b7417a3e9982eb795a62c2ba9713d5cc077a6ac808bde63"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/slots/27/checkpoints/e6/e7-G0_baseline-27-ledger.sqlite",
+      "sha256": "6c268e5adbdd407f4eafb7e79c4221a482d032716f0a7d4cd884f63029a85df3"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/slots/28/checkpoints/e6/e7-G0_baseline-28-ledger.sqlite",
+      "sha256": "ed666aec06373b802a6a365c3beb0cb71c9d01b30b6489d827855db3a44dd028"
+    },
+    {
+      "path": "artifacts/e8/full-rerun-preregistered-20261102/8b/slots/29/checkpoints/e6/e7-G0_baseline-29-ledger.sqlite",
+      "sha256": "673817d67858f30e883e49a55847021cc28045c7c77bb577dab4b9c539e03a85"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-20261101/8b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "1ba76310024573b59a764f74d9b8b24c0b321b70d6ad0912b446e48259ebd9ad"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-20261101/8b/slots/0/checkpoints/e6/e7-G0_baseline-0-ledger.sqlite",
+      "sha256": "d6ac49b1305c9a17e2ff32e4f738355cc8d0293fe380e5298e0e3dc9c19a845d"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-20261101/8b/slots/1/checkpoints/e6/e7-G0_baseline-1-ledger.sqlite",
+      "sha256": "5a2a2623512514563864d1cf2cc5eb916d5f832f398958ceff265a43929041c9"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-32b-retry-3600-20261101/14b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "5807005b6fdef1cc914a324aeb7d83e52dd4891b183981fe11a00f5843f63cfb"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-32b-retry-3600-20261101/14b/slots/0/checkpoints/e6/e7-G0_baseline-0-ledger.sqlite",
+      "sha256": "228ed095babcefac5ed660e95a3ec86d6e073fd5b4b622f5c2ff08690e0e5b0a"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-32b-retry-3600-20261101/14b/slots/1/checkpoints/e6/e7-G0_baseline-1-ledger.sqlite",
+      "sha256": "5de1df56aac8988425978eff5f924b3d5bab25222c6a1c176b24671f8e1ce16a"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-32b-retry-3600-20261101/32b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "aed458b5415d8c2faf7f1d8008173a786d524faa691aded60d192d35d2645d2e"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-32b-retry-3600-20261101/32b/slots/0/checkpoints/e6/e7-G0_baseline-0-ledger.sqlite",
+      "sha256": "f4559b3ae30a6b4d638bad7dfd82ab98814c5b010ea66c6fe08eb119f08b7d82"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-32b-retry-3600-20261101/32b/slots/1/checkpoints/e6/e7-G0_baseline-1-ledger.sqlite",
+      "sha256": "c62e856420c50cc098baa7057127eb4eb0e2f2f7bdaee8b8a022e4d5a05453a8"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-32b-retry-3600-20261101/8b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "1ba76310024573b59a764f74d9b8b24c0b321b70d6ad0912b446e48259ebd9ad"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-32b-retry-3600-20261101/8b/slots/0/checkpoints/e6/e7-G0_baseline-0-ledger.sqlite",
+      "sha256": "d6ac49b1305c9a17e2ff32e4f738355cc8d0293fe380e5298e0e3dc9c19a845d"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-32b-retry-3600-20261101/8b/slots/1/checkpoints/e6/e7-G0_baseline-1-ledger.sqlite",
+      "sha256": "5a2a2623512514563864d1cf2cc5eb916d5f832f398958ceff265a43929041c9"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-retry-20261101/14b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "5807005b6fdef1cc914a324aeb7d83e52dd4891b183981fe11a00f5843f63cfb"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-retry-20261101/14b/slots/0/checkpoints/e6/e7-G0_baseline-0-ledger.sqlite",
+      "sha256": "228ed095babcefac5ed660e95a3ec86d6e073fd5b4b622f5c2ff08690e0e5b0a"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-retry-20261101/14b/slots/1/checkpoints/e6/e7-G0_baseline-1-ledger.sqlite",
+      "sha256": "5de1df56aac8988425978eff5f924b3d5bab25222c6a1c176b24671f8e1ce16a"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-retry-20261101/8b/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "1ba76310024573b59a764f74d9b8b24c0b321b70d6ad0912b446e48259ebd9ad"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-retry-20261101/8b/slots/0/checkpoints/e6/e7-G0_baseline-0-ledger.sqlite",
+      "sha256": "d6ac49b1305c9a17e2ff32e4f738355cc8d0293fe380e5298e0e3dc9c19a845d"
+    },
+    {
+      "path": "artifacts/e8/live-smoke-retry-20261101/8b/slots/1/checkpoints/e6/e7-G0_baseline-1-ledger.sqlite",
+      "sha256": "5a2a2623512514563864d1cf2cc5eb916d5f832f398958ceff265a43929041c9"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "5c21f1691b593b6942b63f5bb0548c1f0576ae750404a413fa0b14ead220af1e"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/10/checkpoints/e6/e7-G0_baseline-10-ledger.sqlite",
+      "sha256": "fbe25a9bff487bef2d456bafd1ae54ed7a3e124d72902fba1e9514ee83b7a44b"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/11/checkpoints/e6/e7-G0_baseline-11-ledger.sqlite",
+      "sha256": "4f0eacf0b22effb94c7f19ab71786cdb9fc3b0b0bbf3839040ab291a1dc9e9c2"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/12/checkpoints/e6/e7-G0_baseline-12-ledger.sqlite",
+      "sha256": "f18ce847078f122fcc77bfd4923a3cb58b50a65654e80bf6b2f7f7963ee48a3c"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/13/checkpoints/e6/e7-G0_baseline-13-ledger.sqlite",
+      "sha256": "af2807e68fa148e6c035da9d56e35388e710f92847acd055897e24747d7d7b22"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/14/checkpoints/e6/e7-G0_baseline-14-ledger.sqlite",
+      "sha256": "fb0b1fb298d107e373165ca3246b17b77aff1aee883f319ab1fa7619c441907a"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/15/checkpoints/e6/e7-G0_baseline-15-ledger.sqlite",
+      "sha256": "254fb20919b09a2b42f890305608522501aca647fd2f6b92530983c915c46d09"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/16/checkpoints/e6/e7-G0_baseline-16-ledger.sqlite",
+      "sha256": "df66d150c7eefe54266571234cd0da76a4529dac318735d8cc1ca64846faf55b"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/17/checkpoints/e6/e7-G0_baseline-17-ledger.sqlite",
+      "sha256": "040aaf15c3d15b085be309411be91c5513f319924158e359172f1d735e132bbc"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/18/checkpoints/e6/e7-G0_baseline-18-ledger.sqlite",
+      "sha256": "743569b034edbfaa3fbd626775534becb6e491c3e3330ab5a7b1d0218de06c52"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/19/checkpoints/e6/e7-G0_baseline-19-ledger.sqlite",
+      "sha256": "e164d5ec6c844f7a2b69469d1c2b0de6b44286a53a222f1b70eaf6aecd2ee39c"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/20/checkpoints/e6/e7-G0_baseline-20-ledger.sqlite",
+      "sha256": "559f0a7af5425e4d962d01fafa3021fb13d88d99d4f1bedea1d05f3302ade4ba"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/21/checkpoints/e6/e7-G0_baseline-21-ledger.sqlite",
+      "sha256": "6991fc42d34e91e014f884e68a1a4517c460d4824e0f454a1b48e20c8ebbc951"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/22/checkpoints/e6/e7-G0_baseline-22-ledger.sqlite",
+      "sha256": "dd66396dd16368938ba6c3a5caba9e67ff39ca8ca8820c4bb7745dec8629d0e3"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/23/checkpoints/e6/e7-G0_baseline-23-ledger.sqlite",
+      "sha256": "f2f8ac6ba2e38a10b74e152fe66b499c929f11030ea04c523e53de9fab2e27bf"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/24/checkpoints/e6/e7-G0_baseline-24-ledger.sqlite",
+      "sha256": "78be60ac0d042fc71cee853c782ba9d0dec9995c957660a1faf9e130e6373a71"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/25/checkpoints/e6/e7-G0_baseline-25-ledger.sqlite",
+      "sha256": "87f5ccc1ced52132a507c324c1b8d1699e7fb3b15b65e775abdb9da1fc425cb5"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/26/checkpoints/e6/e7-G0_baseline-26-ledger.sqlite",
+      "sha256": "6ae8ad88d55efe4d3110e0dcc03e93edcbaf9de75b389e444a943a66dc7a5649"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/27/checkpoints/e6/e7-G0_baseline-27-ledger.sqlite",
+      "sha256": "0644048f10a4a142d28a61fee5c2761930339ae65f5974f95b3095593ee4d27e"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/28/checkpoints/e6/e7-G0_baseline-28-ledger.sqlite",
+      "sha256": "bcb8386b9efff9be2ed1d1b788c7cda0a40ef166cadde9638b67396c2b5325ee"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/29/checkpoints/e6/e7-G0_baseline-29-ledger.sqlite",
+      "sha256": "0b991db6aa7804bcde3307c4c2db0d7b5f337fce65d4dcf23363b3cce8bb7129"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/30/checkpoints/e6/e7-G0_baseline-30-ledger.sqlite",
+      "sha256": "e46b92543574a214e7719637f33844bcdf52863947f7833c1b0139ec890daed8"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/31/checkpoints/e6/e7-G0_baseline-31-ledger.sqlite",
+      "sha256": "0d386abca6f3067d4f236c07df28438746a2c91319667ae0c1fe24bce505dcff"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/32/checkpoints/e6/e7-G0_baseline-32-ledger.sqlite",
+      "sha256": "6471e3a2b4a9690c3ee5efd9236d9303cb4db6c26fd0240f21603d53dad80d82"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/33/checkpoints/e6/e7-G0_baseline-33-ledger.sqlite",
+      "sha256": "f03450a010f9793db613d8fd65206486007ad0b4832a23c47ceace390c4c4a70"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/34/checkpoints/e6/e7-G0_baseline-34-ledger.sqlite",
+      "sha256": "d5ec5501a6d6625a60ac301fff218e25c55da20059a0dd786c4338d292ef2e8c"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/35/checkpoints/e6/e7-G0_baseline-35-ledger.sqlite",
+      "sha256": "b437e93259902324286edc972929021478695283a1bde578397dfb8259b29cb1"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/36/checkpoints/e6/e7-G0_baseline-36-ledger.sqlite",
+      "sha256": "583226e3dc823c97df879ee91d260592e9351763585aa73436ce682f7e747225"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/37/checkpoints/e6/e7-G0_baseline-37-ledger.sqlite",
+      "sha256": "e77aa9aaee75ef1d498f42d17a646235e48244cee5c6886f18e7ebb2f512d204"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/38/checkpoints/e6/e7-G0_baseline-38-ledger.sqlite",
+      "sha256": "4a3bcc3f1d783e531405b565f73aae13108a2241c1b57a58e770766c49881d8e"
+    },
+    {
+      "path": "artifacts/e9/14b/extra30-20261105/slots/39/checkpoints/e6/e7-G0_baseline-39-ledger.sqlite",
+      "sha256": "9b72381a7a87bb40d5d34a177d4472d8132c49bbf2c1f188efb1eee4169cba2b"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "8b6826354afcd7d771e8dd5d6497d1ebb462281f215d4d95b1e46f410b788021"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/slots/0/checkpoints/e6/e7-G0_baseline-0-ledger.sqlite",
+      "sha256": "60ca47c064bbccbb9fcf574e0423fd2cb0e411a6c86f576d8dbb8d17ec4c04b2"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/slots/1/checkpoints/e6/e7-G0_baseline-1-ledger.sqlite",
+      "sha256": "e3b7e0bd163ed26aa0014ff5740080f7d514e5b845cdfba82d9ab01c907f1bed"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/slots/2/checkpoints/e6/e7-G0_baseline-2-ledger.sqlite",
+      "sha256": "29682d2776f902138258451712d80f8e07aaad4cdf76d7927d2b9636a4c70a2d"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/slots/3/checkpoints/e6/e7-G0_baseline-3-ledger.sqlite",
+      "sha256": "6b040dd60bb01427c7a5199f3e09f92ff34357e2b0f627281338682d052782cf"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/slots/4/checkpoints/e6/e7-G0_baseline-4-ledger.sqlite",
+      "sha256": "bc48bbff8d34743ac09dbd63e411adba81ff7d435c51fc851e68457ec255a519"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/slots/5/checkpoints/e6/e7-G0_baseline-5-ledger.sqlite",
+      "sha256": "354519fa978a250f88c8ec14892de26f869633c05c91b7a5b95d09a28f390de2"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/slots/6/checkpoints/e6/e7-G0_baseline-6-ledger.sqlite",
+      "sha256": "a59a0a14f3bf43b963c5ecb5fcfd8a673894cd00d7c36940101455507bc3f40f"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/slots/7/checkpoints/e6/e7-G0_baseline-7-ledger.sqlite",
+      "sha256": "58b8ec1e6843d76a9621b150d8eda6728d45813d373b6c0a021d359272e179dd"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/slots/8/checkpoints/e6/e7-G0_baseline-8-ledger.sqlite",
+      "sha256": "8fa91100d87c11530338f855da2ee637272bb718cb0a98eefefc8d35ec0453fd"
+    },
+    {
+      "path": "artifacts/e9/14b/initial-20261105/slots/9/checkpoints/e6/e7-G0_baseline-9-ledger.sqlite",
+      "sha256": "df34e0e559e5a08735d5d6788650339dcbc8cfc027892da6ce616b5ed7cfe378"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/checkpoints/e6/e8-canary-ledger.sqlite",
+      "sha256": "52278f695207d11ae9aad13fb09a369845afde02f25dacee2a857d52fbb40a95"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/slots/0/checkpoints/e6/e7-G0_baseline-0-ledger.sqlite",
+      "sha256": "216ddfee4b037f8b28f939a687eafedb4fce5e5010a97df80929083412a40b57"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/slots/1/checkpoints/e6/e7-G0_baseline-1-ledger.sqlite",
+      "sha256": "b42d278f01472e5e0062fe915f6ca6f167e17e0ad4274db432dc360cd7bdd3c6"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/slots/2/checkpoints/e6/e7-G0_baseline-2-ledger.sqlite",
+      "sha256": "0d93a53a920c695dfc545f3dc1ad41677577188c298f2c66dfb6920e06038c49"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/slots/3/checkpoints/e6/e7-G0_baseline-3-ledger.sqlite",
+      "sha256": "0addc3b469656788456c6bc68a3baf7728fa4a2f00c1e2c54c115c74c8c4fbf3"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/slots/4/checkpoints/e6/e7-G0_baseline-4-ledger.sqlite",
+      "sha256": "7d7665820b2b0d58669f4462fb3f443ad604b0ee2d0a1c1ae6dc489caabe9545"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/slots/5/checkpoints/e6/e7-G0_baseline-5-ledger.sqlite",
+      "sha256": "c945644b6104552d71237a1583b1f26edc1fc0977ac28f78b4e9a8a0f2f99d83"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/slots/6/checkpoints/e6/e7-G0_baseline-6-ledger.sqlite",
+      "sha256": "313732d19a53b65b3a4658451a57e6e29d0a3a141fd8ea79f517c1d25060d239"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/slots/7/checkpoints/e6/e7-G0_baseline-7-ledger.sqlite",
+      "sha256": "31562ce7d5f531a3a3d31a093e53e3c2c4695c3674218e8856e2bdaaf570f755"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/slots/8/checkpoints/e6/e7-G0_baseline-8-ledger.sqlite",
+      "sha256": "355f5d06e63b5360dac3fa75ffceb9f41332fe38e26f16b2b7f3bbdbbb5e56c6"
+    },
+    {
+      "path": "artifacts/e9/32b/initial-20261105/slots/9/checkpoints/e6/e7-G0_baseline-9-ledger.sqlite",
+      "sha256": "5ed47200323ae749dbbde13cd6a834ed9d6319b5045127cc361480b426712747"
+    },
+    {
+      "path": "artifacts/guarded-fake-8321cbc165da.sqlite",
+      "sha256": "19694b4177962b3948d21fc9114a3be5025235c8e4cdf575680c4e2d8690fa38"
+    },
+    {
+      "path": "artifacts/p3a-guarded-mlx-cap36-final.sqlite",
+      "sha256": "d9bab5d1bc3384e95058bd8c2d8792f2affe1c9053a3d80c5b769032f18da6af"
+    },
+    {
+      "path": "artifacts/p3a-guarded-mlx-cap36.sqlite",
+      "sha256": "772d495620b5b115d302ee7841b5a92d1989f0d958e40fc6a18c252baf850db1"
+    },
+    {
+      "path": "artifacts/p3a-guarded-mlx-final.sqlite",
+      "sha256": "b154523c0913bc4a23ffe6c34c7fd48c074722c2a386c70130d639e4c1e87eac"
+    },
+    {
+      "path": "artifacts/p3a-guarded-mlx-off.sqlite",
+      "sha256": "31091312c324511b4b28d97bdef7ebeef869c8bc7a2cad9a91ae62b3c6eb65be"
+    },
+    {
+      "path": "artifacts/p3a-guarded-mlx-real.sqlite",
+      "sha256": "b9d07ad1550932b4770b13683dbc43111c93ee133d147f6e202263897c82f479"
+    },
+    {
+      "path": "artifacts/p3a-guarded-mlx-strict-final.sqlite",
+      "sha256": "6036e47a234d16538f9cabe79d49fbdeb280cc70955743a6fd3ff474816ff487"
+    },
+    {
+      "path": "artifacts/p3a-guarded-mlx-strict-final2.sqlite",
+      "sha256": "b72843fc52417103b9640603e019f213dc228f2c327323649fe022cb2d21d4cc"
+    },
+    {
+      "path": "artifacts/p3b-b20-20261031-token-ledger.sqlite",
+      "sha256": "c1f40f000b647767d3e25bf47d30e38cca51d8ae3985f41f55a429eca13399a6"
+    },
+    {
+      "path": "artifacts/p3b-b20-400k-final.sqlite",
+      "sha256": "8335b3ad3b9326f49726cc8631f99bccae2066b18646ab5911a6fe73a427c15a"
+    },
+    {
+      "path": "artifacts/p3b-local-b1-reasoning-8k-token-ledger.sqlite",
+      "sha256": "9e74e793c48beabc2d3ff054c78aea47f05c8e02de31dea5e0ded502451f957c"
+    },
+    {
+      "path": "artifacts/p3b-local-b1-reasoning-pilot-token-ledger.sqlite",
+      "sha256": "bdc5ccef8a3707f2373ec6ba8b2a99de4f93618cd0dedb6b4d847d289510d2b0"
+    },
+    {
+      "path": "artifacts/p3b-local-b1-reasoning-temp07-token-ledger.sqlite",
+      "sha256": "be2c15ac5ac4c195bb405737d8e6ca28e3525cef255ff0ed5e5467fb47d5f5a1"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset100-token-ledger.sqlite",
+      "sha256": "2059b132fdcfc4915d7bae41201e0d6476adfc812894e0a3fb3aed865966e43d"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset120-token-ledger.sqlite",
+      "sha256": "c12412246701f83692dc9af05187bd402bbb63677c6b09691975a703bc97756a"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset140-token-ledger.sqlite",
+      "sha256": "f7cd7b840d98860e3fe192e7c4d10ec85bc5156e1ea12159c800b91bcc4c488c"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset160-token-ledger.sqlite",
+      "sha256": "003d4dde8fe7a89265e137976a581abe2b721bdd3e1eabce9ab59d864d59d6f1"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset180-token-ledger.sqlite",
+      "sha256": "17fd1ddfbd15d752ba27d66c8b753b2419d72144e92d65d98e65838a57deb8c9"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset20-token-ledger.sqlite",
+      "sha256": "883b2dfc6113848eff79f7aa4eb11def5f7c62d8ac4d34406cd0f3534551f238"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset200-detail-token-ledger.sqlite",
+      "sha256": "a8166395181bf1b8defe90582ebd50472d41ad4acecb883766795dfd84b73da7"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset200-token-ledger.sqlite",
+      "sha256": "e70e102bb34ab8586011578816c121e86820aefa766525aa909a1b0faa932682"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset220-token-ledger.sqlite",
+      "sha256": "2d739fe4008279a783379a132e7c1b6f2f485117a99a324c43427c76fbbbdf12"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset40-token-ledger.sqlite",
+      "sha256": "3c08d095827cbb9d4af0be1c939036030a86aa34f869dc3524e396942bd1f71d"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset60-token-ledger.sqlite",
+      "sha256": "d06c33a1cfe455a9afb636ad48939adeb13d66ebc75f13884ee2821bf317028f"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-offset80-token-ledger.sqlite",
+      "sha256": "99056e94e94f0ebd465bbdb2dec36bb631bdee4722cf0e1cff0f49df82fb5177"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-v2-token-ledger.sqlite",
+      "sha256": "57b7c1c97346e664159b7bbd10d5ea4f9762a135bfc3a892e4676d03612d9a91"
+    },
+    {
+      "path": "artifacts/p3b-local-b20-v3-token-ledger.sqlite",
+      "sha256": "1d593344a7ed82ad00c4549273ebee333470b1ef4fc41a07d80fc4f5e3657465"
+    },
+    {
+      "path": "artifacts/p3b-local-b5-prompt-pilot-token-ledger.sqlite",
+      "sha256": "8dfec13c7a800647fe81e028a712be9d68682ad0eff61d3b7b20086926d15643"
+    },
+    {
+      "path": "artifacts/p3b-local-b5-temp07-token-ledger.sqlite",
+      "sha256": "feb8841c3273a3f5f9dee129e9e29ee10680499d78b3479753a2202334624a15"
+    },
+    {
+      "path": "artifacts/p3b-local-qwen8b-b20-token-ledger.sqlite",
+      "sha256": "693383975e06833af82dc776094ac16fd33b647775ff729df2b0c75e1adaebb1"
+    },
+    {
+      "path": "artifacts/p3b-local-qwen8b-offset260-token-ledger.sqlite",
+      "sha256": "1e06544cd90d1b5cac3aaedb415eaf3eb0d4a07b8968c92c4184945993c74bb5"
+    },
+    {
+      "path": "artifacts/p3b1-synthetic-0898f2525f72/adapter-http-ledger.sqlite",
+      "sha256": "354120b22c802043054cef5bffdb4e8f12b6ff69bb7163487f971a1b7156ca39"
+    },
+    {
+      "path": "artifacts/p3b1-synthetic-33135f1759ac/adapter-http-ledger.sqlite",
+      "sha256": "bb5ee2c787d01710f99984f19ee022336000659585adca8cdd94729fbce31e01"
+    },
+    {
+      "path": "artifacts/p3b1-synthetic-http-ledger.sqlite",
+      "sha256": "8194b486a694a39a7643667f2e373c817a4a38d468ac5df6efda840382c43fa3"
+    },
+    {
+      "path": "artifacts/p3b3-compare-9a26aaf6340c/server-b.sqlite",
+      "sha256": "809062d073b233359a1e62e66671e68d3b0e094355fa77935bee5ffdbc68f0f1"
+    },
+    {
+      "path": "artifacts/p3b3-compare-9a26aaf6340c/server-c.sqlite",
+      "sha256": "36fe3f2d8ef0cb02a8de71b9a2a371a25c3894c68aa18ff7c3865c887f9013ed"
+    },
+    {
+      "path": "artifacts/p3c-offset285-ledger.sqlite",
+      "sha256": "9653299cf59ad77d7767d962c2d490de86d0e96332c264258d67642e0f07b332"
+    }
+  ],
+  "independence_established": false,
+  "limitations": [
+    "request records use token sequence hashes and do not contain task IDs",
+    "token hashes alone are not independently attributed to source tasks",
+    "missing ledgers and different historical formats remain unknown"
+  ],
+  "request_rows": 2271,
+  "schema_counts": {
+    "binding,budget,metadata,requests": 219,
+    "budget,metadata,requests": 1
+  },
+  "status": "bounded_ledger_schema_review_only",
+  "wal_count": 0
+}

@@ -1,0 +1,735 @@
+# Issue 2: TDD execution plan
+
+The design in [issue 1](rsi-research-protocol.md) and its
+[v2 amendment](../research/rsi/design-v2.md) are design records, not execution
+authorization. This issue implements the method and audit, then records either
+an authorized audited outcome or the gate that prevented continuation.
+
+## Test-first cycles
+
+1. **Task-conditioned generation:** first test that prompts contain only the
+   selected training demonstrations and test inputs, with no test labels;
+   test deterministic task selection, seed scheduling, and sanitized repair
+   feedback. Implement the smallest prompt and scheduling interfaces.
+2. **Candidate and data verification:** first test sandbox-only execution,
+   visible-example checking, generated-label provenance, private-probe isolation,
+   duplicate rejection, and the five-distinct-record gate. Implement the bounded
+   collector and fail-closed data audit using the existing verifier contracts.
+3. **Registration and lifecycle:** first test dependency-closed hashes, immutable
+   inputs, resource limits, authorization boundaries, and interrupted/resume
+   behavior. Implement registration, guarded collection, and independent audit;
+   missing evidence must prevent live dispatch.
+4. **Training and comparison:** first test monitoring and no-training skip,
+   parent adapter identity, matched candidate/base evaluation, scoring and paired
+   uncertainty. Implement preflight, training, comparison, and artifact reporting
+   under separately authorized budgets. Test fixture behavior separately from
+   actual model and score evidence.
+5. **Offline integration:** run fake end-to-end tests through each gate, the
+   focused suites, and the full available suite. Review the exact head and
+   record results and any gate preventing authorized execution.
+
+No cycle authorizes model calls, training, cloud resources, or benchmark
+submission. Do not change sealed prior artifacts, reuse uncertain results as new,
+expose hidden labels in prompts, or use human-authored ARC solving heuristics.
+Live resource feasibility and independent semi-private scoring remain unproven.
+
+### Shared collection budget cycle
+
+Test a per-generation durable budget with atomic concurrent reservations for
+all model calls including canaries, reserved tokens, sandbox starts and elapsed
+wall time. Test exhaustion, restart, clock rollback, and fail-closed persistence.
+Implement it as a cooperating local guard; independent authentication and a
+final registered budget remain separate prerequisites for live execution.
+
+### Conditioned slot orchestration cycle
+
+Test a scheduled slot with a supplied transport and sandbox: matching frozen
+input hashes, pre-dispatch call and token reservations, bounded public repairs,
+terminal private failures, novelty screening, and durable completion evidence.
+Test interrupted attempts remain consumed. Treat supplied components and local
+records as unauthenticated, and keep drafts ineligible for training.
+
+### Captured transport binding cycle
+
+Test the conditioned collector against a local fixture HTTP server, checking
+wire seeds, thinking mode, token reservation, deadlines, captures, and failures
+before dispatch for invalid settings. Bind the collector to the capturing backend
+without enabling or claiming an authenticated live run.
+
+### Capture-to-slot binding cycle
+
+Test that each completed captured attempt records its unique transport request
+ID in the slot evidence, and that malformed or repeated IDs fail closed. Use
+these identifiers for later replay across interleaved logs; they are not proof
+of server identity or an independent seal.
+
+### Captured slot replay cycle
+
+Test hash-bound slot evidence against captured request, response and ledger
+records joined by request ID, including reordered logs, missing or duplicate
+IDs, changed bytes, incorrect statuses, and novelty fingerprints. Replay the
+conditioned lineage with a separately supplied sandbox; keep the result
+ineligible until server and sandbox provenance are independently established.
+
+### Matched evaluation task cycle
+
+Test that two independent samples use the same label-free solve prompt, that
+static rejection, visible-example failures and invalid grid outputs count as
+failed attempts, and that infrastructure failures and the ten-start per-sample
+cap stop scoring. Test per-test-input guesses and task scoring via the isolated
+solution verifier. Keep supplied model and sandbox identity unauthenticated.
+
+### Frozen paired comparison cycle
+
+Test that exactly 200 matched task outcomes and registered per-task seeds are
+frozen before bootstrapping, that parent and candidate adapter identities are
+bound, and that incomplete, unmatched or altered records cannot yield a paired
+summary. Treat local records and claimed execution settings as unauthenticated.
+
+### Comparison budget and execution cycle
+
+Test durable per-comparison ceilings of 800 model calls, 16 million reserved
+tokens, 8,000 sandbox starts, and 36,000 seconds; exclude setup canaries from
+this budget. Then test a matched two-arm runner with a frozen task and seed
+schedule, shared budget, incomplete-run reporting, and output freeze. Fixtures
+must not be interpreted as authenticated model results.
+
+### Comparison replay cycle
+
+Test that task records retain bounded sample source and can be replayed against
+separately supplied tasks, sandbox and verifier. Replay all 400 task-arm records
+and check their scores against the frozen outcomes. Reject missing or changed
+records; the local replay does not prove model, runtime, adapter or run origin.
+
+### Training preparation cycle
+
+Test that a prospective batch is bound to canonical task prompts, distinct
+quarantined sources, the parent adapter, and fixed QLoRA settings. A separate
+one-step preflight plan must not consume the generation batch or authorize any
+training. Missing independent audit, execution registration, process-containment
+proof and explicit authorization must remain visible blockers.
+
+### RSI SFT format and mask cycle
+
+Test conversion of quarantined records to the MLX chat-row shape and verify
+that the thinking-off inference prefix exactly matches the masked token prefix,
+leaving nonempty completion tokens within the sequence limit. Reject altered
+batch hashes, task prompts, source bindings and token offsets. The supplied
+tokenizer and renderer remain unauthenticated until separately checked against
+the registered runtime and model.
+
+### Local tokenizer runtime audit cycle
+
+Test a read-only tokenizer audit that binds the proposed snapshot path,
+tokenizer files and prepared batch to explicit hashes, checks the MLX-LM
+version, and runs the format precheck with the actual ChatDataset processor.
+Keep the audit result separate from model inference, training authorization and
+independent batch provenance. Exercise the local tokenizer with synthetic
+fixture records if the pinned runtime is available.
+
+### Comparison capture binding cycle
+
+Test local guarded HTTP transport for both comparison arms with matched seeds,
+settings and per-arm capture logs. Bind each returned request ID to the saved
+task sample; reject mismatched adapter routing or repeated IDs. The endpoint's
+asserted adapter remains unauthenticated until independently checked.
+
+### Comparison capture replay cycle
+
+Test all 800 sample records against their per-arm request, response and ledger
+captures, joined by unique request ID. Replay the saved programs and scores,
+reject mismatched seeds, prompts, source bytes, missing or duplicate records,
+and preserve the distinction between capture consistency and authenticated
+server, adapter, sandbox or model provenance.
+
+### Comparison server contract cycle
+
+Test both local guarded endpoints before collection and again before dispatch,
+checking the declared model, adapter, thinking canary, reviewed driver, distinct
+ledgers and combined token ceilings. Reject changing or regressing contract
+state. A server declaration is not process or weight attestation.
+
+### Local model and adapter identity cycle
+
+Test complete local snapshot file hashing, quantization and weight-index checks,
+chat-template binding, file drift and escaping symlink rejection. Test the
+existing two-file adapter digest against registered expectations. These local
+hashes are evidence of files read, not proof of server process identity or an
+independently witnessed registration.
+
+### Registered model consistency cycle
+
+Test that the draft registration's model-manifest bytes match the actual local
+snapshot, and detect changes to either the registered inputs or model files.
+Recheck registration before and after the file audit. This is not a final
+preregistration, remote witness, or server process attestation.
+
+### Captured collection to draft cycle
+
+Test that a captured slot must pass replay before it can produce a quarantined
+SFT draft, and that the draft binds the final captured request, response hash,
+source, task and novelty result. Mark origin as unverified; the existing batch
+gate must continue to reject the draft until independent provenance is proven.
+
+### Invalid evaluation response cycle
+
+Test that a captured truncated or malformed model completion consumes one
+sample and counts as an invalid attempt, while malformed transport, budget and
+identity failures make the comparison incomplete. Bind invalid outcomes to
+captured response bytes during replay rather than treating them as valid code.
+
+### Invalid collection response cycle
+
+Test that truncated or malformed collection completions consume a single slot,
+remain ineligible, and cannot become repair input or a draft. Replay the captured
+bytes to verify the invalid outcome; infrastructure failures remain uncertain
+and stop collection.
+
+### Collection generation cycle
+
+Test ten scheduled slots with a single stage budget and a reference pool that
+incorporates earlier provisionally novel slots. Bind the task, probe, parent and
+reference identities before starting. Stop on infrastructure failure, preserve
+completed slot outcomes, and never authorize training from local results.
+
+### Generation capture replay cycle
+
+Test stage-wide replay of all ten slot journals and captured request records,
+reconstructing the novelty pool in order and checking the stage counts and
+completion markers. Reject altered, missing or duplicate slot evidence. The
+replay remains local and does not authenticate server, model or sandbox origin.
+
+### Generation draft batch cycle
+
+Test stage replay followed by slot-ordered draft derivation using the evolving
+reference pool. Record the provisional draft count and the five-record
+threshold without marking any draft independently audited or training eligible.
+Reject altered captures and preserve private probe and query-output boundaries.
+
+### Local runtime identity cycle
+
+Test a read-only native interpreter probe that checks the proposed MLX-LM
+version, reviewed generation source, Python executable digest and selected
+package versions. Bind the observation to the draft runtime manifest and detect
+drift. A local probe does not prove complete dependency closure, process
+identity, live execution authorization or training safety.
+
+### Runtime environment inventory cycle
+
+Test a read-only inventory of every local virtual-environment file, including
+unrecorded files and bytecode, with stable file reads and symlink boundaries.
+Bind the inventory to the interpreter and compare it against a draft runtime
+manifest. Keep base Python libraries, operating-system libraries and process
+attestation as separate unresolved dependencies.
+
+### Generation accounting cycle
+
+Test that collection records the stage budget counters before and after the
+scheduled slots, reports their deltas, and reconciles captured call and token
+reservations against those deltas. Missing or conflicting accounting must fail
+the replay; sandbox counts remain local journal evidence, not authenticated
+execution traces.
+
+### Comparison accounting cycle
+
+Test that complete comparisons freeze their shared budget counters, preserve
+interrupted reservations, and reconcile all captured model-call and token
+reservations against the frozen deltas. Sandbox counts remain local journal
+evidence; missing or inconsistent accounting must prevent a capture replay.
+
+### Collection server contract cycle
+
+Test collection transport against the declared guarded model, parent adapter,
+thinking canary, ledger identity and 200,000-token ceiling. Require a local
+pre-dispatch reservation for each request and reject ledger drift or excess
+server reservations. Server claims remain distinct from authenticated process
+and model identity and do not authorize execution.
+
+### Comparison reservation binding cycle
+
+Test that the guarded comparison transport is bound to its stage budget and
+requires an exact local reservation before consulting either server. Reject
+unreserved, duplicate, mismatched and over-budget dispatches while preserving
+server-contract and adapter checks. These checks remain local protocol evidence.
+
+### Historical duplicate reference cycle
+
+Test building duplicate-only fingerprints from bounded historical source
+records and the registered private probes, with ancestry confined to the
+generation partition and explicit sandbox-start limits. Reject missing ancestry,
+source-hash conflicts, probe failures and development overlap rather than
+silently omitting references. Caller-supplied source origins and history
+completeness remain unverified; reference records never become training data.
+
+### Exact duplicate feedback cycle
+
+Test bounded repairs after exact source or AST duplication, using only the
+model's own previous source and a generic category. Replay each attempt against
+the frozen reference pool. Keep sampled private-behavior matches terminal so
+private probe-derived feedback is not sent to the model.
+
+### Collection attempt accounting cycle
+
+Test that the generation report counts every attempt status, including exact
+duplicates followed by repairs, alongside final slot outcomes. Replay must
+recompute the attempt counts and reject conflicting summaries.
+
+### Quarantined MLX dataset cycle
+
+Test materializing the checked chat rows into an owner-only, non-overwritable
+JSONL dataset and an audit record bound to the preparation and dataset hashes.
+A failed or interrupted write must not be silently reused. This artifact is
+quarantined and cannot bypass provenance, preflight, trainer or authorization
+gates.
+
+### Collection setup accounting cycle
+
+Test reporting the full collection budget before and after slot execution,
+separately from the captured slot-attempt token usage. A prior setup or canary
+reservation without matching captured usage must make the full-stage token
+total unknown. Reconcile counter deltas and reject changed stage records;
+reserved amounts remain distinct from server-reported usage and monetary cost.
+
+### Generation reported-token accounting cycle
+
+Test token accounting for a complete captured collection generation, including
+repair attempts. Reconcile each ledger usage record with its raw response and
+the stage reservation, report missing or partial usage without imputing zero,
+and reject altered usage or incomplete capture coverage. Keep server-reported
+counts separate from reserved tokens and unknown monetary cost.
+
+### Comparison reported-token accounting cycle
+
+Test accounting for prompt, completion and total tokens from captured server
+responses after the matched comparison audit. Bind each ledger usage record to
+its raw response, validate counts and reservations, and report missing or
+partial coverage rather than treating missing values as zero. Keep reported
+tokens distinct from reserved tokens, monetary cost and independent runtime
+attestation.
+
+### Preflight bundle input replay cycle
+
+Test recomputing the entire preflight proposal from the saved synthetic
+preparation, replay markers, generation and canary datasets, loader and fixed
+MLX settings before and after constructing a launch bundle. Reject changed
+datasets, markers and recomputed-digest changes to hyperparameters. This local
+replay does not establish provenance, containment or permission to train.
+
+### Preflight launch bundle cycle
+
+Test a non-executing launch bundle that freezes the exact MLX YAML and the
+existing thinking-off wrapper command, interpreter and source hashes, offline
+environment and working directory. Require a digest-checked preflight proposal
+and local identity verification, reject altered config or existing output, and
+write the bundle exclusively. It is review material only; no subprocess or
+training authorization is implied.
+
+### Local canary tokenizer binding cycle
+
+Test loading the canary through the pinned local MLX-LM tokenizer and dataset
+loader, checking tokenizer file digests before and after the audit and
+rejecting a wrong revision or runtime. Exercise the real local tokenizer with
+synthetic rows and supplied visible tasks; do not load model weights, run
+inference or claim independent runtime attestation.
+
+### Preflight local identity verification cycle
+
+Test comparing the frozen preflight proposal's identity hashes with supplied
+model, runtime, environment and source inventory manifests, then rechecking
+the local files and tokenizer hashes through the existing read-only verifiers.
+Reject changed manifests, interpreter mismatch and proposal drift. Local
+consistency is not independent execution attestation or training authorization.
+
+### Preflight generation lineage cycle
+
+Test requiring the replayed synthetic preparation and dataset markers before
+creating a canary preflight proposal. Recheck the generation dataset, bind its
+hash and stage hash, and reject changed markers, mismatched paths or fewer than
+five mapped rows. Exercise the full fixture path from collection replay through
+canary proposal. Local markers remain unverified and cannot clear the independent
+strict-oracle, registration, containment or authorization gates.
+
+### Preflight specification cycle
+
+Test freezing a non-authorizing preflight proposal after rechecking the canary
+dataset through its MLX loader and translating the pinned training settings.
+Bind the preparation, canary, tokenizer, model, runtime and source-inventory
+digests, parent claim, paths and fixed resource limits. Reject changed inputs,
+overlapping paths, inconsistent settings and repeated writes. Supplied hashes
+are claims, not independent attestation or authorization to execute.
+
+### Canary MLX loader cycle
+
+Test loading the verified canary JSONL with an injected MLX dataset loader,
+checking every row and token mask and requiring empty validation and test
+splits. Recheck the artifact after loading and exercise the installed loader
+with the local tokenizer without loading weights or invoking training.
+
+### Canary dataset readback cycle
+
+Test re-deriving the fixed canary rows and mask from the supplied task
+inventory, then reading the owner-only dataset and audit back by directory
+descriptor. Reject altered rows, changed inventories, unexpected files,
+non-private modes and mismatched digests. This remains local format evidence
+and does not register or authorize a training preflight.
+
+### Separate synthetic preflight dataset cycle
+
+Test a fixed, synthetic five-task canary dataset with a code completion and
+the same thinking-off chat mask as the proposed trainer. Reject overlaps with
+caller-supplied visible task grids and invalid masks, then write an owner-only,
+non-overwritable canary JSONL artifact with content and format hashes. The
+artifact is not model-generated research data, a registered canary, or
+authorization to run preflight training.
+
+### Once-only diagnostic journal cycle
+
+Test an exclusive local diagnostic attempt marker bound to a digest-checked
+final proposal. A claimed attempt remains consumed after interruption; completion
+requires the matching claim token and an evidence digest, and concurrent claims
+cannot both succeed. The local journal is bookkeeping for cooperating callers,
+not execution authorization or proof that an evaluation actually ran.
+
+### Diagnostic content separation cycle
+
+Test final diagnostic proposals against actual generation, development and
+diagnostic prompt data, using ID-independent canonical content hashes as well
+as task IDs. Reject identical prompt data under different IDs and invalid
+grids before writing. Hash the full supplied generation manifest and retain the
+limits of caller-supplied data and incomplete historical exposure audits.
+
+### Final diagnostic proposal cycle
+
+Test a non-authorizing final diagnostic proposal derived from captured
+development screening. Freeze the provisionally selected adapter, comparison
+digests, evaluation task hashes, harness and settings hashes, explicit budget,
+and the v2 target before any diagnostic. Reject task overlap, invalid budgets,
+changed selection evidence and repeated proposal writes. A local proposal is
+not an execution registration, a diagnostic reservation or authorization.
+
+### Matched base comparison cycle
+
+Test a descriptive paired comparison of the provisionally selected adapter
+against the untrained base using captured frozen development outcomes. For a
+second-generation selection, require the same task hashes, settings and sample
+seeds as the base comparison before pairing outcomes; never subtract aggregate
+scores from mismatched tasks. Report the fixed paired bootstrap and keep all
+results unverified, without a final evaluation or improvement claim.
+
+### Captured recursive screening cycle
+
+Test a separate transition screen that requires the full captured comparison
+audit for each generation before applying the local screening rule. Reject
+missing or altered request, response or ledger evidence; preserve the existing
+fixture-only outcome replay as a distinct weaker path. Capture consistency
+does not authenticate the server, loaded adapter or execution provenance.
+
+### Recursive transition screening cycle
+
+Test replaying each complete frozen comparison before applying the positive
+paired-point-estimate development screening rule. Enforce generation order,
+base and immediate-parent adapter identity, and matching development task
+content across transitions. A failed screen ends the loop, and no more than
+two transitions are considered. Fixture outcomes remain provisional and must
+not support a live execution, independent improvement or benchmark claim.
+
+### Bounded adapter product probe cycle
+
+Test bounded deterministic probes of LoRA A/B matrix products in the candidate
+and its optional parent. Distinguish factor changes that cancel or preserve the
+product from a sampled nonzero product difference. An absent witness is
+inconclusive, and a witnessed file-level difference is not a model reload,
+execution attestation or improvement claim.
+
+### Adapter factor comparison cycle
+
+Test a read-only numerical comparison of structurally checked candidate and
+parent adapters. Reject a candidate with no LoRA factor pair containing
+nonzero values, and reject an unchanged generation-two adapter, including
+differences limited to signed zero. Treat observed factor changes as local file
+evidence only: they do not prove an effective matrix update, model reload,
+training provenance or improvement.
+
+### Adapter structural precheck cycle
+
+Test a bounded, read-only check of a proposed Qwen3-14B MLX adapter: pinned
+rank, scale and layer count; complete expected LoRA tensor names and dimensions;
+safe tensor offsets and finite values; and an unchanged adapter digest. Reject
+truncation, missing or unexpected tensors, invalid data and mismatched settings.
+Use synthetic adapter fixtures only. Structural consistency is not an independent
+model reload, execution provenance or permission to train or evaluate.
+
+### One-step preflight evidence review cycle
+
+Test a fail-closed local review of a completed one-step process observation.
+Require clean exit, complete output, exactly one finite loss report, valid
+resource samples and no observed resource or time limit. Explicitly preserve
+unverified process containment, adapter reload and provenance as separate gates;
+the review must never authorize training.
+
+### Owned training stream cycle
+
+Test a bounded stdout reader connected to the loss watchdog and owned-process
+monitor. Exercise non-finite output, finite fixture exit, malformed reports,
+and a stream that remains open after the leader exits. Record observed loss
+separately from process exit and never claim training or containment verified.
+
+### Training loss watchdog cycle
+
+Test a bounded, incremental parser for pinned MLX train-loss report lines and
+an optional timed health sampler in the owned-process monitor. A non-finite
+loss, malformed report, unavailable sampler or sampler timeout stops the owned
+fixture process group. Empty loss history does not establish a successful
+training step, and local stream and process evidence remains unauthenticated.
+
+### MLX configuration preview cycle
+
+Test a pure preview of the proposed one-step preflight and 20-step generation
+MLX configurations. Check mask, learning rate, layer count, LoRA scale,
+resource timeouts and generation-parent adapter continuation. Require distinct
+synthetic canary and generation datasets, reject changed preparation settings,
+and never launch a process or mark the preview authorized.
+
+### Replayed synthetic dataset cycle
+
+Test writing the replayed synthetic preparation as a quarantined MLX dataset
+only after checking the completion marker, its stage and preparation hashes,
+and another replay of the captured generation. Reject absent or changed
+markers, read the completed dataset back, and record a completion marker only
+after post-write replay succeeds. Keep the artifact ineligible for training.
+
+### Synthetic preparation completion cycle
+
+Test that a replayed preparation receives an exclusive completion marker only
+after both replays succeed and that the marker binds the written preparation
+and source stage digests. A failed post-write replay leaves no completion marker
+and must not be confused with a completed preparation. The marker remains a
+local consistency record and does not authorize training.
+
+### Synthetic generation replay cycle
+
+Test an independent readback of the saved generation draft artifact against
+the captured slot journals and supplied sandbox. Recompute generated output
+pairs and mapped rows in slot order, rejecting changed labels even when their
+artifact hash and mapped prompt are recomputed. Keep replay explicitly local
+and unverified; it does not authenticate the model or sandbox.
+
+### Synthetic training preparation cycle
+
+Test deriving an owner-only, non-authorizing training preparation directly
+from a digest-checked generation artifact and supplied source tasks. Recompute
+each proposed synthetic row, reject changed or duplicate identities and
+require at least five distinct mapped records. Freeze both source and synthetic
+task hashes and use the existing token-mask audit on the synthetic tasks.
+Preserve all registration, independent provenance and training gates.
+
+### Proposed synthetic task mapping cycle
+
+Test a deterministic, non-authorizing mapping from each retained generated
+example set to one code-completion chat row. Hold out the first original
+demonstration input as the query, use remaining original demonstrations and
+generated query pairs as demonstrations, and reject repeated input grids to
+avoid exposing the held-out query as a demonstration. Bind the candidate,
+task, request and slot evidence; reject changed inputs or malformed examples.
+This is a proposed mapping, not a frozen registration or a training gate.
+
+### Generated example retention cycle
+
+Test a quarantined synthetic example record derived from a verified candidate:
+bind the source and parent task, require one valid generated output per source
+query input, preserve each input/output pair, and exclude private probe results.
+Reject changed source, changed parent grids and malformed generated outputs.
+Label outputs as generated, not ground truth, and leave training unauthorized.
+The mapping from these examples to actual SFT rows remains to be registered.
+
+### MLX dataset loader audit cycle
+
+Test loading the quarantined artifact through an injected MLX-compatible local
+dataset loader after readback verification. Check every loaded row and masked
+token span against the prepared records, require empty validation and test
+splits, and reject loader or masking discrepancies. Exercise the pinned local
+MLX loader with synthetic data and the local tokenizer without loading model
+weights or invoking training. This is format evidence, not provenance or
+authorization.
+
+### Retained exact prompt exposure cycle
+
+Test a read-only scan of retained JSON and JSONL string values for supplied exact
+prompt texts, including nested values, malformed files and changed inventories.
+Record matches and source paths without treating a match as proof of dispatch;
+absence cannot exclude other prompt formats, missing files or pretraining.
+
+### Historical prompt hash review cycle
+
+Test construction of the historical direct and analysis prompts from task-only
+inputs and check their SHA-256 digests against retained JSON string values.
+Record matched files and format-specific counts; a matching digest is evidence
+of a retained reference, not independent proof of model dispatch or complete
+historical coverage. Preserve the provisional split gate.
+
+### Historical code prompt text cycle
+
+Test reconstruction of the legacy code agent's complete task-text block and
+scan retained strings for it inside longer prompts. Record only bounded matches;
+hash-only code requests and unretained or different prompt formats remain
+unresolved.
+
+### Interrupted candidate journal review
+
+Test parsing of P3-A candidate reservation keys from retained budget journals,
+including incomplete runs, malformed keys, duplicate reservations and changing
+files. Compare task identifiers with the provisional development split; a
+reservation is conservative possible exposure and does not prove dispatch.
+
+### Version 3 exposure amendment cycle
+
+Record the accepted bounded-history amendment as a new design version, keeping
+the earlier versioned files intact. Test that draft registration verifies the
+complete v3-to-v2-to-v1 hash chain and rejects changed documents or mismatched
+targets. It must keep the split provisional, require independent review of the
+bounded inventory, and remain non-authorizing until all execution gates pass.
+
+### Bounded exposure inventory proposal
+
+Test a local proposal that recomputes the retained history, legacy registry,
+extra metadata and candidate journals, unions their source-task identifiers,
+and derives the development split. Bind dataset, reviewed code and inventories;
+reject missing inputs, invalid records, changing files and insufficient eligible
+tasks. This local proposal is not independent review, a frozen execution
+registration, or proof of absent historical or pretraining exposure.
+
+### Prompt review reconciliation
+
+Test matching the proposal's development IDs to the earlier provisional split,
+binding each review to the same dataset, split and retained artifact inventory,
+and comparing replayed match sets with all three saved reviews. Reject missing,
+changed or overlapping evidence; the result remains a local consistency check,
+not independent review or evidence that missing records do not exist.
+
+### Fifty-task exploratory notebook
+
+The user requested an exploratory comparison of the future Qwen3-14B RSI
+adapter with its untrained base on 50 tasks kept separate from the subsequent
+200-task evaluation. Test matched identity and settings, disjoint task IDs,
+correct counts, task type summaries, explicit failure reasons, elapsed time,
+and token usage with missing values represented as unknown. Build a notebook
+that reads recorded results and clearly distinguishes incomplete or fixture
+inputs. It must not launch a model, train, or turn this exploratory check into
+an RSI improvement or competitiveness claim.
+
+### Separate exploratory task proposal
+
+Test proposing 50 exploratory tasks from the provisional generation partition,
+excluding known prior exposures, the first 20 scheduled generation tasks, and
+all 200 later evaluation tasks. Remove them from the eligible generation manifest
+and bind the input proposal hash. Reject incomplete, overlapping or insufficient
+inputs; this is not an independently reviewed or execution-ready split.
+
+### Exploratory manifest registration binding
+
+Test binding the existing v3 draft registration and bounded-history proposal to
+the separately proposed 750/50/200 manifests. Recompute the 50-task selection,
+reject changed inputs, overlaps and changes to either generation's scheduled
+slots, and retain non-authorizing and independent-review gates. Do not change
+the previously registered 800/200 design record or dispatch any model call.
+
+### Exploratory comparison budget
+
+Test a separate durable local budget for the 50-task comparison, bounded at
+200 model calls, 4,000,000 reserved tokens, 2,000 sandbox starts and 9,000
+seconds (one quarter of the proposed 200-task ceilings). Setup canaries require
+separate registration. Test durable reopen, limits and separation from the
+200-task ledger. These are proposed ceilings, not authorization or proof of
+server enforcement.
+
+### Exploratory runner fixture cycle
+
+Test a separate 50-task, two-arm runner with identical prompts and seeds,
+registered manifest hashes, separate durable budget, per-task elapsed time,
+server-reported usage coverage and explicit failure outcomes. Check that
+interruption remains incomplete and cannot be automatically retried. Fixture
+execution is not model identity attestation, independent provenance, training
+eligibility, an improvement claim or live-run authorization.
+
+### Exploratory captured transport binding
+
+Test routing exploratory base/trained arms through the existing captured HTTP
+transport, preserving request IDs and bounded server-reported usage. Partial
+usage remains unknown, malformed or over-budget usage stops the run, and
+captured records remain subject to a separate replay and identity audit. Use a
+local fixture server only; do not authorize live dispatch.
+
+### Exploratory server contract guard
+
+Test independent base and adapter server declarations against the proposed
+exploratory token ceiling, fresh distinct ledgers and exact local reservation
+before each request. Stop on changed ledger identity, regressing counters,
+server reservations exceeding local totals or missing reservation. Declarations
+remain self-reported and do not authenticate the server or authorize inference.
+
+### Exploratory registration digest binding
+
+Test that the exploratory runner rejects any registration whose canonical JSON
+hash does not equal the budget's registration identity, before dispatch. The
+hash is local consistency evidence and does not establish independent review,
+authentication, or authorization.
+
+### Exploratory completion evidence
+
+Test that a completed exploratory fixture retains a separate completion marker
+binding the result digest and final local budget counters, with exactly 200
+reserved calls. Interrupted or inconsistent runs remain incomplete. Local
+markers and reported usage do not authenticate provenance or authorize a run.
+
+### Exploratory capture replay
+
+Test replaying the 50-task fixture with separately supplied tasks, sandbox and
+verifier, joining each saved request ID to captured request, response and ledger
+bytes. Reject altered task records, scores, usage, missing captures, incomplete
+runs and budget mismatches. A successful replay remains local consistency
+evidence, not independent process attestation or an improvement claim.
+
+### Exploratory content separation
+
+Test exact prompt-content separation among all three proposed partitions,
+including distinct IDs carrying identical task content. Bind content manifests
+to the exploratory registration draft. Exact checks do not establish semantic
+independence, historical provenance, or a final reviewed registration.
+
+### E8/E9 failure inventory
+
+Test a read-only aggregation of saved slot and attempt categories, completion,
+valid/strict-new counts and overlapping duplicate flags. Reject malformed input;
+never copy private probe outputs or infer semantic equivalence. Keep historical
+runs and seals unchanged, and do not admit old records to the new training gate.
+
+### Historical allocation review
+
+Test a read-only check that binds the proposed 750/50/200 allocation to the
+bounded-history and selection digests, verifies all 317 known exposures remain
+in generation, and checks exact prompt-content uniqueness across all tasks.
+Record hashes and uncertainty without freezing the split or claiming an
+independent review. Reject modified, overlapping or hidden-label input.
+
+### Version 4 separate-canary design chain
+
+Test the prospective v4 design hash chain through v3, v2 and v1. Preserve the
+750/50/200 draft binding and explicitly retain the new-only strict Oracle gate;
+a design registration must not authorize a canary, training or evaluation.
+Reject changed documents, missing policy fields and altered targets.
+
+### Separate synthetic technical canary proposal
+
+Test a non-executing canary proposal for the pinned 14B and 32B models that
+requires only a separately audited synthetic canary dataset, not generated
+Oracle records. Bind independent per-model configuration, resource limits,
+model/runtime/tokenizer claims and isolated output paths. Fix one training step,
+disable promotion and candidate reuse, and keep training authorization false.
+Reject invalid identities, data overlap, unsafe paths or resource limits.
+
+### Separate 32B model identity review
+
+Test a read-only model-manifest snapshot for the pinned 32B revision using the
+same complete-file, quantization, chat-template and safe-blob checks as 14B.
+Keep the existing 14B default compatible, reject cross-model revision/path
+confusion, and preserve unverified execution and independent-canary gates.

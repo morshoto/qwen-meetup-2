@@ -1,0 +1,23 @@
+{
+  "ast_sha256": "45c2903fc01a4f445f2723df1f52e8401ecd2f4a7b7858fe68e82ebde3c8e177",
+  "behavior_sha256": "efab643ce3ae9155b6f04166ef487e788592eca430ca13b8e7fdea9c26a31d40",
+  "e8_stage_seal_sha256": "a155f9fe50637baa4aaf50b35c09c69ec0d9594008fa7b770f14504182c12426",
+  "e9_existing_oracles_sha256": "94e1126f0a6ca1a031877ba6810462bcb2722cafe796eeadacef71abcfdd8e6d",
+  "e9_run": "artifacts/e9/32b/initial-20261105",
+  "e9_run_seal_sha256": "f299d6f949e6e5a23b70568102d28a07a8e9af65478a1439f2407039cd585e2e",
+  "eligible_under_current_new_only_gate": false,
+  "future_historical_count_policy": "undecided",
+  "independent_new_protocol_review": false,
+  "model_id": "mlx-community/Qwen3-32B-4bit",
+  "model_key": "32b",
+  "model_revision": "bcaaf7f538adf166c1080a2befdb4f6019f66639",
+  "record_sha256": "87ee3a9afa3f145818c616fbe92f4d0c53cb2013a51b285b5a8725c2e60d600e",
+  "source_campaign": "artifacts/e8/full-rerun-preregistered-20261102",
+  "source_protocol_sha256": "92d2dd93fa5ff0cf9d29bd431c1e1b5a678b5e7823c83b9746a9240860681f97",
+  "source_request_id": "7bd2677654fd496991d9a12516ae9a82",
+  "source_slot": 20,
+  "source_type": "generator_distillation",
+  "status": "historical_candidate_metadata_only",
+  "task_id": "e6f-4e38596220634fd3b8b1f4a6",
+  "training_allowed": false
+}

@@ -153,3 +153,12 @@ uv run --locked python -m src.cli.exploration_collect \
 For the 14B/32B E9 autonomous RSI collection, strict Oracle gate, audit results,
 and exact additional-slot approval command, see
 [docs/e9-dual-model-rsi.md](docs/e9-dual-model-rsi.md).
+
+For the proposed task-conditioned RSI research design, see the
+[v1 protocol](docs/rsi-research-protocol.md) and the
+[v2 benchmark amendment](research/rsi/design-v2.md). The amendment supersedes
+v1's 26% reference with a 42.4% verified Qwen reference. Both are design
+records; neither authorizes execution or establishes an RSI result.
+The [extended exposure review](research/rsi/extended-exposure-review.json)
+records a bounded scan of additional retained artifacts. It does not establish
+that prompts, missing history, or model pretraining are free of exposure.

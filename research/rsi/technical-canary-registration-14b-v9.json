@@ -1,0 +1,83 @@
+{
+  "candidate_reuse_allowed": false,
+  "config_sha256": "6684a007bd0abc36db906b43b8bb47b9cffb718b5cbbc95799e361a4361020f3",
+  "data_source": "fixed_synthetic_canary",
+  "dataset_sha256": "c7ca0ab04a51cebc44d0b4cf95de24519c3595448efbabd1abef2700bb26d19b",
+  "execution_ready": false,
+  "fork_restriction": "proposed_only_fixture_does_not_prove_containment_or_training_compatibility",
+  "group_signal_fixture_sha256": "6499c8ea5507675048210f9cbd97f618cb82ee846c8bd17c07748f0a3a9f4e53",
+  "independently_verified": false,
+  "limitations": [
+    "local paths and manifests can drift and must be reverified before execution",
+    "resource limits do not establish hardware feasibility",
+    "this draft and its hash list do not authorize a launch"
+  ],
+  "local_file_sha256": {
+    "preflight-canary.quarantine/audit.json": "ba7c843d9fd5eb776d4405ff66a97d2428e036895ff1eab62295404b9609dff3",
+    "preflight-canary.quarantine/train.jsonl": "c7ca0ab04a51cebc44d0b4cf95de24519c3595448efbabd1abef2700bb26d19b",
+    "technical-canary-14b.launch.quarantine/environment_manifest.json": "e55846f399d0b0d4b3c748aa381e7038afa574c7a5f4424dbab9bd2b8f6196c2",
+    "technical-canary-14b.launch.quarantine/launch.json": "2cfd336d948f1c0ee415d08e271c2a3d4d941f54ef7d3bd613f19e941a062359",
+    "technical-canary-14b.launch.quarantine/mlx_lora.json": "6684a007bd0abc36db906b43b8bb47b9cffb718b5cbbc95799e361a4361020f3",
+    "technical-canary-14b.launch.quarantine/model_manifest.json": "e2df5138afed02a3ed3d87013b06f117c576d1b2f79bbcf72d2724565220e39d",
+    "technical-canary-14b.launch.quarantine/proposal.json": "a51e44e1e835cfef9ddf0e9cac28758924978cc3f7634ceb3cf3cbff74611ee8",
+    "technical-canary-14b.launch.quarantine/runtime_manifest.json": "7af1101bc86e9f47c13305650bf7069983d4b3767c0489bf3e0057b11f37ad09",
+    "technical-canary-14b.launch.quarantine/source_inventory.json": "6b3e6c2a56dc16c51b1f2e9ebf00c00c5d4e37483b166e35f8e3315ba88121db"
+  },
+  "local_root": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-canary-review-20261105-v9/14b",
+  "model_id": "mlx-community/Qwen3-14B-4bit",
+  "model_key": "14b",
+  "model_revision": "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+  "outstanding": [
+    "independent registration and identity review",
+    "containment of escaped descendants",
+    "authenticated resource sampling and loss monitoring",
+    "independent review and execution of save and reload procedure with a separate resource budget",
+    "separately scoped technical canary authorization",
+    "resolve exited process group cleanup evidence on this host"
+  ],
+  "promotion_allowed": false,
+  "proposed_reload_resource_limits": {
+    "maximum_process_rss_gib": 32,
+    "maximum_swap_growth_mib": 512,
+    "minimum_disk_gib": 20,
+    "minimum_free_memory_percent": 20,
+    "sample_interval_seconds": 5,
+    "timeout_seconds": 300
+  },
+  "reload_argv_template": [
+    "/tmp/qwen-p3a-mlx-venv/bin/python",
+    "-u",
+    "-B",
+    "-m",
+    "src.cli.rsi_reload_probe",
+    "--model-key",
+    "14b",
+    "--model-dir",
+    "/Users/shotomorisaki/.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+    "--adapter-dir",
+    "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-canary-review-20261105-v9/14b/nonpromotable.adapter",
+    "--adapter-sha256",
+    "<digest-from-authorized-training>",
+    "--model-manifest",
+    "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-canary-review-20261105-v9/14b/technical-canary-14b.launch.quarantine/model_manifest.json",
+    "--model-manifest-sha256",
+    "e2df5138afed02a3ed3d87013b06f117c576d1b2f79bbcf72d2724565220e39d"
+  ],
+  "reload_review_procedure_sha256": "461924bdad28792febfc72dd291e3217930bb209f0d61c96d503edfbd2f0cad6",
+  "resource_limits": {
+    "maximum_process_rss_gib": 32,
+    "maximum_swap_growth_mib": 512,
+    "minimum_disk_gib": 20,
+    "minimum_free_memory_percent": 20,
+    "sample_interval_seconds": 5,
+    "timeout_seconds": 300
+  },
+  "run_purpose": "single synthetic training step and independent adapter reload",
+  "status": "draft_technical_canary_registration_superseded",
+  "superseded_by": "technical-canary-registration-14b-v10.json",
+  "superseded_reason": "source inventory changed for group observation",
+  "supersedes": "technical-canary-registration-14b-v8.json",
+  "tiny_fixture_report_sha256": "b78ee0021f4077d1d9423536c6ed9238b489f2610622d059ecf4d11b072dd560",
+  "training_allowed": false,
+  "training_started": false
+}

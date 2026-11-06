@@ -1,0 +1,50 @@
+{
+  "candidate_code_executed": false,
+  "execution_ready": false,
+  "grid_generator": "src.arc.e6_curriculum._quality_grids",
+  "grid_generator_file_sha256": "cc15da4d1ce3ae5f94d1cc8b5e70a07f9a75272226b6feadd920b0aee101129b",
+  "independently_verified": false,
+  "limitations": [
+    "local provisional inputs require independent review and freeze",
+    "exact nonoverlap does not establish semantic independence",
+    "private probe contents and outputs must not enter model prompts",
+    "reference behavior fingerprints must be generated and independently audited separately",
+    "generation seeds were not retained; exact local files and hashes define these provisional probes"
+  ],
+  "model_dispatch": false,
+  "overlap_check": "no exact overlap across four probe sets or source challenge input and visible output grids",
+  "probes": {
+    "14b": {
+      "private": {
+        "canonical_probe_sha256": "8fecded49dbbc5af8a242a0764e61951972b3e1f2c4bbb37684b55b272525239",
+        "file_sha256": "87d94138d12b9f91e00e3cde8a386e9048ac5a2162e1fb5b70489891abe8a0d1",
+        "grid_count": 5,
+        "local_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-oracle-probe-candidates-20261106-v1/14b/private.json"
+      },
+      "public": {
+        "canonical_probe_sha256": "460ea330f69d335b3acd1f40a3f7bf7b3388d62282cb61a58a0947cdf80f5396",
+        "file_sha256": "f34c0365d92113fd8bfa0d660037686e15975e2f425cc1122f66a6622e57e34f",
+        "grid_count": 5,
+        "local_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-oracle-probe-candidates-20261106-v1/14b/public.json"
+      }
+    },
+    "32b": {
+      "private": {
+        "canonical_probe_sha256": "55d78dc92f9ed1d6d53ca839e1e4a2ccfaf6fa54062f28b96ce432e64a2b3182",
+        "file_sha256": "bd93b57691dfb0c5645c8fdefb7e6c6090440edfe9bfdb03ee6733620d9d7284",
+        "grid_count": 5,
+        "local_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-oracle-probe-candidates-20261106-v1/32b/private.json"
+      },
+      "public": {
+        "canonical_probe_sha256": "e6947234c26f9909bedfab373432e3227840fde6c49bc4a19bd24839f49dbe70",
+        "file_sha256": "67e634d7c851c4a64f82956fd1655bec232541d6b83338c4de2c709f3a084125",
+        "grid_count": 5,
+        "local_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-oracle-probe-candidates-20261106-v1/32b/public.json"
+      }
+    }
+  },
+  "status": "draft_local_probe_candidates_unverified",
+  "task_count": 1000,
+  "task_source_sha256": "779eaba89790ebad9af02514a7efc0aefaf2cf8236f046a31bbf8b9ec48f20f5",
+  "training_allowed": false
+}

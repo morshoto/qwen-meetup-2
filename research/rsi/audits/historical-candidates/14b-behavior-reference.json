@@ -1,0 +1,25 @@
+{
+  "elapsed_seconds": 2.418087416997878,
+  "eligible_for_training": false,
+  "generation_authorized": false,
+  "independently_verified": false,
+  "limitations": [
+    "local execution evidence requires independent provenance and sandbox review",
+    "the historical task ID is synthetic; ARC ancestry is not assumed",
+    "sampled behavior does not prove semantic equivalence",
+    "not a new Oracle or RSI result"
+  ],
+  "local_result_path": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-legacy-reference-preparation-20261106-v1/14b/result.json",
+  "local_result_sha256": "b72c9c717c274f25f2bf57a418497533809ba8fa5718fdd39b51be84d32b1a94",
+  "model_calls": 0,
+  "model_key": "14b",
+  "pool_sha256": "4f1b866af08cbfcdf2376aa608606a27bfd8d2dbfa8902649a37bf787a41f5cc",
+  "preparation_draft_sha256": "8921b6d582d522b29385d6a7329e1a10b7609ed2b6e20680ffc4e7426eb62d61",
+  "preparation_script_sha256": "bfdf6afe8ee27d5ec8e80213bf8685e150bdb24f0d9fb28c9bc3860331075fe9",
+  "private_outputs_exposed": false,
+  "probe_set_sha256": "8fecded49dbbc5af8a242a0764e61951972b3e1f2c4bbb37684b55b272525239",
+  "sandbox_starts": 10,
+  "source_sha256": "02491e2004c406ea4543ecdba1a7422ed47f0ac3ce7fcfe5a4d9ec6bd89f84af",
+  "status": "legacy_behavior_reference_local_unverified",
+  "training_steps": 0
+}

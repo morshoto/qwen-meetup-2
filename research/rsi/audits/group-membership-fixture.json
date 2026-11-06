@@ -1,0 +1,40 @@
+{
+  "cases": {
+    "leader_only": {
+      "after_states": [
+        "Z"
+      ],
+      "before_live_count": 0,
+      "before_states": [
+        "Z"
+      ],
+      "exit_code": 0,
+      "signals": {
+        "SIGKILL": "errno_1",
+        "SIGTERM": "errno_1"
+      }
+    },
+    "live_group_member": {
+      "after_states": [
+        "Z"
+      ],
+      "before_live_count": 1,
+      "before_states": [
+        "Z",
+        "S"
+      ],
+      "exit_code": 0,
+      "signals": {
+        "SIGKILL": "sent",
+        "SIGTERM": "sent"
+      }
+    }
+  },
+  "escaped_processes_excluded": false,
+  "group_cleanup_verified": false,
+  "interpretation": "These snapshots and signal outcomes do not prove group cleanup or exclude escaped processes.",
+  "model_loaded": false,
+  "observer_sha256": "ba8f14b11d0c914717c1bdc35496809310506ee4ad2dff25f37d64940f12e24d",
+  "status": "local_group_fixture_unverified",
+  "training_started": false
+}

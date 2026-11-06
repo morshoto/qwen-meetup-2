@@ -1,0 +1,99 @@
+"""Run a bounded matched comparison with caller-supplied components.
+
+This orchestration does not establish model, adapter, sandbox, seed support or
+registration authenticity. It does not authorize a live experiment.
+"""
+import json
+import re
+from pathlib import Path
+
+from src.arc.data import Task
+from src.arc.prompting import system_prompt_for_kind
+from src.arc.rsi_budget_adapters import BudgetedSandbox
+from src.arc.rsi_comparison_budget import ComparisonBudget
+from src.arc.rsi_comparison_freeze import _SETTINGS, _budget_delta, _counters, _validate, comparison_coverage, freeze_comparison
+from src.arc.rsi_evaluation import InvalidModelOutput, evaluate_task, score_task
+from src.arc.rsi_slot_lifecycle import _create, _directory
+from src.arc.rsi_slot_audit import task_sha256
+
+
+def run_comparison(*, root, registration_sha256, generation, task_ids, tasks, seeds,
+                   parent_adapter, candidate_adapter, generate, sandbox, verifier, budget):
+    if (not isinstance(budget, ComparisonBudget) or
+            budget.identity != {'registration_sha256': registration_sha256, 'generation': generation} or
+            Path(budget.root).resolve() != Path(root).resolve()):
+        raise ValueError('comparison budget identity differs')
+    if not isinstance(tasks, dict) or any(not isinstance(tasks.get(key), Task) for key in task_ids):
+        raise ValueError('task manifest differs')
+    task_hashes = {key: task_sha256(tasks[key]) for key in task_ids}
+    placeholders = {task: {'solved': False, 'seeds': seeds.get(task)} for task in task_ids}
+    _validate({'registration_sha256': registration_sha256, 'settings': dict(_SETTINGS),
+               'task_ids': task_ids, 'task_hashes': task_hashes, 'seeds': seeds, 'parent_adapter': parent_adapter,
+               'candidate_adapter': candidate_adapter, 'parent': placeholders, 'candidate': placeholders,
+               'budget_before': {'model_calls': 0, 'reserved_tokens': 0, 'sandbox_runs': 0},
+               'budget_after': {'model_calls': 800, 'reserved_tokens': 800, 'sandbox_runs': 0},
+               'evidence_type': 'caller_supplied_outcomes'})
+    if (not isinstance(tasks, dict) or set(tasks) != set(task_ids) or
+            any(not isinstance(tasks[key], Task) or tasks[key].id != key or not tasks[key].train or
+                not tasks[key].test_inputs or verifier.output_count(key) != len(tasks[key].test_inputs)
+                for key in task_ids)):
+        raise ValueError('task or verifier manifest differs')
+    budget_before = _counters(budget.snapshot())
+    with _directory(root) as directory:
+        _create(directory, 'comparison.started.json', {'registration_sha256': registration_sha256,
+                                                         'generation': generation, 'budget_before': budget_before})
+    outcomes = {'parent': {}, 'candidate': {}}
+    seen_request_ids = set()
+    metered = BudgetedSandbox(sandbox, budget)
+    try:
+        for index, task_id in enumerate(task_ids):
+            task = tasks[task_id]
+            for arm, adapter in (('parent', parent_adapter), ('candidate', candidate_adapter)):
+                request_ids = []
+                def call(prompt, *, sample):
+                    messages = [{'role': 'system', 'content': system_prompt_for_kind('e5_self_solve')},
+                                {'role': 'user', 'content': prompt}]
+                    reserved = 512 + len(json.dumps(messages, ensure_ascii=False).encode('utf-8')) + 1024
+                    budget.reserve_model(reserved, kind='evaluation')
+                    response = generate(prompt, arm=arm, adapter=adapter, task_id=task_id, sample=sample,
+                                        seed=seeds[task_id][sample], timeout=budget.remaining())
+                    request_id = None
+                    if isinstance(response, dict):
+                        if set(response) not in ({'code', 'request_id'}, {'code', 'request_id', 'failure'}):
+                            raise ValueError('invalid comparison transport response')
+                        invalid = 'failure' in response
+                        if invalid and (response['failure'] != 'invalid_model_output' or response['code'] is not None):
+                            raise ValueError('invalid comparison failure marker')
+                        request_id = response['request_id']
+                        if (not isinstance(request_id, str) or not re.fullmatch(r'[0-9a-f]{32}', request_id)
+                                or request_id in seen_request_ids):
+                            raise ValueError('invalid or duplicate comparison request ID')
+                        seen_request_ids.add(request_id)
+                        response = InvalidModelOutput() if invalid else response['code']
+                    request_ids.append(request_id)
+                    return response
+                result = evaluate_task(task, generate=call, sandbox=metered)
+                result['sample_request_ids'] = request_ids
+                score = score_task(task, result, verifier)
+                value = {'solved': score['solved'], 'seeds': list(seeds[task_id])}
+                with _directory(root) as directory:
+                    _create(directory, f'comparison-{index:03d}-{arm}.json',
+                            {'task_id': task_id, 'result': result, 'score': score})
+                outcomes[arm][task_id] = value
+        return freeze_comparison(root=root, registration_sha256=registration_sha256, task_ids=task_ids,
+                                 task_hashes=task_hashes, seeds=seeds, parent_adapter=parent_adapter, candidate_adapter=candidate_adapter,
+                                 parent=outcomes['parent'], candidate=outcomes['candidate'],
+                                 budget_before=budget_before, budget_after=_counters(budget.snapshot()))
+    except Exception as exc:
+        try:
+            budget_after = _counters(budget.snapshot())
+            usage = _budget_delta(budget_before, budget_after)
+        except Exception:
+            budget_after, usage = None, None
+        coverage = comparison_coverage(task_ids, parent=outcomes['parent'], candidate=outcomes['candidate'])
+        report = {**coverage, 'status': 'incomplete', 'failure_type': type(exc).__name__,
+                  'budget_after': budget_after, 'budget_usage': usage,
+                  'evidence_type': 'caller_supplied_execution'}
+        with _directory(root) as directory:
+            _create(directory, 'comparison.incomplete.json', report)
+        return report

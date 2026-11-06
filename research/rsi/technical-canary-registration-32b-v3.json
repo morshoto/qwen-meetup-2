@@ -1,0 +1,51 @@
+{
+  "candidate_reuse_allowed": false,
+  "config_sha256": "9ed205d080549527b54b778cf8e1ef695cacc3852f0da6eb34b64de31ba35c36",
+  "data_source": "fixed_synthetic_canary",
+  "dataset_sha256": "c7ca0ab04a51cebc44d0b4cf95de24519c3595448efbabd1abef2700bb26d19b",
+  "execution_ready": false,
+  "independently_verified": false,
+  "limitations": [
+    "local paths and manifests can drift and must be reverified before execution",
+    "resource limits do not establish hardware feasibility",
+    "this draft and its hash list do not authorize a launch"
+  ],
+  "local_file_sha256": {
+    "preflight-canary.quarantine/audit.json": "ba7c843d9fd5eb776d4405ff66a97d2428e036895ff1eab62295404b9609dff3",
+    "preflight-canary.quarantine/train.jsonl": "c7ca0ab04a51cebc44d0b4cf95de24519c3595448efbabd1abef2700bb26d19b",
+    "technical-canary-32b.launch.quarantine/environment_manifest.json": "e55846f399d0b0d4b3c748aa381e7038afa574c7a5f4424dbab9bd2b8f6196c2",
+    "technical-canary-32b.launch.quarantine/launch.json": "02f43940a73efc557980c487dd95e847e8124dc13023dce594bf6f773172d1bd",
+    "technical-canary-32b.launch.quarantine/mlx_lora.json": "9ed205d080549527b54b778cf8e1ef695cacc3852f0da6eb34b64de31ba35c36",
+    "technical-canary-32b.launch.quarantine/model_manifest.json": "5294dfd86014761a7b3e31e88dac24f02e15f3f808aecfced0b15491b047734b",
+    "technical-canary-32b.launch.quarantine/proposal.json": "263692a9a625440053ebefaaedb99b89626466c28e8909b9f8dbcb4051d53f90",
+    "technical-canary-32b.launch.quarantine/runtime_manifest.json": "7af1101bc86e9f47c13305650bf7069983d4b3767c0489bf3e0057b11f37ad09",
+    "technical-canary-32b.launch.quarantine/source_inventory.json": "a1779cb3f80678de223d20a055a1032679d2ba266ff4242fb524c1db3be2f397"
+  },
+  "local_root": "/Users/shotomorisaki/Engineering/qwen-meetup-2-issue-2/artifacts/rsi-canary-review-20261105-v3/32b",
+  "model_id": "mlx-community/Qwen3-32B-4bit",
+  "model_key": "32b",
+  "model_revision": "bcaaf7f538adf166c1080a2befdb4f6019f66639",
+  "outstanding": [
+    "independent registration and identity review",
+    "containment of escaped descendants",
+    "authenticated resource sampling and loss monitoring",
+    "independent save and reload verification procedure",
+    "separately scoped technical canary authorization"
+  ],
+  "promotion_allowed": false,
+  "resource_limits": {
+    "maximum_process_rss_gib": 32,
+    "maximum_swap_growth_mib": 512,
+    "minimum_disk_gib": 20,
+    "minimum_free_memory_percent": 20,
+    "sample_interval_seconds": 5,
+    "timeout_seconds": 300
+  },
+  "run_purpose": "single synthetic training step and independent adapter reload",
+  "status": "draft_technical_canary_registration_superseded",
+  "superseded_by": "technical-canary-registration-32b-v4.json",
+  "superseded_reason": "source inventory changed during reload review work",
+  "supersedes": "technical-canary-registration-32b.json",
+  "training_allowed": false,
+  "training_started": false
+}

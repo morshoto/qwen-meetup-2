@@ -1,0 +1,23 @@
+{
+  "code_sha256": {
+    "src/arc/agent.py": "07222772a9d01be7a145bfa32aad448e2a3705b3bb111af1084ad52fb1872c84",
+    "src/arc/data.py": "cf0d4fa581e8795f1535bf22a28883bf1345fa3b7355210a4a4ca876205dc7cb",
+    "src/arc/rsi_historical_prompt_hash.py": "66af679f30c7474adf189fb370b4060e4c2681052287917bd5525444796fffb8",
+    "src/arc/rsi_historical_prompt_text.py": "334eeb0dcb0d1788aafd6f55b813024bd299998a0eb87e5770bc58e8e4b3d5b1",
+    "src/arc/rsi_prompt_exposure.py": "c2d79ff3abe483a9758453d04964da0d08eaeab7fc86a9a698f4e36a17fb3c0f"
+  },
+  "dataset_sha256": "779eaba89790ebad9af02514a7efc0aefaf2cf8236f046a31bbf8b9ec48f20f5",
+  "file_count": 6762,
+  "independence_established": false,
+  "inventory_sha256": "592cf357335282add4e196fa247440ad99e6e9ce5dc49cccac90334036be1b56",
+  "limitations": [
+    "current reconstruction of historical code-agent task text only",
+    "retained JSON and JSONL string values only",
+    "matches do not independently prove dispatch",
+    "hash-only code requests, missing files, other formats and pretraining remain unexamined"
+  ],
+  "matches": {},
+  "split_sha256": "5a3f55299ac1988a40680d1510cffe62650bb537462d94c6b024534c707102e6",
+  "status": "bounded_historical_task_text_review_only",
+  "task_count": 200
+}

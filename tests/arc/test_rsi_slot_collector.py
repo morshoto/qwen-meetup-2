@@ -1,0 +1,139 @@
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import Mock
+
+from src.arc.data import Task
+from src.arc.e6_curriculum import _quality_grids
+from src.arc.e6_fake import FAKE_PROGRAMS, FakeE6Sandbox
+from src.arc.rsi_candidate import inspect_candidate
+from src.arc.rsi_novelty import screen_novelty
+from src.arc.rsi_collection_budget import CollectionBudget
+from src.arc.rsi_lineage_audit import probes_sha256
+from src.arc.rsi_slot_audit import manifest_sha256, task_sha256
+from src.arc.rsi_slot_collector import collect_slot
+from src.arc.rsi_slot_lifecycle import observe_slot
+
+REG = 'a' * 64
+
+
+class SlotCollectorTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.ids = [f'task-{i:02}' for i in range(20)]
+        self.task = Task(self.ids[0], (([[1, 2]], [[2, 1]]),), ([[3, 4]],))
+        self.public, self.private = _quality_grids(42, 5), _quality_grids(43, 5)
+        self.budget = CollectionBudget.create(self.root, registration_sha256=REG, generation=0)
+        self.transport = Mock(side_effect=[FAKE_PROGRAMS[2], FAKE_PROGRAMS[1]])
+
+    def collect(self, **overrides):
+        args = dict(root=self.root, registration_sha256=REG, generation=0, slot=0,
+                    task_ids=self.ids, task=self.task, expected_manifest_sha256=manifest_sha256(self.ids),
+                    expected_task_sha256=task_sha256(self.task), public_probes=self.public,
+                    private_probes=self.private, expected_public_probes_sha256=probes_sha256(self.public),
+                    expected_private_probes_sha256=probes_sha256(self.private), reference_pool=[],
+                    transport=self.transport, sandbox=FakeE6Sandbox(), budget=self.budget)
+        args.update(overrides)
+        return collect_slot(**args)
+
+    def test_repair_is_scheduled_and_durable(self):
+        result = self.collect()
+        self.assertEqual(result['status'], 'novel_unverified')
+        self.assertFalse(result['eligible_for_training'])
+        self.assertEqual([call.kwargs['seed'] for call in self.transport.call_args_list], [12000, 12001])
+        self.assertIn('visible_demonstration_mismatch', self.transport.call_args_list[1].args[0])
+        self.assertNotIn(str(self.private[0]), repr(self.transport.call_args_list))
+        self.assertEqual(self.budget.snapshot()['model_calls'], 2)
+        self.assertGreater(self.budget.snapshot()['sandbox_runs'], 0)
+        self.assertEqual(observe_slot(self.root, registration_sha256=REG, generation=0, slot=0)['status'], 'completion_recorded_unverified')
+        evidence = json.loads((self.root / 'g0-slot-00.collection.json').read_text())
+        self.assertEqual(evidence['status'], 'novel_unverified')
+        self.assertNotIn(str(self.private[0]), repr(evidence))
+
+    def test_duplicate_source_is_terminal_and_not_eligible(self):
+        self.transport.side_effect = [FAKE_PROGRAMS[2]] * 3
+        result = self.collect()
+        self.assertEqual(result['status'], 'repeated_code')
+        self.assertFalse(result['eligible_for_training'])
+        self.assertEqual(self.transport.call_count, 2)
+
+    def test_exhausted_budget_stops_before_transport(self):
+        self.budget.reserve_model(200000, kind='canary')
+        with self.assertRaises(TimeoutError):
+            self.collect()
+        self.transport.assert_not_called()
+        self.assertEqual(observe_slot(self.root, registration_sha256=REG, generation=0, slot=0)['status'],
+                         'started_outcome_uncertain')
+
+    def test_invalid_or_reused_transport_id_stops_slot(self):
+        for payload in ({'code': FAKE_PROGRAMS[1], 'request_id': 'bad'},
+                        {'code': FAKE_PROGRAMS[1], 'request_id': None}):
+            with self.subTest(payload=payload):
+                with tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    budget = CollectionBudget.create(root, registration_sha256=REG, generation=0)
+                    with self.assertRaises(ValueError):
+                        self.collect(root=root, budget=budget, transport=Mock(return_value=payload))
+        request_id = 'b' * 32
+        with self.assertRaises(ValueError):
+            self.collect(transport=Mock(side_effect=[{'code': FAKE_PROGRAMS[2], 'request_id': request_id},
+                                                     {'code': FAKE_PROGRAMS[1], 'request_id': request_id}]))
+
+    def test_ast_duplicate_receives_generic_repair(self):
+        task = Task(self.ids[0], (([[1]], [[1]]),), ([[2, 3]],))
+        candidate = inspect_candidate(task, FAKE_PROGRAMS[1], public_probes=self.public,
+                                      private_probes=self.private, sandbox=FakeE6Sandbox())
+        prior = screen_novelty(FAKE_PROGRAMS[1], candidate['private_behavior_sha256'],
+                               candidate['private_probe_set_sha256'], [])
+        pool = [{key: prior[key] for key in ('source_sha256', 'ast_sha256', 'behavior_sha256', 'probe_set_sha256')}]
+        alternate = 'def transform(grid):\n return [row[::-1] for row in grid]'
+        class Sandbox:
+            def run(self, code, grid):
+                return FakeE6Sandbox().run(FAKE_PROGRAMS[1] if code == alternate else code, grid)
+        transport = Mock(side_effect=[alternate, FAKE_PROGRAMS[3]])
+        result = self.collect(task=task, expected_task_sha256=task_sha256(task), reference_pool=pool,
+                              sandbox=Sandbox(), transport=transport)
+        self.assertEqual(result['status'], 'novel_unverified')
+        self.assertIn('duplicate_ast', transport.call_args_list[1].args[0])
+        self.assertNotIn(str(self.private[0]), transport.call_args_list[1].args[0])
+
+    def test_private_behavior_match_is_terminal_without_feedback(self):
+        candidate = inspect_candidate(self.task, FAKE_PROGRAMS[1], public_probes=self.public,
+                                      private_probes=self.private, sandbox=FakeE6Sandbox())
+        prior = screen_novelty(FAKE_PROGRAMS[1], candidate['private_behavior_sha256'],
+                               candidate['private_probe_set_sha256'], [])
+        pool = [{key: prior[key] for key in ('source_sha256', 'ast_sha256', 'behavior_sha256', 'probe_set_sha256')}]
+        alternate = 'def transform(grid):\n return [list(reversed(row)) for row in grid]'
+        class Sandbox:
+            def run(self, code, grid):
+                return FakeE6Sandbox().run(FAKE_PROGRAMS[1] if code == alternate else code, grid)
+        transport = Mock(return_value=alternate)
+        result = self.collect(reference_pool=pool, sandbox=Sandbox(), transport=transport)
+        self.assertEqual(result['status'], 'sampled_behavior_match')
+        self.assertEqual(transport.call_count, 1)
+
+    def test_wrong_task_stops_before_claim_or_dispatch(self):
+        with self.assertRaises(ValueError):
+            self.collect(expected_task_sha256='b' * 64)
+        self.transport.assert_not_called()
+        self.assertEqual(observe_slot(self.root, registration_sha256=REG, generation=0, slot=0)['status'], 'unstarted')
+
+    def test_private_failure_is_terminal(self):
+        self.transport.side_effect = [FAKE_PROGRAMS[1], FAKE_PROGRAMS[1]]
+        private = [[[7, 8]]] * 5
+        result = self.collect(private_probes=private, expected_private_probes_sha256=probes_sha256(private))
+        self.assertEqual(result['status'], 'private_acceptance_rejected')
+        self.assertEqual(self.transport.call_count, 1)
+
+    def test_failed_dispatch_is_consumed_and_charged(self):
+        self.transport.side_effect = TimeoutError('unknown dispatch outcome')
+        with self.assertRaises(TimeoutError):
+            self.collect()
+        self.assertEqual(self.budget.snapshot()['model_calls'], 1)
+        self.assertEqual(observe_slot(self.root, registration_sha256=REG, generation=0, slot=0)['status'], 'started_outcome_uncertain')
+        with self.assertRaises(FileExistsError):
+            self.collect()
+        self.assertEqual(self.transport.call_count, 1)

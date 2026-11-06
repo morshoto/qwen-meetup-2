@@ -1,0 +1,40 @@
+{
+  "actual_qwen_weights_used": false,
+  "arc_data_used": false,
+  "elapsed_seconds": 0.9325272919959389,
+  "exit_code": 0,
+  "independently_verified": false,
+  "limitations": [
+    "does not establish 14B or 32B training or reload feasibility",
+    "fixture adapter deleted with temporary directory",
+    "sampled resources do not establish peaks or complete process containment",
+    "not an RSI or benchmark result"
+  ],
+  "loss": {
+    "last_loss": 3.046,
+    "last_step": 1,
+    "status": "ok"
+  },
+  "model": "random_fabricated_qwen_shaped_tiny",
+  "promotion_allowed": false,
+  "reload_cleanup_verified": false,
+  "reload_elapsed_seconds": 0.6147197499813046,
+  "reload_sample_count": 3,
+  "reload_stop_reason": "process_exited",
+  "sample_count": 4,
+  "source_sha256": {
+    "src/arc/rsi_canary_containment.py": "19ec583e80c199d4e04b8c53d7119f19dccf7a25ea5b45f5ff3378563af1f46f",
+    "src/arc/rsi_process_monitor.py": "581981bd2b6c12ab8d20e8e48ed9fbed4d7df45a33d24bc4b818a0b0b1d95897",
+    "src/arc/rsi_reload_stream.py": "05cb0c57b05cc8bff9bb01fc4b2e07cda6c5b016b68b37ecfa0e494f99754e8e",
+    "src/arc/rsi_tiny_pipeline.py": "e249176b9efa81715aa38d118bd9b81ef40828ff948930c90a96f4990416620d",
+    "src/arc/rsi_training_stream.py": "2bffa6286e4c324c2c3ed42217e7e7bbaba7e581a850aee055ad9e53dbfe3406",
+    "src/cli/p3b_train.py": "c01266066d1c1b3589dab0b07adff74775dbcfc0ec8360c536d2c5db8477b3ea",
+    "tests/arc/test_rsi_tiny_pipeline.py": "653d269b028b1e14569bb86fd6ab08ab736b5bd81e8d641409ad42f1b5b1ed39"
+  },
+  "status": "tiny_restricted_mlx_fixture_passed_unverified",
+  "stop_reason": "process_exited",
+  "stream_complete": true,
+  "tiny_adapter_reloaded": true,
+  "tiny_reloaded_factor_matches": 28,
+  "training_verified": false
+}

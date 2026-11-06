@@ -1,0 +1,25 @@
+{
+  "adapter_written": false,
+  "dataset_sha256": "c7ca0ab04a51cebc44d0b4cf95de24519c3595448efbabd1abef2700bb26d19b",
+  "exact_challenge_and_solution_grid_overlap": false,
+  "independently_verified": false,
+  "limitations": [
+    "local tokenizer and loader consistency only",
+    "runtime and environment manifests are historical claims",
+    "canary source and task availability are bounded",
+    "no training feasibility or adapter reload demonstrated"
+  ],
+  "mlx_lm_version": "0.30.7",
+  "model_id": "mlx-community/Qwen3-32B-4bit",
+  "model_key": "32b",
+  "model_lock_sha256": "69ecac507e8a84099cb6662bc8c07078eae1827d4150eacaa41c98e3ad894ada",
+  "revision": "bcaaf7f538adf166c1080a2befdb4f6019f66639",
+  "row_count": 5,
+  "source_challenges_sha256": "779eaba89790ebad9af02514a7efc0aefaf2cf8236f046a31bbf8b9ec48f20f5",
+  "source_inventory_sha256": "8046b101713ec8f591b785faa94810e35fd34572c5565ab8a10380d145f59715",
+  "source_solutions_sha256": "9f07a38bd25af5e83aa5bf85c5cb1a1fefdb30f6a755256fa65429e697ca97f9",
+  "status": "local_canary_format_consistent_unverified",
+  "tokenizer_config_sha256": "253153d0738ceb4c668d2eff957714dd2bea0b56de772a9fdccd96cbf517e6a0",
+  "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+  "training_started": false
+}

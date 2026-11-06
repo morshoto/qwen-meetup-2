@@ -1,0 +1,65 @@
+{
+  "status": "design_not_run",
+  "human_arc_heuristics": false,
+  "execution_authorized": false,
+  "minimum_strict_oracles": 5,
+  "max_generations": 2,
+  "development_split": {
+    "known_prior_exposure_registry": "configs/p3c.exploration.exclusions.v1.json",
+    "task_count": 200,
+    "requires_complete_history_audit": true,
+    "independence_established": false
+  },
+  "proposed_generation": {
+    "model_revision": "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4",
+    "slots_per_generation": 10,
+    "max_repairs_per_slot": 2,
+    "temperature": 0.2,
+    "max_new_tokens": 512,
+    "max_calls_per_stage": 32,
+    "max_reserved_tokens_per_stage": 200000,
+    "max_sandbox_starts_per_stage": 300,
+    "max_wall_seconds_per_stage": 3600
+  },
+  "proposed_evaluation_per_transition": {
+    "tasks": 200,
+    "models": 2,
+    "calls_per_model_task": 2,
+    "max_calls": 800,
+    "max_reserved_tokens": 16000000,
+    "max_sandbox_starts": 8000,
+    "max_wall_seconds": 36000
+  },
+  "evaluation": {
+    "competitive_target_percent": 26.0,
+    "benchmark": "ARC-AGI-2 semi-private",
+    "independent_score_required": true,
+    "matched_untrained_base_required": true,
+    "each_generation_compared_to_parent": true,
+    "recursive_transitions_required": 2,
+    "attempts_per_test_input": 2,
+    "public_eval_used_for_development": false
+  },
+  "proposed_training": {
+    "preflight_max_steps": 1,
+    "preflight_max_wall_seconds": 300,
+    "min_free_disk_gib": 20,
+    "min_system_memory_free_percent": 20,
+    "max_swap_increase_mib": 512,
+    "max_process_tree_rss_gib": 32,
+    "max_steps_per_generation": 20,
+    "max_wall_seconds_per_generation": 1800,
+    "batch_size": 1,
+    "lora_rank": 8,
+    "lora_alpha": 16,
+    "learning_rate": 0.0001,
+    "max_sequence_length": 2048,
+    "num_layers": 2
+  },
+  "budgets": {
+    "authorized_live_calls": 0,
+    "authorized_training_steps": 0,
+    "authorized_external_spend_usd": 0,
+    "separate_run_caps_required": true
+  }
+}

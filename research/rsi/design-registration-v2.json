@@ -1,0 +1,28 @@
+{
+  "competitive_target_percent": 42.4,
+  "execution_blockers": [
+    "historical exposure inventory is not proven complete",
+    "task-conditioned generation and training monitors are not implemented or audited",
+    "execution dependencies and final data manifests require an execution freeze",
+    "live model calls, training and independent scoring require separate authorization"
+  ],
+  "execution_ready": false,
+  "files": {
+    "research/rsi/design-registration-v1.json": "8a88ae443f58ecf3b438a7fd858424b0ec7c1565ddfc2d739408c82d3514341d",
+    "research/rsi/design-v2.md": "806e62fe7b821b84f7045fd508b7a6a7d781177650cd6713420bda16fccd8209"
+  },
+  "kind": "design_only",
+  "recorded_at_local": "2026-11-05T16:02:51+09:00",
+  "reference": {
+    "estimated_cost_usd_per_task": 0.4469,
+    "matched_compute": false,
+    "model": "Qwen3.8-27B",
+    "reasoning_effort": "xhigh",
+    "source": "https://arcprize.org/results/alibaba-qwen3-8-27b",
+    "split": "ARC-AGI-2 semi-private"
+  },
+  "source_commit": "201c69761b3c57ea3698eee5cf641f559719daa8",
+  "source_commit_role": "Parent commit before the version 2 amendment files.",
+  "supersedes": "research/rsi/design-registration-v1.json",
+  "timestamp_note": "Locally recorded time, not an independently witnessed timestamp."
+}
