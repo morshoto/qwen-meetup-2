@@ -59,7 +59,8 @@ not an execution gate or a complete live runner.
 `python -m src.arc.lt_score_cli --frozen FROZEN.json --receipt INPUTS.json
 --challenges CHALLENGES.json --solutions SOLUTIONS.json --sources SOURCES.json
 --prompt PROMPT --results RESULTS.jsonl` writes a JSON report to stdout only
-after rechecking the frozen selection and input receipt. `SOURCES.json` maps
+after rechecking the frozen selection and input receipt. Add `--format jsonl`
+for per-task records followed by one summary record. `SOURCES.json` maps
 stable inventory names to local file paths. Each result row must include the
 frozen `comparison_sha256`, model key (`14b` or `32b`), task ID, status,
 candidates, tokens, runtime and peak memory/swap values; use JSON null for
