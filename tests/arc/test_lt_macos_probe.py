@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.arc.lt_macos_probe import build_probe_profile
+from src.arc.lt_macos_probe import build_probe_profile, restrict_mach_lookup
 
 
 class ProfileTests(unittest.TestCase):
@@ -196,7 +196,7 @@ print(json.dumps(result))
             for sandboxed in (False, True):
                 command = [sys.executable, '-I', '-B', '-c', script]
                 if sandboxed:
-                    command = ['/usr/bin/sandbox-exec', '-p', profile, *command]
+                    command = ['/usr/bin/sandbox-exec', '-p', restrict_mach_lookup(profile), *command]
                 with self.subTest(sandboxed=sandboxed):
                     result = subprocess.run(command, env=env, cwd=root, close_fds=True, capture_output=True,
                                             text=True, timeout=30)
@@ -206,9 +206,6 @@ print(json.dumps(result))
                     self.assertEqual(actual['shape'], [1, 2, 32])
                     self.assertTrue(actual['finite'])
                     self.assertIn('gpu', actual['device'])
-
-
-if __name__ == '__main__': unittest.main()
 
 
 @unittest.skipUnless(platform.system() == 'Darwin' and Path('/usr/bin/sandbox-exec').exists(),
@@ -243,13 +240,23 @@ print(json.dumps({'lookup':r,'send':s}))
                 dirs = [os.path.realpath(directory), sys.prefix, sys.base_prefix,
                         str(Path(os.path.realpath(python)).parent.parent)]
                 profile = build_probe_profile(dirs, [os.path.realpath(directory)])['profile']
-                result = subprocess.run(['/usr/bin/sandbox-exec', '-p', profile, python, '-I', '-B',
-                                         '-c', script, name], capture_output=True, text=True,
-                                        close_fds=True, timeout=10)
-                self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(json.loads(result.stdout), {'lookup': 0, 'send': 0})
-                buffer = ctypes.create_string_buffer(1024)
-                self.assertEqual(system.mach_msg(buffer, 2 | 0x100, 0, len(buffer), port.value, 300, 0), 0)
-                self.assertEqual(ctypes.cast(buffer, ctypes.POINTER(uint))[5], 424242)
+                for restricted in (False, True):
+                    tested_profile = restrict_mach_lookup(profile) if restricted else profile
+                    result = subprocess.run(['/usr/bin/sandbox-exec', '-p', tested_profile, python, '-I', '-B',
+                                             '-c', script, name], capture_output=True, text=True,
+                                            close_fds=True, timeout=10)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    actual = json.loads(result.stdout)
+                    if restricted:
+                        self.assertNotEqual(actual['lookup'], 0)
+                        self.assertIsNone(actual['send'])
+                    else:
+                        self.assertEqual(actual, {'lookup': 0, 'send': 0})
+                        buffer = ctypes.create_string_buffer(1024)
+                        self.assertEqual(system.mach_msg(buffer, 2 | 0x100, 0, len(buffer), port.value, 300, 0), 0)
+                        self.assertEqual(ctypes.cast(buffer, ctypes.POINTER(uint))[5], 424242)
         finally:
             system.mach_port_destroy(task, port.value)
+
+
+if __name__ == '__main__': unittest.main()
