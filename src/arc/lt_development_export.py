@@ -51,3 +51,27 @@ def load_development_export(export: dict, receipt: dict) -> dict:
         raise ValueError('development export identity differs')
     return load_public_export({'comparison_sha256': export['development_manifest_sha256'], 'tasks': export['tasks']},
         {'comparison_sha256': receipt['development_manifest_sha256'], 'selected_task_sha256': receipt['selected_task_sha256']})
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    import sys
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ('challenges', 'exposure', 'manifest'):
+        parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--part', choices=('export', 'receipt'), required=True)
+    args = parser.parse_args(argv)
+    try:
+        export, receipt = build_development_export(args.challenges.read_bytes(), args.exposure.read_bytes(),
+                                                   _object(args.manifest.read_bytes()))
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        print(f'development export failed: {type(exc).__name__}', file=sys.stderr)
+        return 1
+    print(json.dumps(export if args.part == 'export' else receipt, sort_keys=True, allow_nan=False))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

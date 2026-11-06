@@ -1,6 +1,10 @@
 import copy
 import hashlib
 import json
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
 import unittest
 
 from src.arc.lt_development import build_development_manifest
@@ -32,6 +36,25 @@ class DevelopmentExportTests(unittest.TestCase):
         self.assertTrue(all(set(pair) == {'input'} for item in export['tasks'].values() for pair in item['test']))
         self.assertFalse(receipt['execution_ready'])
         self.assertEqual(receipt['purpose'], 'development_only')
+
+    def test_cli_outputs_public_development_document_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'tasks.json').write_bytes(self.challenges)
+            (root / 'exposure.json').write_bytes(self.registry)
+            (root / 'manifest.json').write_bytes(raw(self.manifest))
+            command = [sys.executable, '-m', 'src.arc.lt_development_export', '--challenges', str(root / 'tasks.json'),
+                       '--exposure', str(root / 'exposure.json'), '--manifest', str(root / 'manifest.json')]
+            exported = subprocess.run(command + ['--part', 'export'], capture_output=True, text=True)
+            receipt = subprocess.run(command + ['--part', 'receipt'], capture_output=True, text=True)
+            self.assertEqual(exported.returncode, 0, exported.stderr)
+            self.assertEqual(receipt.returncode, 0, receipt.stderr)
+            self.assertEqual(set(load_development_export(json.loads(exported.stdout), json.loads(receipt.stdout))),
+                             set(self.manifest['task_ids']))
+            (root / 'tasks.json').write_bytes(self.challenges + b' ')
+            failed = subprocess.run(command + ['--part', 'export'], capture_output=True, text=True)
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertEqual(failed.stdout, '')
 
     def test_rejects_tampered_sources_manifest_and_export(self):
         with self.assertRaises(ValueError): build_development_export(self.challenges + b' ', self.registry, self.manifest)
