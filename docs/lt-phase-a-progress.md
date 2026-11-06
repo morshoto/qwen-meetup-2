@@ -66,6 +66,10 @@ not an execution gate or a complete live runner.
 with `--part receipt` to obtain the input receipt. Both invocations validate
 the same inputs. Preserve their outputs before scoring or any experiment; these
 documents alone neither verify the loaded model nor permit live execution.
+The configuration also binds model names and full revisions, a loopback guarded
+server URL, a digest-pinned sandbox image and its resource limits. Component
+construction and guarded-server metadata checks only compare supplied settings;
+they do not authenticate a server, prove model identity or verify cleanup.
 
 `python -m src.arc.lt_score_cli --frozen FROZEN.json --receipt INPUTS.json
 --challenges CHALLENGES.json --solutions SOLUTIONS.json --sources SOURCES.json
