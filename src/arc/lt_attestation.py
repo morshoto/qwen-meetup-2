@@ -35,10 +35,18 @@ def _object(data: bytes) -> dict:
     return parsed
 
 
+def _file_sha(path: Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def source_digest(sources: Mapping[str, Path]) -> str:
     if not sources or any(not isinstance(name, str) or not name for name in sources):
         raise ValueError('source inventory is empty or invalid')
-    return _sha(_canonical({name: _sha(Path(path).read_bytes()) for name, path in sources.items()}))
+    return _sha(_canonical({name: _file_sha(path) for name, path in sources.items()}))
 
 
 def attest_inputs(frozen: dict, challenges_path: Path, solutions_path: Path,
@@ -67,3 +75,24 @@ def verify_inputs(receipt: dict, frozen: dict, challenges_path: Path, solutions_
                   sources: Mapping[str, Path], prompt_path: Path) -> None:
     if receipt != attest_inputs(frozen, challenges_path, solutions_path, sources, prompt_path):
         raise ValueError('input attestation differs')
+
+
+def attest_model_runtime(frozen: dict, model: str, model_files: Mapping[str, Path],
+                         runtime_files: Mapping[str, Path]) -> dict:
+    """Check supplied inventories; does not prove inventories are complete or loaded."""
+    verify_manifest(frozen)
+    if model not in ('14b', '32b'):
+        raise ValueError('invalid model')
+    model_sha, runtime_sha = source_digest(model_files), source_digest(runtime_files)
+    config = frozen['config']
+    if model_sha != config['model_files_sha256'][model] or runtime_sha != config['runtime_sha256']:
+        raise ValueError('model or runtime identity differs')
+    return {'comparison_sha256': frozen['sha256'], 'model': model, 'revision': config['models'][model],
+            'model_files_sha256': model_sha, 'runtime_sha256': runtime_sha,
+            'inventory_completeness_verified': False, 'loaded_identity_verified': False}
+
+
+def verify_model_runtime(receipt: dict, frozen: dict, model: str, model_files: Mapping[str, Path],
+                         runtime_files: Mapping[str, Path]) -> None:
+    if receipt != attest_model_runtime(frozen, model, model_files, runtime_files):
+        raise ValueError('model runtime receipt differs')

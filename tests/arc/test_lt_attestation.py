@@ -6,7 +6,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from src.arc.lt_attestation import source_digest, attest_inputs, verify_inputs
+from src.arc.lt_attestation import source_digest, attest_inputs, verify_inputs, attest_model_runtime, verify_model_runtime
 from src.arc.lt_comparison import make_manifest, freeze_manifest
 
 
@@ -50,6 +50,26 @@ class InputAttestationTests(unittest.TestCase):
         self.solution.write_text(self.solution.read_text() + ' ')
         with self.assertRaises(ValueError):
             verify_inputs(receipt, self.frozen, self.challenge, self.solution, self.sources, self.prompt)
+
+    def test_model_and_runtime_files_must_match_registered_hashes(self):
+        model14 = self.challenge.parent / 'model14'
+        model32 = self.challenge.parent / 'model32'
+        runtime = self.challenge.parent / 'runtime'
+        model14.write_bytes(b'14b weights and tokenizer fixture')
+        model32.write_bytes(b'32b weights and tokenizer fixture')
+        runtime.write_bytes(b'local runtime fixture')
+        config = dict(self.frozen['config'])
+        config['model_files_sha256'] = {'14b': source_digest({'model': model14}),
+                                        '32b': source_digest({'model': model32})}
+        config['runtime_sha256'] = source_digest({'runtime': runtime})
+        frozen = freeze_manifest(self.frozen['manifest'], config)
+        receipt = attest_model_runtime(frozen, '14b', {'model': model14}, {'runtime': runtime})
+        verify_model_runtime(receipt, frozen, '14b', {'model': model14}, {'runtime': runtime})
+        model14.write_bytes(b'changed weights')
+        with self.assertRaises(ValueError):
+            verify_model_runtime(receipt, frozen, '14b', {'model': model14}, {'runtime': runtime})
+        with self.assertRaises(ValueError):
+            attest_model_runtime(frozen, '32b', {'model': model14}, {'runtime': runtime})
 
     def test_offline_cli_scores_bound_predictions_and_rejects_changed_answers(self):
         root = self.challenge.parent
