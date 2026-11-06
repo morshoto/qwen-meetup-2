@@ -1,6 +1,6 @@
 # LT Phase A: Qwen ARC comparison status
 
-**Status as of 2026-11-06: incomplete. No ARC comparison was run.** This is
+**Status as of 2026-11-06: the 200-task comparison is incomplete.** This is
 an exploratory protocol separate from the original RSI experiment in issue #2.
 
 | Measure | Qwen3-14B | Qwen3-32B |
@@ -11,6 +11,20 @@ an exploratory protocol separate from the original RSI experiment in issue #2.
 | Task-level pass@1 / pass@2 | Not measured | Not measured |
 | Test-output accuracy | Not measured | Not measured |
 | Tokens, runtime, peak memory and swap | Not measured | Not measured |
+
+A separate real 14B direct-grid development run (`lt-dev-20261106-direct-01`)
+at revision `a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4` attempted three
+known-exposed tasks with two candidates each. The trusted scorer recorded
+0/3 task-level pass@1 and 0/3 pass@2: `84db8fc4`, `a64e4611`, and `e5c44e8f`
+all failed because neither candidate conformed to the agent output schema.
+Four responses used output objects rather than grids; two were truncated at
+the 2,048-token limit. This is a development format result, not the frozen
+comparison. The run recorded 37,695 total prompt and generated tokens, 367.8
+seconds across tasks, and 11.12 GB process-reported peak memory; swap was not
+measured. The launched model process exited with code zero and its recorded
+PIDs were absent afterward; external Metal service cleanup was not verified.
+No generated Python or Docker containers were used. Local raw responses and
+scores are in `artifacts/lt-dev-20261106-direct-01/`.
 
 Zero attempts is not a zero-percent accuracy result. No baseline or model
 ranking can be inferred, and no ARC improvement, training success or official
@@ -32,8 +46,7 @@ settings and fixture journaling. A local synthetic container probe returned and
 timed out as expected, with neither probed container listed afterward. These
 are not real-model ARC results or independent proof of containment and cleanup.
 The live runner, loaded-model identity, evaluator isolation and owned-process
-cleanup remain unverified, so development inference and the comparison have
-not started. [Details and current evidence](lt-phase-a-progress.md).
+cleanup remain unverified, so the frozen comparison has not started. [Details and current evidence](lt-phase-a-progress.md).
 
 Next, establish the local execution and cleanup boundary, demonstrate the
 existing agent on development-only data, and freeze the task and model/run
