@@ -177,12 +177,21 @@ print(json.dumps(result))
     @unittest.skipUnless(platform.system() == 'Darwin' and os.environ.get('LT_PROBE_MLX') == '1',
                          'requires explicit offline MLX probe')
     def test_synthetic_mlx_gpu_works_under_proposed_profile(self):
-        script = ('import json,mlx_lm,mlx.core as mx; x=mx.array([1,2,3]); y=x+2; mx.eval(y); '
-                  'print(json.dumps({"device":str(mx.default_device()),"result":y.tolist()}))')
+        script = ('import json,mlx_lm,mlx.core as mx; from mlx_lm.models.qwen3 import Model,ModelArgs; '
+                  'x=mx.array([1,2,3]); y=x+2; '
+                  'a=ModelArgs(model_type="qwen3",hidden_size=16,num_hidden_layers=1,intermediate_size=32,'
+                  'num_attention_heads=2,rms_norm_eps=1e-6,vocab_size=32,num_key_value_heads=2,'
+                  'max_position_embeddings=32,rope_theta=10000,head_dim=8,tie_word_embeddings=True); '
+                  'logits=Model(a)(mx.array([[1,2]])); mx.eval(y,logits); '
+                  'print(json.dumps({"device":str(mx.default_device()),"result":y.tolist(),'
+                  '"shape":list(logits.shape),"finite":bool(mx.all(mx.isfinite(logits)).item())}))')
         with tempfile.TemporaryDirectory(prefix='lt-mlx-probe-') as directory:
             root = os.path.realpath(directory)
-            roots = [root, sys.prefix, sys.base_prefix, os.path.expanduser('~/.cache/uv/archive-v0')]
-            profile = build_probe_profile(roots, [root])['profile']
+            cache_base = subprocess.check_output(['/usr/bin/getconf', 'DARWIN_USER_CACHE_DIR'], text=True).strip()
+            metal_cache = os.path.realpath(os.path.join(cache_base, 'org.python.python', 'com.apple.metalfe'))
+            roots = [root, sys.prefix, sys.base_prefix, os.path.expanduser('~/.cache/uv/archive-v0'), metal_cache]
+            profile = build_probe_profile(roots, [root, metal_cache])['profile']
+            profile += ' (allow file-issue-extension (subpath ' + json.dumps(metal_cache) + '))'
             env = {'PATH': '/usr/bin:/bin', 'TMPDIR': root, 'HOME': root}
             for sandboxed in (False, True):
                 command = [sys.executable, '-I', '-B', '-c', script]
@@ -194,6 +203,8 @@ print(json.dumps(result))
                     self.assertEqual(result.returncode, 0, result.stderr)
                     actual = json.loads(result.stdout)
                     self.assertEqual(actual['result'], [3, 4, 5])
+                    self.assertEqual(actual['shape'], [1, 2, 32])
+                    self.assertTrue(actual['finite'])
                     self.assertIn('gpu', actual['device'])
 
 
