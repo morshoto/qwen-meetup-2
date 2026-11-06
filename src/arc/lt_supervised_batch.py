@@ -22,7 +22,7 @@ def supervised_batch(journal, model, limit, worker, on_result=None):
                 raise ValueError('worker result identity differs')
         elif status in ('timeout', 'error'):
             row = {'task_id':task_id, 'model':model, 'status':status, 'candidates':[],
-                   'tokens':None, 'runtime_seconds':None, 'peak_memory_bytes':None,
+                   'tokens':None, 'runtime_seconds':observation.get('elapsed_seconds'), 'peak_memory_bytes':None,
                    'peak_swap_bytes':None, 'calls':[]}
         else: raise ValueError('unknown worker status')
         row['worker_diagnostics'] = {'stdout':observation.get('stdout'), 'stderr':observation.get('stderr')}
