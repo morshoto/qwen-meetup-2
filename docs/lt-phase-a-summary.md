@@ -1,6 +1,6 @@
 # LT Phase A: Qwen ARC comparison status
 
-**Status as of 2026-11-07: incomplete.** Qwen3-14B has completed all 200 frozen tasks; Qwen3-32B has completed 40 tasks. The complete 14B result is pass@1 3/200 and pass@2 3/200, with 328/400 valid candidates, 72 invalid candidates, zero timeouts, 1,264,719 tokens, 13,160.9 seconds summed runtime, 11.07 GB process-reported peak memory, and swap unavailable. At 40/200 tasks, 32B is at pass@1 1/40 and pass@2 1/40, with 65/80 valid candidates, 15 invalid candidates, zero timeouts, 290,404 tokens, 6,777.5 seconds summed runtime, 22.61 GB peak memory, and swap unavailable. Exact candidate-response duplicates occurred on 147/200 14B tasks and 10/40 32B tasks, so pass@2 counts recorded attempts and is not evidence of independent sampling. Checkpoint evidence and the frozen manifest are documented in [the progress record](lt-phase-a-progress.md) and `artifacts/lt-phase-a-frozen-20261107-01/`.
+**Status as of 2026-11-07: incomplete.** Qwen3-14B has completed all 200 frozen tasks; Qwen3-32B has completed 50 tasks. The complete 14B result is pass@1 3/200 and pass@2 3/200, with 328/400 valid candidates, 72 invalid candidates, zero timeouts, 1,264,719 tokens, 13,160.9 seconds summed runtime, 11.07 GB process-reported peak memory, and swap unavailable. At 50/200 tasks, 32B is at pass@1 1/50 and pass@2 1/50, with 85/100 valid candidates, 15 invalid candidates, zero timeouts, 336,976 tokens, 7,547.3 seconds summed runtime, 22.61 GB peak memory, and swap unavailable. Exact candidate-response duplicates occurred on 147/200 14B tasks and 14/50 32B tasks, so pass@2 counts recorded attempts and is not evidence of independent sampling. Checkpoint evidence and the frozen manifest are documented in [the progress record](lt-phase-a-progress.md) and `artifacts/lt-phase-a-frozen-20261107-01/`.
 
 This is an exploratory protocol separate from the original RSI experiment in issue #2. The Phase A run uses the frozen 200-task set, direct-grid agent, two candidates per task, a 4,096-token limit, and sequential model runs. Its 14B task allocation excludes development and Phase B tasks; the official public evaluation remains reserved for Phase C.
 
@@ -8,11 +8,11 @@ This is an exploratory protocol separate from the original RSI experiment in iss
 | --- | --- | --- |
 | Planned comparison tasks | 200 | 200 |
 | Frozen comparison task IDs | 200 | 200 |
-| Tasks completed | 200 | 40 |
-| Scored checkpoint | 200 | 40; partial |
-| Task-level pass@1 / pass@2 at checkpoint | 3/200 / 3/200 | 1/40 / 1/40 |
-| Valid candidates at checkpoint | 328/400 | 65/80 |
-| Tokens, runtime, peak memory and swap at checkpoint | 1,264,719; 13,160.9 s; 11.07 GB; null | 290,404; 6,777.5 s; 22.61 GB; null |
+| Tasks completed | 200 | 50 |
+| Scored checkpoint | 200 | 50; partial |
+| Task-level pass@1 / pass@2 at checkpoint | 3/200 / 3/200 | 1/50 / 1/50 |
+| Valid candidates at checkpoint | 328/400 | 85/100 |
+| Tokens, runtime, peak memory and swap at checkpoint | 1,264,719; 13,160.9 s; 11.07 GB; null | 336,976; 7,547.3 s; 22.61 GB; null |
 
 A separate real 14B direct-grid development run (`lt-dev-20261106-direct-01`)
 at revision `a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4` attempted three
