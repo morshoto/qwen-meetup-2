@@ -113,13 +113,18 @@ def run_fixture_model(root: Path, frozen: dict, receipt: dict, public_export: di
                             if previous_callback:
                                 previous_callback(event)
                         backend.event_callback = capture
+                    interrupted = None
                     try:
                         row = run_bounded_task(tasks[task_id], backend, sandbox, budget,
                                                max_tokens=config['max_tokens'], max_repairs=config['max_repairs'])
+                    except KeyboardInterrupt as exc:
+                        interrupted = exc
+                        row = {'task_id': task_id, 'status': 'aborted', 'candidates': []}
                     finally:
                         if has_callback:
                             backend.event_callback = previous_callback
-                    tokens = _usage_total(events, budget.state['calls'] - calls_before)
+                    tokens = (None if interrupted is not None else
+                              _usage_total(events, budget.state['calls'] - calls_before))
                     row.update(model=model, comparison_sha256=frozen['sha256'], tokens=tokens,
                                runtime_seconds=time.monotonic() - started, peak_memory_bytes=None,
                                peak_swap_bytes=None)
@@ -129,6 +134,8 @@ def run_fixture_model(root: Path, frozen: dict, receipt: dict, public_export: di
                     stream.flush()
                     os.fsync(fd)
                     attempted += 1
+                    if interrupted is not None:
+                        raise interrupted
                     if row['status'] != 'complete':
                         break
         except BaseException as exc:
