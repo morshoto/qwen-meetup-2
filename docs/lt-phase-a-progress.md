@@ -91,8 +91,11 @@ and writes only the selected public tasks to stdout. It verifies task hashes and
 rejects any test-output fields. This export reduces data passed to the solver;
 it is not evidence of filesystem, network, or process isolation. The
 `run_fixture_model` journal writes owner-only started markers and per-task
-results and refuses to reuse a started model run. It records unknown token and
-memory values as null. Its input components and results remain unverified fixture
+results and refuses to reuse a started model run. Model-specific terminal
+records bind the task inventory, configuration identities and result-file hash;
+a consistency audit remains explicitly unverified. Token totals are recorded
+only when every reserved request reports consistent usage. Unknown token and
+memory values remain null. Its input components and results remain unverified fixture
 evidence; no live launcher or cleanup gate is provided by this helper.
 
 ## Synthetic Docker probe (2026-11-06 JST)
