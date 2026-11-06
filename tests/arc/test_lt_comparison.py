@@ -24,8 +24,6 @@ class ComparisonTests(unittest.TestCase):
                                protected=protected, dataset_sha256='a' * 64)
         self.assertEqual(result['protected_exclusions'], sorted(protected))
         self.assertTrue(set(result['task_ids']).isdisjoint(protected))
-        config_test = {'task_ids': result['task_ids'], 'status': 'proposal'}
-        with self.assertRaises(ValueError): freeze_manifest(config_test, {})
 
     def test_manifest_rejects_duplicates_and_insufficient_tasks(self):
         with self.assertRaises(ValueError):
@@ -50,6 +48,11 @@ class ComparisonTests(unittest.TestCase):
                   'max_seconds_per_task': 120}}
         frozen = freeze_manifest(proposal, config)
         verify_manifest(frozen)
+        missing = dict(proposal)
+        del missing['protected_exclusions']
+        with self.assertRaises(ValueError): freeze_manifest(missing, config)
+        overlapping = {**proposal, 'protected_exclusions': [proposal['task_ids'][0]]}
+        with self.assertRaises(ValueError): freeze_manifest(overlapping, config)
         frozen['config']['max_tokens'] = 1001
         with self.assertRaises(ValueError): verify_manifest(frozen)
 
