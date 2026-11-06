@@ -83,6 +83,9 @@ def score_comparison(task_ids: list[str], rows: list[dict[str, Any]], verifier: 
             'status': 'complete' if len(attempted) == len(task_ids) and
                 all(row['status'] == 'complete' for row in attempted) else 'incomplete',
             'selected': len(task_ids), 'attempted': len(attempted),
+            'candidate_denominator': sum(len(indexed[(model, row['task_id'])]['candidates']) for row in attempted),
+            'valid_candidates': sum(len(indexed[(model, row['task_id'])]['candidates']) - row['invalid'] - row['timeouts'] for row in attempted),
+            'planned_candidates': len(task_ids) * 2,
             'pass_at_1': sum(row['pass_at_1'] is True for row in model_rows),
             'pass_at_1_denominator': sum(row['pass_at_1'] is not None for row in model_rows),
             'pass_at_2': sum(row['pass_at_2'] is True for row in model_rows),
