@@ -60,3 +60,27 @@ def check_protected_allocation(proposal: dict, registry_bytes: bytes, split_byte
             'development_manifest_sha256': _sha(json.dumps(development, sort_keys=True,
                 separators=(',', ':'), allow_nan=False).encode()),
             'training_ids_sha256': _sha(json.dumps(sorted(training), separators=(',', ':')).encode())}
+
+
+def build_comparison_proposal(challenge_bytes: bytes, registry_bytes: bytes, split_bytes: bytes,
+                              development: dict, training_task_ids: list[str], *, seed: int) -> tuple[dict, dict]:
+    """Derive exclusions from supplied evidence; the result is not execution-ready."""
+    if (not isinstance(challenge_bytes, bytes) or not isinstance(registry_bytes, bytes) or
+            not isinstance(split_bytes, bytes) or not isinstance(development, dict) or
+            not isinstance(training_task_ids, list) or
+            any(not isinstance(x, str) or not x for x in training_task_ids) or
+            len(training_task_ids) != len(set(training_task_ids))):
+        raise ValueError('invalid proposal inputs')
+    tasks, registry, split = _object(challenge_bytes), _object(registry_bytes), _object(split_bytes)
+    try:
+        universe = registry['partitions']['generation'] + registry['partitions']['development']
+        if _sha(challenge_bytes) != registry['task_source_sha256'] or set(tasks) != set(universe):
+            raise ValueError('training source differs from prior registry')
+        proposal = make_manifest(list(tasks), seed=seed, development=set(development['task_ids']),
+            training=set(training_task_ids), exposures=set(registry['known_exposed_task_ids']),
+            protected=set(split['confirmatory_task_ids']) | set(split['exploratory_task_ids']),
+            dataset_sha256=_sha(challenge_bytes))
+        audit = check_protected_allocation(proposal, registry_bytes, split_bytes, development, training_task_ids)
+    except (KeyError, TypeError) as exc:
+        raise ValueError('invalid proposal evidence') from exc
+    return proposal, audit
