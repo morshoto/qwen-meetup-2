@@ -6,7 +6,7 @@ from pathlib import Path
 
 from src.arc.http_backend import BackendError
 from src.arc.lt_comparison import freeze_manifest, make_manifest
-from src.arc.lt_journal import run_fixture_model, audit_fixture_run
+from src.arc.lt_journal import run_fixture_model, audit_fixture_run, _usage_total
 from src.arc.lt_public import build_public_export
 from src.arc.sandbox import FakeSandbox, IDENTITY_CODE
 
@@ -55,6 +55,31 @@ class JournalTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             run_fixture_model(self.root, self.frozen, self.receipt, self.export, '14b', backend, FakeSandbox())
         self.assertEqual(backend.calls, 5)
+
+    def test_token_accounting_requires_usage_for_every_reserved_request(self):
+        events = [{'usage': {'prompt_tokens': 5, 'completion_tokens': 2, 'total_tokens': 7}},
+                  {'usage': {'total_tokens': 3}}]
+        self.assertEqual(_usage_total(events, 2), 10)
+        self.assertIsNone(_usage_total(events, 3))
+        self.assertIsNone(_usage_total([{'usage': None}], 1))
+        self.assertIsNone(_usage_total([{'usage': {'prompt_tokens': 2, 'completion_tokens': 2, 'total_tokens': 3}}], 1))
+        self.assertIsNone(_usage_total([{'usage': {'total_tokens': True}}], 1))
+        self.assertIsNone(_usage_total([{'usage': {'prompt_tokens': 8, 'total_tokens': 3}}], 1))
+
+    def test_journal_records_observed_per_task_usage(self):
+        class Backend:
+            event_callback = None
+            def __init__(self): self.calls = 0
+            def generate(self, prompt, *, kind, candidate):
+                self.calls += 1
+                if self.event_callback: self.event_callback({'usage': {'total_tokens': 7}})
+                if self.calls == 5: raise BackendError('unavailable', 'fixture')
+                return 'copy input' if kind == 'analysis' else IDENTITY_CODE
+        result = run_fixture_model(self.root, self.frozen, self.receipt, self.export,
+                                   '14b', Backend(), FakeSandbox())
+        rows = [json.loads(line) for line in (self.root / '14b.results.jsonl').read_text().splitlines()]
+        self.assertEqual([r['tokens'] for r in rows], [28, 7])
+        self.assertEqual(result['status'], 'incomplete')
 
     def test_model_manifest_binds_journal_and_detects_tampering(self):
         class Backend:

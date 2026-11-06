@@ -18,6 +18,32 @@ from src.arc.lt_public import load_public_export
 from src.arc.rsi_slot_lifecycle import _create, _directory, _read
 
 
+def _usage_total(events: list, reserved_calls: int) -> int | None:
+    if type(reserved_calls) is not int or reserved_calls <= 0 or len(events) != reserved_calls:
+        return None
+    total = 0
+    for event in events:
+        usage = event.get('usage') if isinstance(event, dict) else None
+        if not isinstance(usage, dict):
+            return None
+        counts = {k: usage[k] for k in ('prompt_tokens', 'completion_tokens', 'total_tokens') if k in usage}
+        if any(type(v) is not int or v < 0 for v in counts.values()):
+            return None
+        if 'total_tokens' in counts:
+            if counts['total_tokens'] < max(counts.get('prompt_tokens', 0), counts.get('completion_tokens', 0)):
+                return None
+            if ('prompt_tokens' in counts and 'completion_tokens' in counts and
+                    counts['total_tokens'] != counts['prompt_tokens'] + counts['completion_tokens']):
+                return None
+            value = counts['total_tokens']
+        elif 'prompt_tokens' in counts and 'completion_tokens' in counts:
+            value = counts['prompt_tokens'] + counts['completion_tokens']
+        else:
+            return None
+        total += value
+    return total
+
+
 def run_fixture_model(root: Path, frozen: dict, receipt: dict, public_export: dict,
                       model: str, backend: Any, sandbox: Any) -> dict:
     verify_manifest(frozen)
@@ -49,9 +75,24 @@ def run_fixture_model(root: Path, frozen: dict, receipt: dict, public_export: di
                     _create(directory, f'{model}.task-{index:03d}.started.json',
                             {'model': model, 'comparison_sha256': frozen['sha256'], 'task_id': task_id})
                     started = time.monotonic()
-                    row = run_bounded_task(tasks[task_id], backend, sandbox, budget,
-                                           max_tokens=config['max_tokens'], max_repairs=config['max_repairs'])
-                    row.update(model=model, comparison_sha256=frozen['sha256'], tokens=None,
+                    calls_before = budget.state['calls']
+                    events = []
+                    has_callback = hasattr(backend, 'event_callback')
+                    previous_callback = getattr(backend, 'event_callback', None)
+                    if has_callback:
+                        def capture(event):
+                            events.append(event)
+                            if previous_callback:
+                                previous_callback(event)
+                        backend.event_callback = capture
+                    try:
+                        row = run_bounded_task(tasks[task_id], backend, sandbox, budget,
+                                               max_tokens=config['max_tokens'], max_repairs=config['max_repairs'])
+                    finally:
+                        if has_callback:
+                            backend.event_callback = previous_callback
+                    tokens = _usage_total(events, budget.state['calls'] - calls_before)
+                    row.update(model=model, comparison_sha256=frozen['sha256'], tokens=tokens,
                                runtime_seconds=time.monotonic() - started, peak_memory_bytes=None,
                                peak_swap_bytes=None)
                     line = (json.dumps(row, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode()
