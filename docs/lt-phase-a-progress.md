@@ -474,3 +474,22 @@ pass metrics, 33,292 tokens, 313.3 seconds of task inference and 11.07 GB
 process-reported peak memory. Swap was not sampled. The validation used only
 public task exports and did not execute generated code. Local worker and result
 records are under `artifacts/lt-batch-dev-20261107-01/`.
+
+## Frozen Phase A comparison
+
+The direct-grid comparison registration is `ac03cb7a0f9d2d56c8ed03586d474e0db5cc319acc7b6668f20221e7b6672a48`,
+with the reviewable registration in `configs/lt.phase-a.frozen.json` and local
+public export and journal in `artifacts/lt-phase-a-frozen-20261107-01/`.
+It fixes 200 task IDs, both model file inventories, code and scorer hashes,
+thinking off, two candidate requests, temperature 0.6, 4,096 generated tokens
+per request, a 1,800-second task deadline and an MLX working-memory limit of
+48 GiB. Seeds are requested but independence is unverified; swap is not sampled.
+
+Each `run` invocation processes up to ten tasks. The 32B run cannot begin until
+all 14B tasks have terminal records. A task whose worker was interrupted stops
+the journal; `reconcile --model MODEL --task TASK` checks the recorded process
+group before recovering an already completed worker output or preserving a
+partial attempt for retry. No automatic retry occurs if process evidence is
+missing or the group still exists. The offline `lt_benchmark_score` command
+reports actual attempted and candidate denominators without fabricating results.
+These checks cover the owned task process group, not macOS system services.
