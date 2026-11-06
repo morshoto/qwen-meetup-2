@@ -209,3 +209,47 @@ print(json.dumps(result))
 
 
 if __name__ == '__main__': unittest.main()
+
+
+@unittest.skipUnless(platform.system() == 'Darwin' and Path('/usr/bin/sandbox-exec').exists(),
+                     'Darwin sandbox required')
+class MachServiceProbeTests(unittest.TestCase):
+    def test_synthetic_profile_can_message_independent_mach_service(self):
+        import ctypes
+        import uuid
+
+        system = ctypes.CDLL('/usr/lib/libSystem.B.dylib')
+        uint = ctypes.c_uint32
+        task = uint.in_dll(system, 'mach_task_self_').value
+        bootstrap = uint.in_dll(system, 'bootstrap_port').value
+        port = uint()
+        self.assertEqual(system.mach_port_allocate(task, 1, ctypes.byref(port)), 0)
+        try:
+            self.assertEqual(system.mach_port_insert_right(task, port.value, port.value, 20), 0)
+            name = 'com.lt-probe.' + uuid.uuid4().hex
+            self.assertEqual(system.bootstrap_register(bootstrap, name.encode(), port.value), 0)
+            script = '''import ctypes,json,sys
+L=ctypes.CDLL('/usr/lib/libSystem.B.dylib'); u=ctypes.c_uint32
+b=u.in_dll(L,'bootstrap_port').value; p=u()
+r=L.bootstrap_look_up(b,sys.argv[1].encode(),ctypes.byref(p))
+class H(ctypes.Structure):
+ _fields_=[(n,u) for n in ('bits','size','remote','local','voucher','id')]
+h=H(19,ctypes.sizeof(H),p.value,0,0,424242)
+s=L.mach_msg(ctypes.byref(h),1,ctypes.sizeof(h),0,0,0,0) if r==0 else None
+print(json.dumps({'lookup':r,'send':s}))
+'''
+            with tempfile.TemporaryDirectory(prefix='lt-mach-') as directory:
+                python = '/opt/homebrew/bin/python3.12' if Path('/opt/homebrew/bin/python3.12').exists() else sys.executable
+                dirs = [os.path.realpath(directory), sys.prefix, sys.base_prefix,
+                        str(Path(os.path.realpath(python)).parent.parent)]
+                profile = build_probe_profile(dirs, [os.path.realpath(directory)])['profile']
+                result = subprocess.run(['/usr/bin/sandbox-exec', '-p', profile, python, '-I', '-B',
+                                         '-c', script, name], capture_output=True, text=True,
+                                        close_fds=True, timeout=10)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout), {'lookup': 0, 'send': 0})
+                buffer = ctypes.create_string_buffer(1024)
+                self.assertEqual(system.mach_msg(buffer, 2 | 0x100, 0, len(buffer), port.value, 300, 0), 0)
+                self.assertEqual(ctypes.cast(buffer, ctypes.POINTER(uint))[5], 424242)
+        finally:
+            system.mach_port_destroy(task, port.value)
