@@ -288,3 +288,12 @@ for the public export, and
 for its receipt. No export was persisted or sent to a model. These hashes
 identify a local proposal, not independently verified data provenance or a
 completed development run.
+
+`python -m src.arc.lt_development_score` scores recorded development-only
+predictions separately from comparison results. It rechecks the development
+receipt and local source identities, accepts only selected task IDs, reads the
+solutions only in the offline scorer, and marks its report ineligible for a
+comparison claim. A local wiring check used the three proposed tasks with an
+empty prediction file: both model summaries reported three selected, zero
+attempted and zero pass@1/pass@2 denominators. No predictions were fabricated,
+no accuracy was calculated, and the temporary report was not persisted.
