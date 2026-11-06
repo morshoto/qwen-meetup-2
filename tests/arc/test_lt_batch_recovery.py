@@ -21,3 +21,11 @@ class RecoveryTests(unittest.TestCase):
             _create(root/'a.process.json',{'task_id':'a','identity':'id','pid':12345})
             with patch('src.arc.lt_batch_recovery.os.killpg',return_value=None), self.assertRaises(ValueError): reconcile(j,'a')
             with self.assertRaises(ValueError): j.pending(1)
+    def test_complete_worker_output_is_committed_without_retry(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);j=BatchJournal(root,['a'],'id:14b');j.start('a')
+            _create(root/'a.process.json',{'task_id':'a','identity':'id:14b','pid':12345})
+            _create(root/'a.worker.json',{'task_id':'a','model':'14b','status':'complete','candidates':[[[[1]]],[[[1]]]],'tokens':1,'runtime_seconds':1,'peak_memory_bytes':1,'peak_swap_bytes':None})
+            with patch('src.arc.lt_batch_recovery.os.killpg',side_effect=ProcessLookupError): reconcile(j,'a')
+            self.assertEqual(j.pending(1),[])
+            self.assertEqual(json.loads((root/'a.result.json').read_text())['status'],'complete')
