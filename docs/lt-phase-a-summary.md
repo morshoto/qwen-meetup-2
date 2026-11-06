@@ -1,6 +1,6 @@
 # LT Phase A: Qwen ARC comparison status
 
-**Status as of 2026-11-07: incomplete.** Qwen3-14B has completed 130 of 200 frozen tasks; Qwen3-32B has not started. At the scored 120-task checkpoint, pass@1 and pass@2 were each 1/120, with 200/240 valid candidates, 40 invalid candidates, zero timeouts, 785,053 tokens, 8,334.9 seconds summed runtime, 11.07 GB process-reported peak memory, and swap unavailable. The 200-task comparison is not complete and these are not final scores. Full checkpoint evidence and the frozen manifest are documented in [the progress record](lt-phase-a-progress.md) and `artifacts/lt-phase-a-frozen-20261107-01/`.
+**Status as of 2026-11-07: incomplete.** Qwen3-14B has completed 150 of 200 frozen tasks; Qwen3-32B has not started. At the scored 150-task checkpoint, pass@1 and pass@2 were each 3/150, with 249/300 valid candidates, 51 invalid candidates, zero timeouts, 956,787 tokens, 9,964.4 seconds summed runtime, 11.07 GB process-reported peak memory, and swap unavailable. These are partial scores. Full checkpoint evidence and the frozen manifest are documented in [the progress record](lt-phase-a-progress.md) and `artifacts/lt-phase-a-frozen-20261107-01/`.
 
 This is an exploratory protocol separate from the original RSI experiment in issue #2. The Phase A run uses the frozen 200-task set, direct-grid agent, two candidates per task, a 4,096-token limit, and sequential model runs. Its 14B task allocation excludes development and Phase B tasks; the official public evaluation remains reserved for Phase C.
 
@@ -8,11 +8,11 @@ This is an exploratory protocol separate from the original RSI experiment in iss
 | --- | --- | --- |
 | Planned comparison tasks | 200 | 200 |
 | Frozen comparison task IDs | 200 | 200 |
-| Tasks completed | 130 | 0 |
-| Scored checkpoint | 120 | Not started |
-| Task-level pass@1 / pass@2 at checkpoint | 1/120 / 1/120 | Not measured |
-| Valid candidates at checkpoint | 200/240 | Not measured |
-| Tokens, runtime, peak memory and swap at checkpoint | 785,053; 8,334.9 s; 11.07 GB; null | Not measured |
+| Tasks completed | 150 | 0 |
+| Scored checkpoint | 150 | Not started |
+| Task-level pass@1 / pass@2 at checkpoint | 3/150 / 3/150 | Not measured |
+| Valid candidates at checkpoint | 249/300 | Not measured |
+| Tokens, runtime, peak memory and swap at checkpoint | 956,787; 9,964.4 s; 11.07 GB; null | Not measured |
 
 A separate real 14B direct-grid development run (`lt-dev-20261106-direct-01`)
 at revision `a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4` attempted three
