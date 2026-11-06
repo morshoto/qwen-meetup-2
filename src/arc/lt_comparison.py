@@ -97,6 +97,20 @@ def run_task(task: Any, backend: Any, sandbox: Any, *, max_repairs: int) -> dict
     return {'task_id': task.id, 'status': 'complete', 'candidates': candidates}
 
 
+def run_bounded_task(task: Any, backend: Any, sandbox: Any, budget: Any, *,
+                     max_tokens: int, max_repairs: int) -> dict[str, Any]:
+    """Apply existing in-process reservations; this does not prove containment."""
+    from src.arc.search import BudgetedBackend, BudgetedSandbox, SearchBudget
+    if (not isinstance(budget, SearchBudget) or type(max_tokens) is not int or max_tokens <= 0 or
+            (hasattr(backend, 'max_tokens') and backend.max_tokens != max_tokens) or
+            getattr(backend, 'reserve', None) is not None or
+            getattr(sandbox, 'reserve', None) is not None):
+        raise ValueError('invalid or conflicting budget configuration')
+    scope = task.id
+    return run_task(task, BudgetedBackend(backend, budget, scope, max_tokens=max_tokens),
+                    BudgetedSandbox(sandbox, budget, scope), max_repairs=max_repairs)
+
+
 def summarize(task_ids: list[str], rows: list[dict[str, Any]], verifier: Verifier) -> dict[str, Any]:
     if len(task_ids) != len(set(task_ids)):
         raise ValueError('duplicate selected task')

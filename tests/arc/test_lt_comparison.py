@@ -2,7 +2,7 @@ import unittest
 
 from src.arc.data import Task, Verifier
 from src.arc.sandbox import FakeSandbox, IDENTITY_CODE
-from src.arc.lt_comparison import make_manifest, summarize, freeze_manifest, verify_manifest, run_task
+from src.arc.lt_comparison import make_manifest, summarize, freeze_manifest, verify_manifest, run_task, run_bounded_task
 
 
 class ComparisonTests(unittest.TestCase):
@@ -85,6 +85,57 @@ class ComparisonTests(unittest.TestCase):
         result = run_task(task, Backend(), FakeSandbox(), max_repairs=0)
         self.assertEqual(result['status'], 'error')
         self.assertEqual(result['candidates'], [])
+
+    def test_bounded_task_stops_before_exceeding_model_call_limit(self):
+        from src.arc.search import SearchBudget
+        class Backend:
+            def __init__(self): self.calls = 0
+            def generate(self, prompt, *, kind, candidate):
+                self.calls += 1
+                return 'copy input'
+        task = Task('x', (([[1]], [[1]]),), ([[2]],))
+        backend = Backend()
+        budget = SearchBudget(max_seconds=60, max_calls=1, max_tokens=100000,
+                              max_sandbox_starts=10, max_calls_per_task=1,
+                              max_tokens_per_task=100000, max_sandbox_per_task=10,
+                              max_seconds_per_task=60)
+        result = run_bounded_task(task, backend, FakeSandbox(), budget, max_tokens=500, max_repairs=0)
+        self.assertEqual(backend.calls, 1)
+        self.assertEqual(result['status'], 'error')
+        self.assertEqual(budget.finish()['calls'], 1)
+        self.assertEqual(budget.finish()['sandbox_starts'], 0)
+
+    def test_bounded_task_stops_before_exceeding_sandbox_limit(self):
+        from src.arc.search import SearchBudget
+        class Backend:
+            def generate(self, prompt, *, kind, candidate):
+                return 'copy input' if kind == 'analysis' else IDENTITY_CODE
+        class Sandbox:
+            def __init__(self): self.calls = 0
+            def run(self, code, grid):
+                self.calls += 1
+                return grid
+        sandbox = Sandbox()
+        budget = SearchBudget(max_seconds=60, max_calls=10, max_tokens=100000,
+                              max_sandbox_starts=0, max_calls_per_task=10,
+                              max_tokens_per_task=100000, max_sandbox_per_task=0,
+                              max_seconds_per_task=60)
+        task = Task('x', (([[1]], [[1]]),), ([[2]],))
+        result = run_bounded_task(task, Backend(), sandbox, budget, max_tokens=500, max_repairs=0)
+        self.assertEqual(result['status'], 'error')
+        self.assertEqual(sandbox.calls, 0)
+
+    def test_bounded_task_rejects_nested_sandbox_reservation(self):
+        from src.arc.search import SearchBudget
+        class Sandbox:
+            reserve = lambda: None
+        budget = SearchBudget(max_seconds=60, max_calls=10, max_tokens=100000,
+                              max_sandbox_starts=10, max_calls_per_task=10,
+                              max_tokens_per_task=100000, max_sandbox_per_task=10,
+                              max_seconds_per_task=60)
+        task = Task('x', (([[1]], [[1]]),), ([[2]],))
+        with self.assertRaises(ValueError):
+            run_bounded_task(task, object(), Sandbox(), budget, max_tokens=500, max_repairs=0)
 
     def test_missing_second_candidate_is_incomplete(self):
         verifier = Verifier({'a': [[[1]]]})
