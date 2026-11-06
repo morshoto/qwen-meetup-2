@@ -66,7 +66,9 @@ def run(directory, model):
                   '--export',str(directory/'export.json'),'--receipt',str(directory/'receipt.json'),
                   '--output',str(output),'--task',task,'--model',model,'--model-path',str(model_path)]
             return run_worker(argv,timeout=manifest['task_timeout_seconds'])
-        return supervised_batch(journal,model,manifest['batch_size'],worker)
+        def progress(task,status):
+            print(json.dumps({'model':model,'task_id':task,'status':status}),flush=True)
+        return supervised_batch(journal,model,manifest['batch_size'],worker,on_result=progress)
     finally:
         os.close(lockfd)
 

@@ -11,7 +11,7 @@ class BenchmarkCLITests(unittest.TestCase):
             root=Path(d);(root/'data/raw').mkdir(parents=True)
             (root/'data/raw/arc-agi_training_challenges.json').write_text(json.dumps({'a':task}))
             dest=root/'run'
-            def fake(journal,model,limit,worker):
+            def fake(journal,model,limit,worker,on_result=None):
                 ids=journal.pending(limit)
                 for task_id in ids:
                     journal.start(task_id);journal.finish(task_id,{'task_id':task_id,'model':model,'status':'complete'})
