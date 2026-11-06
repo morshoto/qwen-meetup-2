@@ -19,6 +19,6 @@ class WorkerCLITests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);(root/'e').write_text(json.dumps(export));(root/'r').write_text(json.dumps(receipt))
             argv=['worker','--export',str(root/'e'),'--receipt',str(root/'r'),'--output',str(root/'out'),'--task','t','--model','14b','--model-path','/model']
-            with patch('sys.argv',argv), patch('src.cli.lt_batch_worker.MLXBackend',Backend): main()
+            with patch('sys.argv',argv), patch('src.cli.lt_batch_worker.MLXBackend',Backend), patch('src.cli.lt_batch_worker.importlib.metadata.version', side_effect=lambda p: {'mlx-lm':'0.30.7','mlx':'0.32.4'}[p]): main()
             row=json.loads((root/'out').read_text());self.assertEqual(row['candidates'],[[[[2]]],[[[2]]]])
-            with patch('sys.argv',argv), patch('src.cli.lt_batch_worker.MLXBackend',Backend), self.assertRaises(FileExistsError): main()
+            with patch('sys.argv',argv), patch('src.cli.lt_batch_worker.MLXBackend',Backend), patch('src.cli.lt_batch_worker.importlib.metadata.version', side_effect=lambda p: {'mlx-lm':'0.30.7','mlx':'0.32.4'}[p]), self.assertRaises(FileExistsError): main()

@@ -1,6 +1,7 @@
 """Execute one public LT task in a dedicated native MLX process."""
 import argparse
 import json
+import importlib.metadata
 from pathlib import Path
 from src.arc.lt_batch_journal import _create
 from src.arc.lt_live_backend import MLXBackend
@@ -18,6 +19,8 @@ def main():
     export = json.loads(args.export.read_bytes()); receipt = json.loads(args.receipt.read_bytes())
     tasks = load_public_export(export, receipt)
     if args.task not in tasks: raise ValueError('unregistered task')
+    if importlib.metadata.version('mlx-lm') != '0.30.7' or importlib.metadata.version('mlx') != '0.32.4':
+        raise ValueError('runtime version differs')
     backend = MLXBackend(args.model_path)
     row = execute_task(tasks[args.task], backend, args.model)
     _create(args.output, row)

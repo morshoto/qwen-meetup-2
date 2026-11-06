@@ -25,6 +25,7 @@ def supervised_batch(journal, model, limit, worker):
                    'tokens':None, 'runtime_seconds':None, 'peak_memory_bytes':None,
                    'peak_swap_bytes':None, 'calls':[]}
         else: raise ValueError('unknown worker status')
+        row['worker_diagnostics'] = {'stdout':observation.get('stdout'), 'stderr':observation.get('stderr')}
         row['cleanup'] = {'leader_reaped':True, 'group_absent':True, 'returncode':observation.get('returncode')}
         journal.finish(task_id, row)
         completed += 1
