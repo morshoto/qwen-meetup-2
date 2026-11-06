@@ -49,6 +49,16 @@ class ComparisonTests(unittest.TestCase):
         frozen['config']['max_tokens'] = 1001
         with self.assertRaises(ValueError): verify_manifest(frozen)
 
+    def test_freeze_rejects_tampered_proposal(self):
+        ids = [f'task-{i:03}' for i in range(210)]
+        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+        proposal['task_ids'] = ['duplicate'] * 200
+        config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
+                  'models': {'14b': 'revision-14', '32b': 'revision-32'},
+                  'thinking': 'off', 'temperature': 0.7, 'candidates': 2,
+                  'max_tokens': 1000, 'timeout_seconds': 60}
+        with self.assertRaises(ValueError): freeze_manifest(proposal, config)
+
     def test_error_row_cannot_make_run_complete(self):
         verifier = Verifier({'a': [[[1]]]})
         result = summarize(['a'], [{'task_id': 'a', 'candidates': [], 'status': 'error'}], verifier)

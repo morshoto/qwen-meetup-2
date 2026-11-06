@@ -49,6 +49,12 @@ def _digest(value: dict[str, Any]) -> str:
 def freeze_manifest(proposal: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     required = {'prompt_sha256', 'code_sha256', 'models', 'thinking', 'temperature',
                 'candidates', 'max_tokens', 'timeout_seconds'}
+    ids = proposal.get('task_ids')
+    if (not isinstance(ids, list) or len(ids) != 200 or
+            any(not isinstance(x, str) or not x for x in ids) or len(set(ids)) != 200 or
+            any(set(ids) & set(proposal.get(k, [])) for k in
+                ('development_exclusions', 'training_exclusions', 'known_exposure_exclusions'))):
+        raise ValueError('invalid comparison task selection')
     if set(config) != required or proposal.get('status') != 'proposal':
         raise ValueError('invalid comparison proposal or configuration')
     if (any(not isinstance(config[k], str) or not re.fullmatch(r'[0-9a-f]{64}', config[k])
