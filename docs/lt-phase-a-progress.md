@@ -406,3 +406,11 @@ responses copied the literal two-output format example; they were rejected
 because these tasks each have one test input. The run logged 33,294 tokens,
 169.0 seconds across tasks, 11.00 GB process-reported peak memory and unknown
 swap. Its local record is `artifacts/lt-dev-20261106-direct-v2-off-01/`.
+
+The separate `lt-dev-20261106-code-off-01` code-agent run produced zero
+scoreable candidates out of six, with pass@1 and pass@2 both 0/3. All six
+candidates exhausted the configured zero-repair allowance. Twenty uniquely
+named Docker containers were absent on their post-execution checks; the owned
+model process exited. The run recorded 70,175 tokens, 414.8 seconds across
+tasks, 11.00 GB process-reported peak memory and unknown swap. These local
+observations do not establish the original strict RSI isolation gates.
