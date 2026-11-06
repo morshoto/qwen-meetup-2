@@ -22,7 +22,10 @@ def main():
     if sorted(tasks) != IDS: raise ValueError('development selection differs')
     out = Path(os.environ['LT_DEVELOPMENT_RUN_DIR']); out.mkdir(mode=0o700, parents=False, exist_ok=False)
     (out / 'receipt.json').write_text(json.dumps(receipt, sort_keys=True))
-    model, tokenizer = load(MODEL)
+    model_key = os.environ.get('LT_MODEL', '14b')
+    if model_key not in ('14b', '32b'): raise ValueError('invalid model')
+    model_path = MODEL if model_key == '14b' else str(Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-32B-4bit/snapshots/bcaaf7f538adf166c1080a2befdb4f6019f66639')
+    model, tokenizer = load(model_path)
     sandbox = CheckedSandbox(image='sha256:a3013c6339a68a667aa9a5f26377693a1f4357a7f7a12db6470a8f06732b91f1', timeout=5)
     class Backend:
         def __init__(self): self.calls = []
@@ -45,14 +48,14 @@ def main():
             candidates = []; failures = []; fatal = None
             for candidate in range(2):
                 try:
-                    result = code_agent(tasks[task_id], backend, sandbox, 0, candidate)
+                    result = code_agent(tasks[task_id], backend, sandbox, 1, candidate, prompt_variant='structured')
                     candidates.append(result.outputs if not result.error else None)
                     failures.append({'candidate':candidate, 'error':result.error, 'error_kind':result.error_kind,
                                      'history':result.history})
                 except BackendError as exc:
                     fatal = str(exc); break
             calls = backend.calls[before:]; usage = [c['usage'] for c in calls]
-            row = {'model':'14b', 'task_id':task_id, 'status':'error' if fatal else 'complete',
+            row = {'model':model_key, 'task_id':task_id, 'status':'error' if fatal else 'complete',
                    'candidates':candidates, 'development_manifest_sha256':receipt['development_manifest_sha256'],
                    'tokens':sum(x['prompt_tokens']+x['completion_tokens'] for x in usage) if usage and all(usage) else None,
                    'runtime_seconds':time.monotonic()-start,
