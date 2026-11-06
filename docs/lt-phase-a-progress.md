@@ -463,3 +463,14 @@ tasks, 22.61 GB process-reported peak memory, and unknown swap. Both observed
 model PIDs were absent after normal process exit. All three 32B candidate pairs
 differed; two of the three 14B pairs were identical. Seeds were requested, but
 seed support and statistical independence were not independently verified.
+
+## Supervised batch development validation
+
+The `lt-batch-dev-20261107-01` validation used the native 14B worker on two
+registered development tasks, stopping after one and resuming for the second.
+Both task processes exited and their owned process groups were absent; all four
+candidate grids were valid. The independent scorer recorded 0/2 for both
+pass metrics, 33,292 tokens, 313.3 seconds of task inference and 11.07 GB
+process-reported peak memory. Swap was not sampled. The validation used only
+public task exports and did not execute generated code. Local worker and result
+records are under `artifacts/lt-batch-dev-20261107-01/`.
