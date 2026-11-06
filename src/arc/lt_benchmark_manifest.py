@@ -11,7 +11,7 @@ SOURCE_FILES = ('src/arc/agent.py','src/arc/data.py','src/arc/scoring.py','src/a
                 'src/arc/lt_task_supervisor.py','src/arc/lt_benchmark_manifest.py','src/arc/http_backend.py',
                 'src/arc/sandbox.py','src/arc/lt_allocation.py','src/arc/lt_comparison.py',
                 'src/arc/lt_attestation.py','src/arc/lt_development.py','src/arc/rsi_exploratory_split.py',
-                'src/cli/lt_batch_worker.py','src/cli/lt_benchmark.py')
+                'src/cli/lt_batch_worker.py','src/cli/lt_benchmark.py','src/cli/lt_benchmark_score.py')
 
 
 def sha(data): return hashlib.sha256(data).hexdigest()
