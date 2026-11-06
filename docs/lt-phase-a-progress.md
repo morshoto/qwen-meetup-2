@@ -199,6 +199,14 @@ observations do not exclude aliases, IPC services or escaped processes, nor do
 they establish the identity or cleanup of a model server. The profile builder
 is marked non-authorizing and is not wired to the runner.
 
+A separate synthetic test registered a uniquely named local Mach service in the
+test process. A child running under the proposed profile, with inherited file
+descriptors closed, looked up that service and sent a message that the parent
+received. The test destroys its own receive port afterward. This demonstrates
+a concrete IPC path through the broad Mach allowance; it does not establish
+what access any particular external service grants. The profile remains
+unsuitable for isolating a live model from evaluator data.
+
 The synthetic controls, including the opt-in Metal operation, can be repeated
 from the worktree using cached dependencies:
 
