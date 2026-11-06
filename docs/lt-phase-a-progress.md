@@ -207,6 +207,15 @@ a concrete IPC path through the broad Mach allowance; it does not establish
 what access any particular external service grants. The profile remains
 unsuitable for isolating a live model from evaluator data.
 
+A narrower **test-only** profile denies Mach service lookup except for
+`com.apple.MTLCompilerService`. With that rule, the same controlled service
+lookup failed, while the synthetic one-layer Qwen3-shaped GPU forward pass
+succeeded. Denying all Mach lookups prevented the compiler connection. These
+observations cover one service lookup and one small workload on this host;
+other Mach operations and IOKit remain permitted, the compiler is external,
+and alias, service behavior, ownership and cleanup are not verified. The
+restricted profile is not connected to a live launcher.
+
 The synthetic controls, including the opt-in Metal operation, can be repeated
 from the worktree using cached dependencies:
 
