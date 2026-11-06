@@ -268,3 +268,23 @@ with `ownership_verified`, `cleanup_verified` and `execution_ready` always
 false. The API is undocumented, may be unavailable or race with PID exit and
 reuse, and is not an independent receipt. No model weights or ARC data were
 used; no shared service was signalled.
+
+## Development-only public export
+
+`python -m src.arc.lt_development_export` accepts the proposed development
+manifest, local training challenges and bounded exposure registry. It checks
+their hashes and selection, and emits either a development-only public task
+export or its receipt. It does not open the solutions file. The loader rejects
+extra tasks, changed grids and test-output fields. Both outputs remain
+non-authorizing and do not establish filesystem or process isolation.
+
+An in-memory check against the local training source reloaded all three
+proposed IDs. Canonical JSON SHA-256 values were
+`6eb4dedaee93fc1ea0da260a22d12278f8a04d3305e0f1050437ee885258161e`
+for the development manifest,
+`6ca84fe65af901605d24f3915411f7648b91e29b77d6ca7541cc2873e7c1bb0b`
+for the public export, and
+`3031f53e0ccf5951d1f1ed3021f07b675fd1b49cbd584bb8167a2e49e7c53756`
+for its receipt. No export was persisted or sent to a model. These hashes
+identify a local proposal, not independently verified data provenance or a
+completed development run.
