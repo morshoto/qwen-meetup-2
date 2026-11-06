@@ -13,6 +13,8 @@ import math
 import re
 from typing import Any
 
+from src.arc.agent import code_agent
+from src.arc.http_backend import BackendError
 from src.arc.data import Verifier
 from src.arc.scoring import score
 
@@ -69,6 +71,24 @@ def verify_manifest(frozen: dict[str, Any]) -> None:
             raise ValueError('comparison manifest digest differs')
     except (KeyError, TypeError) as exc:
         raise ValueError('invalid frozen comparison') from exc
+
+
+def run_task(task: Any, backend: Any, sandbox: Any, *, max_repairs: int) -> dict[str, Any]:
+    """Exercise the existing solver; caller supplies the isolated execution boundary."""
+    if type(max_repairs) is not int or max_repairs < 0:
+        raise ValueError('invalid repair limit')
+    candidates: list[Any] = []
+    for candidate in range(2):
+        try:
+            result = code_agent(task, backend, sandbox, max_repairs, candidate)
+        except BackendError as exc:
+            return {'task_id': task.id, 'status': 'error', 'candidates': candidates,
+                    'error': str(exc)}
+        if result.error:
+            candidates.append('timeout' if result.error_kind == 'timeout' else None)
+        else:
+            candidates.append(result.outputs)
+    return {'task_id': task.id, 'status': 'complete', 'candidates': candidates}
 
 
 def summarize(task_ids: list[str], rows: list[dict[str, Any]], verifier: Verifier) -> dict[str, Any]:

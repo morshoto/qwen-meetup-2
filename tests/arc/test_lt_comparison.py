@@ -3,7 +3,7 @@ import unittest
 from src.arc.data import Task, Verifier
 from src.arc.agent import code_agent
 from src.arc.sandbox import FakeSandbox, IDENTITY_CODE, ZERO_CODE
-from src.arc.lt_comparison import make_manifest, summarize, freeze_manifest, verify_manifest
+from src.arc.lt_comparison import make_manifest, summarize, freeze_manifest, verify_manifest, run_task
 
 
 class ComparisonTests(unittest.TestCase):
@@ -66,6 +66,29 @@ class ComparisonTests(unittest.TestCase):
         self.assertEqual(result['pass_at_2'], 1)
         self.assertEqual(result['first_candidate_correct_outputs'], 1)
         self.assertEqual(result['test_outputs_attempted'], 2)
+
+    def test_run_task_uses_two_independent_candidate_indices(self):
+        task = Task('x', (([[1]], [[1]]),), ([[2]],))
+        class Backend:
+            def __init__(self): self.candidates = []
+            def generate(self, prompt, *, kind, candidate):
+                self.candidates.append(candidate)
+                return 'copy input' if kind == 'analysis' else IDENTITY_CODE
+        backend = Backend()
+        result = run_task(task, backend, FakeSandbox(), max_repairs=0)
+        self.assertEqual(backend.candidates, [0, 0, 1, 1])
+        self.assertEqual(result['status'], 'complete')
+        self.assertEqual(result['candidates'], [[[[2]]], [[[2]]]])
+
+    def test_run_task_records_backend_failure_without_fabricating_candidate(self):
+        from src.arc.http_backend import BackendError
+        class Backend:
+            def generate(self, prompt, *, kind, candidate):
+                raise BackendError('unavailable', 'test')
+        task = Task('x', (([[1]], [[1]]),), ([[2]],))
+        result = run_task(task, Backend(), FakeSandbox(), max_repairs=0)
+        self.assertEqual(result['status'], 'error')
+        self.assertEqual(result['candidates'], [])
 
     def test_summary_rejects_duplicate_and_unselected_rows(self):
         verifier = Verifier({'a': [[[1]]]})
