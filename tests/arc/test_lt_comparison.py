@@ -9,7 +9,7 @@ class ComparisonTests(unittest.TestCase):
     def test_manifest_is_deterministic_and_excludes_reserved_tasks(self):
         ids = [f'task-{i:03}' for i in range(230)]
         kwargs = dict(seed=7, development={'task-000'}, training={'task-001'},
-                      exposures={'task-002'}, dataset_sha256='a' * 64)
+                      exposures={'task-002'}, protected=set(), dataset_sha256='a' * 64)
         manifest = make_manifest(ids, **kwargs)
         self.assertEqual(manifest, make_manifest(list(reversed(ids)), **kwargs))
         self.assertEqual(len(manifest['task_ids']), 200)
@@ -17,15 +17,25 @@ class ComparisonTests(unittest.TestCase):
         self.assertTrue(manifest['unknown_pretraining_exposure'])
         self.assertTrue(manifest['unknown_project_exposure'])
 
+    def test_manifest_excludes_original_protocol_reserved_tasks(self):
+        ids = [f'task-{i:03}' for i in range(260)]
+        protected = set(ids[:25])
+        result = make_manifest(ids, seed=7, development=set(), training=set(), exposures=set(),
+                               protected=protected, dataset_sha256='a' * 64)
+        self.assertEqual(result['protected_exclusions'], sorted(protected))
+        self.assertTrue(set(result['task_ids']).isdisjoint(protected))
+        config_test = {'task_ids': result['task_ids'], 'status': 'proposal'}
+        with self.assertRaises(ValueError): freeze_manifest(config_test, {})
+
     def test_manifest_rejects_duplicates_and_insufficient_tasks(self):
         with self.assertRaises(ValueError):
-            make_manifest(['x'] * 201, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+            make_manifest(['x'] * 201, seed=1, development=set(), training=set(), exposures=set(), protected=set(), dataset_sha256='a' * 64)
         with self.assertRaises(ValueError):
-            make_manifest(['x'], seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+            make_manifest(['x'], seed=1, development=set(), training=set(), exposures=set(), protected=set(), dataset_sha256='a' * 64)
 
     def test_freeze_binds_manifest_config_and_detects_changes(self):
         ids = [f'task-{i:03}' for i in range(210)]
-        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), protected=set(), dataset_sha256='a' * 64)
         config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
                   'models': {'14b': '1' * 40, '32b': '2' * 40},
                   'model_names': {'14b': 'model14', '32b': 'model32'}, 'backend_url': 'http://127.0.0.1:8080/v1',
@@ -45,7 +55,7 @@ class ComparisonTests(unittest.TestCase):
 
     def test_freeze_rejects_missing_execution_budget_and_seed(self):
         ids = [f'task-{i:03}' for i in range(210)]
-        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), protected=set(), dataset_sha256='a' * 64)
         incomplete = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
                       'models': {'14b': '1' * 40, '32b': '2' * 40},
                   'model_names': {'14b': 'model14', '32b': 'model32'}, 'backend_url': 'http://127.0.0.1:8080/v1',
@@ -56,7 +66,7 @@ class ComparisonTests(unittest.TestCase):
 
     def test_models_receive_equal_independent_frozen_budget(self):
         ids = [f'task-{i:03}' for i in range(210)]
-        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), protected=set(), dataset_sha256='a' * 64)
         config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
                   'models': {'14b': '1' * 40, '32b': '2' * 40},
                   'model_names': {'14b': 'model14', '32b': 'model32'}, 'backend_url': 'http://127.0.0.1:8080/v1',
@@ -79,7 +89,7 @@ class ComparisonTests(unittest.TestCase):
 
     def test_freeze_rejects_tampered_proposal(self):
         ids = [f'task-{i:03}' for i in range(210)]
-        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), protected=set(), dataset_sha256='a' * 64)
         proposal['task_ids'] = ['duplicate'] * 200
         config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
                   'models': {'14b': '1' * 40, '32b': '2' * 40},

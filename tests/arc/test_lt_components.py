@@ -9,7 +9,7 @@ from src.arc.lt_components import prepare_components, check_guarded_metadata, pr
 class ComponentTests(unittest.TestCase):
     def setUp(self):
         self.proposal = make_manifest([f't{i:03}' for i in range(200)], seed=1,
-                                      development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+                                      development=set(), training=set(), exposures=set(), protected=set(), dataset_sha256='a' * 64)
         self.config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
                        'models': {'14b': '1' * 40, '32b': '2' * 40},
                        'model_names': {'14b': 'model14', '32b': 'model32'},

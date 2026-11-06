@@ -21,24 +21,24 @@ from src.arc.scoring import score
 
 
 def make_manifest(ids: list[str], *, seed: int, development: set[str],
-                  training: set[str], exposures: set[str], dataset_sha256: str) -> dict[str, Any]:
+                  training: set[str], exposures: set[str], protected: set[str], dataset_sha256: str) -> dict[str, Any]:
     if (type(seed) is not int or not isinstance(ids, list) or
             any(not isinstance(x, str) or not x for x in ids) or len(ids) != len(set(ids)) or
             not isinstance(dataset_sha256, str) or not re.fullmatch(r'[0-9a-f]{64}', dataset_sha256)):
         raise ValueError('invalid task IDs, seed, or dataset digest')
     universe = set(ids)
-    if any(not isinstance(group, set) or not group <= universe for group in (development, training, exposures)):
+    if any(not isinstance(group, set) or not group <= universe for group in (development, training, exposures, protected)):
         raise ValueError('invalid exclusions')
     if development & training:
         raise ValueError('development and training exclusions overlap')
-    eligible = sorted(universe - development - training - exposures)
+    eligible = sorted(universe - development - training - exposures - protected)
     if len(eligible) < 200:
         raise ValueError('fewer than 200 eligible tasks')
     random.Random(seed).shuffle(eligible)
     return {'protocol': 'lt-phase-a-exploratory', 'status': 'proposal', 'seed': seed,
             'dataset_sha256': dataset_sha256, 'task_ids': sorted(eligible[:200]),
             'development_exclusions': sorted(development), 'training_exclusions': sorted(training),
-            'known_exposure_exclusions': sorted(exposures),
+            'known_exposure_exclusions': sorted(exposures), 'protected_exclusions': sorted(protected),
             'unknown_pretraining_exposure': True, 'unknown_project_exposure': True}
 
 
@@ -53,10 +53,11 @@ def freeze_manifest(proposal: dict[str, Any], config: dict[str, Any]) -> dict[st
                 'prompt_variant', 'model_files_sha256', 'runtime_sha256', 'budget',
                 'model_names', 'backend_url', 'sandbox'}
     ids = proposal.get('task_ids')
-    if (not isinstance(ids, list) or len(ids) != 200 or
+    if ('protected_exclusions' not in proposal or not isinstance(proposal['protected_exclusions'], list) or
+            not isinstance(ids, list) or len(ids) != 200 or
             any(not isinstance(x, str) or not x for x in ids) or len(set(ids)) != 200 or
             any(set(ids) & set(proposal.get(k, [])) for k in
-                ('development_exclusions', 'training_exclusions', 'known_exposure_exclusions'))):
+                ('development_exclusions', 'training_exclusions', 'known_exposure_exclusions', 'protected_exclusions'))):
         raise ValueError('invalid comparison task selection')
     if set(config) != required or proposal.get('status') != 'proposal':
         raise ValueError('invalid comparison proposal or configuration')

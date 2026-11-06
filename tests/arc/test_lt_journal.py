@@ -18,7 +18,7 @@ class JournalTests(unittest.TestCase):
         self.ids = [f't{i:03}' for i in range(200)]
         self.tasks = {x: {'train': [{'input': [[1]], 'output': [[1]]}],
                           'test': [{'input': [[2]]}]} for x in self.ids}
-        proposal = make_manifest(self.ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+        proposal = make_manifest(self.ids, seed=1, development=set(), training=set(), exposures=set(), protected=set(), dataset_sha256='a' * 64)
         config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
                   'models': {'14b': '1' * 40, '32b': '2' * 40},
                   'model_names': {'14b': 'model14', '32b': 'model32'}, 'backend_url': 'http://127.0.0.1:8080/v1',

@@ -69,7 +69,8 @@ def attest_inputs(frozen: dict, challenges_path: Path, solutions_path: Path,
         raise ValueError('dataset identities differ')
     proposal = make_manifest(list(challenges), seed=manifest['seed'],
         development=set(manifest['development_exclusions']), training=set(manifest['training_exclusions']),
-        exposures=set(manifest['known_exposure_exclusions']), dataset_sha256=manifest['dataset_sha256'])
+        exposures=set(manifest['known_exposure_exclusions']), protected=set(manifest['protected_exclusions']),
+        dataset_sha256=manifest['dataset_sha256'])
     if proposal != manifest:
         raise ValueError('task selection is not the registered selection')
     if source_digest(sources) != config['code_sha256'] or _sha(Path(prompt_path).read_bytes()) != config['prompt_sha256']:

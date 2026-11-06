@@ -29,7 +29,7 @@ class InputAttestationTests(unittest.TestCase):
         self.sources = {'solver.py': self.code}
         digest = hashlib.sha256(self.challenge.read_bytes()).hexdigest()
         proposal = make_manifest(list(challenges), seed=7, development={'t000'}, training={'t001'},
-                                 exposures={'t002'}, dataset_sha256=digest)
+                                 exposures={'t002'}, protected=set(), dataset_sha256=digest)
         config = {'prompt_sha256': hashlib.sha256(self.prompt.read_bytes()).hexdigest(),
                   'code_sha256': source_digest(self.sources),
                   'models': {'14b': '1' * 40, '32b': '2' * 40},
