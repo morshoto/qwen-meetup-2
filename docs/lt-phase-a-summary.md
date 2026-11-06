@@ -24,7 +24,10 @@ seconds across tasks, and 11.12 GB process-reported peak memory; swap was not
 measured. The launched model process exited with code zero and its recorded
 PIDs were absent afterward; external Metal service cleanup was not verified.
 No generated Python or Docker containers were used. Local raw responses and
-scores are in `artifacts/lt-dev-20261106-direct-01/`.
+scores are in `artifacts/lt-dev-20261106-direct-01/`; `run.json` records
+configuration and SHA-256 hashes of the receipt, raw results and score. The
+run record is a local observation, and model and cleanup identities were not
+independently verified.
 
 Zero attempts is not a zero-percent accuracy result. No baseline or model
 ranking can be inferred, and no ARC improvement, training success or official
