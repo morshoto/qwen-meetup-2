@@ -188,5 +188,12 @@ LT_PROBE_MLX=1 uv run --offline --no-project --python /opt/homebrew/bin/python3.
   -s tests/arc -p 'test_lt_macos_probe.py' -v
 ```
 
-All four controls passed locally. This narrows the earlier allowlist startup
+The base profile denied a local listener. In additional synthetic probes, an
+explicit rule for one loopback port allowed that port to bind and exchange a
+byte with a local client; a different bind and an outbound connection were
+denied in the tested cases. The listener extension exists only in the tests,
+not in the profile builder or a model launcher. The port is not authenticated,
+and these controls do not rule out other local or Mach-service access.
+
+All six controls passed locally. This narrows the earlier allowlist startup
 failure but does **not** clear the live-run blocker.
