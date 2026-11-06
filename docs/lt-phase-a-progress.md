@@ -434,3 +434,23 @@ the separate code-agent run used checked Docker containers but produced no
 valid candidates. A single code-agent end-to-end run with valid predictions
 and verified container cleanup has therefore not yet been demonstrated. No
 200-task allocation or comparison configuration has been frozen.
+
+## One-repair code-agent development
+
+The six zero-repair failures were incorrect training-example outputs: each
+candidate ran and returned grids but failed three or four training pairs. The
+recorded histories contain no syntax, API, runtime or formatting exception.
+The separate `lt-dev-20261107-code-repair-14b-01` run used one structured,
+example-based repair per candidate. It again produced zero valid predictions
+out of six, with pass@1 and pass@2 both 0/3; all 40 named containers were
+absent on post-execution checks and the model process exited. The run recorded
+149,432 tokens, 882.9 seconds across tasks, 13.64 GB process-reported peak
+memory and unknown swap. The clarified direct-grid agent is the comparison
+candidate; the 32B development check must finish before its settings can be
+frozen.
+
+The allocation files record 100 Phase B training IDs and a 200-ID Phase A
+proposal, selected from the 433 eligible training IDs after excluding the
+registered development, known-exposure and original RSI reserved IDs. They
+have no task-ID overlap. The Phase B training recipe and the comparison run
+settings remain unfrozen; historical and pretraining exposure remain unknown.
