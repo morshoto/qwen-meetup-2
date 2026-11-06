@@ -121,8 +121,12 @@ before dispatch. Model-specific terminal
 records bind the task inventory, configuration identities and result-file hash;
 a consistency audit remains explicitly unverified. Token totals are recorded
 only when every reserved request reports consistent fixture usage. Unknown token and
-memory values remain null. Its input components and results remain unverified fixture
-evidence; no live launcher or cleanup gate is provided by this helper.
+memory values remain null. When a catchable keyboard interrupt occurs during a
+fixture task, the journal records it as aborted with unknown token use before
+propagating the interrupt; partial candidates are not preserved. An uncatchable
+process death or a write failure may still leave only a started marker. Its input
+components and results remain unverified fixture evidence; no live launcher or
+cleanup gate is provided by this helper.
 
 ## Synthetic Docker probe (2026-11-06 JST)
 
