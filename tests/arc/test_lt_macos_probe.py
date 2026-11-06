@@ -140,6 +140,40 @@ print(json.dumps(result))
             self.assertEqual(json.loads(result.stdout), {'registered': 'bound', 'other': 'denied', 'outbound': 'denied'})
             with self.assertRaises(socket.timeout): listener.accept()
 
+    @unittest.skipUnless(platform.system() == 'Darwin' and Path('/usr/bin/sandbox-exec').exists(),
+                         'Darwin sandbox required')
+    def test_synthetic_listener_exchanges_bytes_on_registered_port(self):
+        import select
+        script = ("import socket,sys; s=socket.socket(); s.settimeout(5); "
+                  "s.bind(('127.0.0.1',int(sys.argv[1]))); s.listen(1); print('ready',flush=True); "
+                  "c,_=s.accept(); c.recv(1); c.sendall(b'y'); c.close(); s.close()")
+        with tempfile.TemporaryDirectory(prefix='lt-profile-') as directory:
+            with socket.socket() as probe:
+                probe.bind(('127.0.0.1', 0)); port = probe.getsockname()[1]
+            python = '/opt/homebrew/bin/python3.12' if Path('/opt/homebrew/bin/python3.12').exists() else sys.executable
+            dirs = [os.path.realpath(directory), sys.prefix, sys.base_prefix,
+                    str(Path(os.path.realpath(python)).parent.parent)]
+            profile = build_probe_profile(dirs, [os.path.realpath(directory)])['profile']
+            endpoint = f'localhost:{port}'
+            profile += f' (allow network-bind (local ip "{endpoint}")) (allow network-inbound (local ip "{endpoint}"))'
+            child = subprocess.Popen(['/usr/bin/sandbox-exec', '-p', profile, python, '-I', '-B', '-c',
+                                      script, str(port)], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                     text=True, close_fds=True)
+            try:
+                self.assertTrue(select.select([child.stdout], [], [], 5)[0], 'listener did not become ready')
+                self.assertEqual(child.stdout.readline().strip(), 'ready')
+                with socket.create_connection(('127.0.0.1', port), timeout=3) as client:
+                    client.sendall(b'x')
+                    self.assertEqual(client.recv(1), b'y')
+                _, stderr = child.communicate(timeout=6)
+                self.assertEqual(child.returncode, 0, stderr)
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait()
+                if child.stdout: child.stdout.close()
+                if child.stderr: child.stderr.close()
+
     @unittest.skipUnless(platform.system() == 'Darwin' and os.environ.get('LT_PROBE_MLX') == '1',
                          'requires explicit offline MLX probe')
     def test_synthetic_mlx_gpu_works_under_proposed_profile(self):
