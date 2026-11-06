@@ -71,6 +71,23 @@ class InputAttestationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             attest_model_runtime(frozen, '32b', {'model': model14}, {'runtime': runtime})
 
+    def test_public_export_cli_only_emits_selected_challenges(self):
+        root = self.challenge.parent
+        receipt = attest_inputs(self.frozen, self.challenge, self.solution, self.sources, self.prompt)
+        (root / 'frozen.json').write_text(json.dumps(self.frozen))
+        (root / 'receipt.json').write_text(json.dumps(receipt))
+        command = [sys.executable, '-m', 'src.arc.lt_public_cli', '--frozen', str(root / 'frozen.json'),
+                   '--receipt', str(root / 'receipt.json'), '--challenges', str(self.challenge)]
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        exported = json.loads(result.stdout)
+        self.assertEqual(set(exported['tasks']), set(self.frozen['manifest']['task_ids']))
+        self.assertTrue(all(set(pair) == {'input'} for task in exported['tasks'].values() for pair in task['test']))
+        self.challenge.write_text(self.challenge.read_text() + ' ')
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, '')
+
     def test_offline_prepare_cli_emits_separate_reviewable_documents(self):
         root = self.challenge.parent
         (root / 'proposal.json').write_text(json.dumps(self.frozen['manifest']))
