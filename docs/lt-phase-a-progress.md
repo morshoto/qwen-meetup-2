@@ -108,9 +108,11 @@ available candidate slots, with missing tasks and candidates reported explicitly
 A reported incomplete result must not be interpreted as a 200-task score.
 
 
-The `lt_public_cli` command accepts `--frozen`, `--receipt`, and `--challenges`
-and writes only the selected public tasks to stdout. It verifies task hashes and
-rejects any test-output fields. This export reduces data passed to the solver;
+The `lt_public_cli` command accepts `--frozen`, `--receipt`, `--challenges`,
+`--registry`, `--split`, `--development` and `--training`, and writes only
+selected public tasks to stdout. It rechecks the bound allocation audit,
+verifies task hashes and rejects test-output fields. `--fixture-only` accepts
+only an allocation-unchecked receipt and does not authorize execution. This export reduces data passed to the solver;
 it is not evidence of filesystem, network, or process isolation. The
 `run_fixture_model` journal writes owner-only started markers and per-task
 results and refuses to reuse a started model run. It accepts only the built-in
