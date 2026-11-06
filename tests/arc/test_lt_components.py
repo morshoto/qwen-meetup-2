@@ -14,7 +14,7 @@ class ComponentTests(unittest.TestCase):
                        'models': {'14b': '1' * 40, '32b': '2' * 40},
                        'model_names': {'14b': 'model14', '32b': 'model32'},
                        'backend_url': 'http://127.0.0.1:8080/v1',
-                       'thinking': 'off', 'temperature': 0.7, 'candidates': 2, 'max_tokens': 1000,
+                       'thinking': 'off', 'temperature': 0.7, 'candidates': 2, 'max_tokens': 1000, 'max_prompt_tokens': 5000,
                        'timeout_seconds': 60, 'seed': 42, 'max_repairs': 1, 'prompt_variant': 'legacy',
                        'model_files_sha256': {'14b': 'd' * 64, '32b': 'e' * 64}, 'runtime_sha256': 'f' * 64,
                        'sandbox': {'image': 'sha256:' + '9' * 64, 'timeout': 3, 'memory_mb': 128,
@@ -81,7 +81,7 @@ class ComponentTests(unittest.TestCase):
         self.assertEqual(report['status'], 'metadata_consistent_unverified')
         self.assertFalse(report['execution_ready'])
         for change in ({'model': 'model32'}, {'revision': 'wrong'}, {'token_limit': 20000001},
-                       {'reserved_tokens': 1}, {'thinking_canary': {'supported': True, 'different_token_ids': False}},
+                       {'reserved_tokens': 1}, {'max_prompt_tokens': 4999}, {'thinking_canary': {'supported': True, 'different_token_ids': False}},
                        {'max_request_seconds': 61}, {'adapter_sha256': 'unexpected'}):
             with self.subTest(change=change), self.assertRaises(ValueError):
                 check_guarded_metadata(frozen, '14b', {**metadata, **change})

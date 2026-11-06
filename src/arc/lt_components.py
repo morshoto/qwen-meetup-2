@@ -29,7 +29,8 @@ def check_guarded_metadata(frozen: dict, model: str, metadata: dict) -> dict:
             type(metadata.get('token_limit')) is not int or
             metadata['token_limit'] != config['budget']['max_reserved_tokens'] or
             type(metadata.get('reserved_tokens')) is not int or metadata['reserved_tokens'] != 0 or
-            type(metadata.get('max_prompt_tokens')) is not int or metadata['max_prompt_tokens'] <= 0 or
+            type(metadata.get('max_prompt_tokens')) is not int or
+            metadata['max_prompt_tokens'] != config['max_prompt_tokens'] or
             type(metadata.get('max_new_tokens')) is not int or metadata['max_new_tokens'] != config['max_tokens'] or
             metadata.get('max_request_seconds') != config['timeout_seconds'] or
             metadata.get('contract') != 'same_process_token_ids_v1' or

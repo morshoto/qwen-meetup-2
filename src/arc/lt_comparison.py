@@ -49,7 +49,7 @@ def _digest(value: dict[str, Any]) -> str:
 
 def freeze_manifest(proposal: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     required = {'prompt_sha256', 'code_sha256', 'models', 'thinking', 'temperature',
-                'candidates', 'max_tokens', 'timeout_seconds', 'seed', 'max_repairs',
+                'candidates', 'max_tokens', 'max_prompt_tokens', 'timeout_seconds', 'seed', 'max_repairs',
                 'prompt_variant', 'model_files_sha256', 'runtime_sha256', 'budget',
                 'model_names', 'backend_url', 'sandbox'}
     ids = proposal.get('task_ids')
@@ -67,6 +67,7 @@ def freeze_manifest(proposal: dict[str, Any], config: dict[str, Any]) -> dict[st
                 for v in config['models'].values()) or
             config['thinking'] not in {'on', 'off'} or config['candidates'] != 2 or
             type(config['max_tokens']) is not int or config['max_tokens'] <= 0 or
+            type(config['max_prompt_tokens']) is not int or config['max_prompt_tokens'] <= 0 or
             type(config['timeout_seconds']) not in (int, float) or not math.isfinite(config['timeout_seconds']) or config['timeout_seconds'] <= 0 or
             type(config['temperature']) not in (int, float) or not math.isfinite(config['temperature']) or config['temperature'] <= 0):
         raise ValueError('invalid comparison configuration')
