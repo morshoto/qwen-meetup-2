@@ -25,7 +25,8 @@ not an execution gate or a complete live runner.
   Image availability alone does not verify containment or cleanup.
 - `research/rsi/bounded-exposure-proposal.json` and related reviews inventory
   prior project use, but explicitly leave historical and pretraining exposure
-  uncertain. No 200 IDs have been selected for this protocol.
+  uncertain. A separate 200-task proposal and 100-task training pool are now
+  recorded under `configs/`; their run settings remain unfrozen.
   The copied challenge file contains 1,000 task IDs; the union of the bounded
   proposal and extended metadata review identifies 317 of them as exposed,
   leaving 683 outside that known union. This is a bounded inventory, not proof
@@ -368,7 +369,7 @@ registries, verifies the development selection, and rejects training IDs in
 those reservations or the development subset. The audit marks the supplied
 training inventory unverified: it cannot establish that the list includes all
 Phase B examples. This command has only been exercised with synthetic tasks;
-no real 200-task proposal has been created or frozen.
+a 200-task proposal has been recorded, but comparison settings are not frozen.
 
 ### Process start-time observations
 
