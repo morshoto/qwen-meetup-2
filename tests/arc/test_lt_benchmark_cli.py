@@ -18,6 +18,12 @@ class BenchmarkCLITests(unittest.TestCase):
                 return len(ids)
             with patch('src.cli.lt_benchmark.ROOT',root),patch('src.cli.lt_benchmark.build',return_value=manifest),patch('src.cli.lt_benchmark.verify'),patch('src.cli.lt_benchmark.verify_model',return_value=Path('/model')),patch('src.cli.lt_benchmark.supervised_batch',side_effect=fake):
                 self.assertEqual(prepare(dest),'a'*64)
+                export=json.loads((dest/'export.json').read_text())
+                export['tasks']['a']['test'][0]['input']=[[9]]
+                (dest/'export.json').write_text(json.dumps(export))
+                with self.assertRaisesRegex(ValueError, 'export identity'):run(dest,'14b')
+                export['tasks']['a']['test'][0]['input']=[[2]]
+                (dest/'export.json').write_text(json.dumps(export))
                 with self.assertRaises(ValueError):run(dest,'32b')
                 self.assertEqual(run(dest,'14b'),1)
                 self.assertEqual(run(dest,'14b'),0)
