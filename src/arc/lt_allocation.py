@@ -84,3 +84,28 @@ def build_comparison_proposal(challenge_bytes: bytes, registry_bytes: bytes, spl
     except (KeyError, TypeError) as exc:
         raise ValueError('invalid proposal evidence') from exc
     return proposal, audit
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ('challenges', 'registry', 'split', 'development', 'training'):
+        parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--seed', type=int, required=True)
+    parser.add_argument('--part', choices=('proposal', 'audit'), required=True)
+    args = parser.parse_args(argv)
+    try:
+        training = json.loads(args.training.read_bytes())
+        proposal, audit = build_comparison_proposal(args.challenges.read_bytes(), args.registry.read_bytes(),
+            args.split.read_bytes(), _object(args.development.read_bytes()), training, seed=args.seed)
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        print(f'allocation proposal failed: {type(exc).__name__}', file=sys.stderr)
+        return 1
+    print(json.dumps(proposal if args.part == 'proposal' else audit, sort_keys=True, allow_nan=False))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

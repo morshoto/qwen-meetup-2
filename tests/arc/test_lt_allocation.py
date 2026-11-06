@@ -1,5 +1,8 @@
 import hashlib
 import json
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -50,6 +53,26 @@ class AllocationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_comparison_proposal(self.challenges, self.registry, self.split,
                                       self.development, [self.development['task_ids'][0]], seed=2)
+
+    def test_cli_requires_training_inventory_and_checks_proposal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            documents = {'challenges': self.challenges, 'registry': self.registry, 'split': self.split,
+                         'development': raw(self.development), 'training': raw(sorted(self.training))}
+            for name, value in documents.items(): (root / name).write_bytes(value)
+            command = [sys.executable, '-m', 'src.arc.lt_allocation']
+            for name in documents: command += ['--' + name, str(root / name)]
+            command += ['--seed', '2']
+            proposal = subprocess.run(command + ['--part', 'proposal'], capture_output=True, text=True)
+            audit = subprocess.run(command + ['--part', 'audit'], capture_output=True, text=True)
+            self.assertEqual(proposal.returncode, 0, proposal.stderr)
+            self.assertEqual(audit.returncode, 0, audit.stderr)
+            self.assertEqual(json.loads(proposal.stdout), self.proposal)
+            self.assertFalse(json.loads(audit.stdout)['execution_ready'])
+            (root / 'training').write_bytes(raw([self.development['task_ids'][0]]))
+            failed = subprocess.run(command + ['--part', 'proposal'], capture_output=True, text=True)
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertEqual(failed.stdout, '')
 
     def test_checks_prior_reservations_development_and_training(self):
         result = check_protected_allocation(self.proposal, self.registry, self.split,
