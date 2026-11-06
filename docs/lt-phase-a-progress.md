@@ -70,7 +70,9 @@ not an execution gate or a complete live runner.
 
 `python -m src.arc.lt_prepare_cli --proposal PROPOSAL.json --config CONFIG.json
 --challenges CHALLENGES.json --solutions SOLUTIONS.json --sources SOURCES.json
---prompt PROMPT --part frozen` writes the comparison document to stdout; repeat
+--prompt PROMPT --registry REGISTRY.json --split SPLIT.json --development DEV.json
+--training TRAINING.json --source-root ROOT --source-inventory INVENTORY.json
+--part frozen` writes the comparison document to stdout; repeat
 with `--part receipt` to obtain the input receipt. Both invocations validate
 the same inputs. Preserve their outputs before scoring or any experiment; these
 documents alone neither verify the loaded model nor permit live execution.
@@ -87,7 +89,9 @@ they do not authenticate a server, prove model identity or verify cleanup.
 
 `python -m src.arc.lt_score_cli --frozen FROZEN.json --receipt INPUTS.json
 --challenges CHALLENGES.json --solutions SOLUTIONS.json --sources SOURCES.json
---prompt PROMPT --results RESULTS.jsonl` writes a JSON report to stdout only
+--prompt PROMPT --registry REGISTRY.json --split SPLIT.json --development DEV.json
+--training TRAINING.json --source-root ROOT --source-inventory INVENTORY.json
+--results RESULTS.jsonl` writes a JSON report to stdout only
 after rechecking the frozen selection and input receipt. Add `--format jsonl`
 for per-task records followed by one summary record. `SOURCES.json` maps
 stable inventory names to local file paths. Each result row must include the
