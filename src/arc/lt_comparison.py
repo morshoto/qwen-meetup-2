@@ -102,11 +102,11 @@ def summarize(task_ids: list[str], rows: list[dict[str, Any]], verifier: Verifie
         if task_id not in selected or task_id in seen:
             raise ValueError('duplicate or unselected result')
         seen.add(task_id)
-        if row['status'] != 'complete':
-            errors += 1
         candidates = row['candidates']
         if not isinstance(candidates, list) or len(candidates) > 2:
             raise ValueError('invalid candidate list')
+        if row['status'] != 'complete' or len(candidates) != 2:
+            errors += 1
         result = score(verifier, task_id, candidates)
         pass1 += result.pass_at_1
         pass2 += result.pass_at_2

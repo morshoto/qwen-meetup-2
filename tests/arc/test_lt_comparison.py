@@ -90,6 +90,20 @@ class ComparisonTests(unittest.TestCase):
         self.assertEqual(result['status'], 'error')
         self.assertEqual(result['candidates'], [])
 
+    def test_missing_second_candidate_is_incomplete(self):
+        verifier = Verifier({'a': [[[1]]]})
+        row = {'task_id': 'a', 'candidates': [[[[1]]]], 'status': 'complete'}
+        result = summarize(['a'], [row], verifier)
+        self.assertEqual(result['status'], 'incomplete')
+        self.assertEqual(result['pass_at_1'], 1)
+
+    def test_scoring_invalid_and_timeout_are_not_matches(self):
+        from src.arc.scoring import score
+        verifier = Verifier({'a': [[[1]], [[2]]]})
+        result = score(verifier, 'a', ['timeout', [[[1]]]])
+        self.assertEqual((result.pass_at_1, result.pass_at_2, result.timeouts, result.invalid),
+                         (False, False, 1, 1))
+
     def test_summary_rejects_duplicate_and_unselected_rows(self):
         verifier = Verifier({'a': [[[1]]]})
         row = {'task_id': 'a', 'candidates': [], 'status': 'error'}
