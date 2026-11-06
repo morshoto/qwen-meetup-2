@@ -27,7 +27,12 @@ def _output_matches(verifier: Verifier, task_id: str, candidate: Any) -> list[bo
     count = verifier.output_count(task_id)
     if not isinstance(candidate, list) or len(candidate) != count:
         return [False] * count
-    return [verifier.matches_output(task_id, i, grid) for i, grid in enumerate(candidate)]
+    matches = []
+    for index, grid in enumerate(candidate):
+        probe = [None] * count
+        probe[index] = grid
+        matches.append(verifier.correct_outputs(task_id, probe) == 1)
+    return matches
 
 
 def score_comparison(task_ids: list[str], rows: list[dict[str, Any]], verifier: Verifier) -> dict[str, Any]:

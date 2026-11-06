@@ -53,16 +53,6 @@ class Verifier:
                 pass
         return count
 
-    def matches_output(self, task_id: str, index: int, candidate: Any) -> bool:
-        """Score one output without returning the held-out target."""
-        expected = self.__solutions[task_id]
-        if type(index) is not int or not 0 <= index < len(expected):
-            raise ValueError("invalid output index")
-        try:
-            return validate_grid(candidate) == expected[index]
-        except (ValueError, TypeError):
-            return False
-
     def matches(self, task_id: str, candidate: Any) -> bool:
         try:
             if not isinstance(candidate, list):
