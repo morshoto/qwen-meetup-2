@@ -21,3 +21,9 @@ class BatchJournalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             BatchJournal(Path(d), ['a'], 'hash')
             with self.assertRaises(ValueError): BatchJournal(Path(d), ['a'], 'other')
+
+    def test_changed_start_marker_is_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            j=BatchJournal(Path(d), ['a'], 'hash');j.start('a');j.finish('a', {'task_id':'a','status':'complete'})
+            (Path(d)/'a.started.json').write_text('{"task_id":"other","identity":"hash"}')
+            with self.assertRaises(ValueError): j.pending(1)
