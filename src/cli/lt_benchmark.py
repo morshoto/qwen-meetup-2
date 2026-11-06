@@ -45,9 +45,13 @@ def run(directory, model):
     manifest=json.loads((directory/'manifest.json').read_bytes());verify(ROOT,manifest)
     receipt=json.loads((directory/'receipt.json').read_bytes())
     export=json.loads((directory/'export.json').read_bytes())
-    tasks=load_public_export(export,receipt)
-    if (receipt['comparison_sha256']!=manifest['sha256'] or set(tasks)!=set(manifest['task_ids'])):
+    challenges=json.loads((ROOT/'data/raw/arc-agi_training_challenges.json').read_bytes())
+    expected={'comparison_sha256':manifest['sha256'],
+              'selected_task_sha256':{task:sha(canonical(challenges[task])) for task in manifest['task_ids']}}
+    if receipt != expected or export != build_public_export(challenges,expected):
         raise ValueError('export identity differs')
+    tasks=load_public_export(export,receipt)
+    if set(tasks)!=set(manifest['task_ids']): raise ValueError('task set differs')
     lockfd=os.open(directory/'run.lock',os.O_CREAT|os.O_RDWR|os.O_NOFOLLOW,0o600)
     try:
         fcntl.flock(lockfd,fcntl.LOCK_EX|fcntl.LOCK_NB)
