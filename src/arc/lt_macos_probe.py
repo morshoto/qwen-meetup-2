@@ -26,3 +26,15 @@ def build_probe_profile(read_dirs: list[str], write_dirs: list[str]) -> dict:
                '(allow file-write* (literal "/dev/null") ' + write_rules + ')')
     return {'profile': profile, 'execution_ready': False, 'isolation_verified': False,
             'evidence_type': 'synthetic_profile_proposal'}
+
+
+def restrict_mach_lookup(profile: str) -> str:
+    """Experimental synthetic restriction, not a verified isolation boundary.
+
+    The Metal compiler remains an external service, and other Mach operations
+    and IOKit access remain allowed. Do not use this profile for live models.
+    """
+    if not isinstance(profile, str) or '(allow mach*)' not in profile:
+        raise ValueError('expected a synthetic probe profile')
+    return profile + (' (deny mach-lookup)'
+                      ' (allow mach-lookup (global-name "com.apple.MTLCompilerService"))')
