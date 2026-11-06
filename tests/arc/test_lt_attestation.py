@@ -49,6 +49,7 @@ class InputAttestationTests(unittest.TestCase):
         receipt = attest_inputs(self.frozen, self.challenge, self.solution, self.sources, self.prompt)
         self.assertEqual(len(receipt['selected_task_sha256']), 200)
         self.assertEqual(receipt['allocation_scope'], 'allocation_unchecked')
+        self.assertFalse(receipt['execution_ready'])
         verify_inputs(receipt, self.frozen, self.challenge, self.solution, self.sources, self.prompt)
         self.solution.write_text(self.solution.read_text() + ' ')
         with self.assertRaises(ValueError):

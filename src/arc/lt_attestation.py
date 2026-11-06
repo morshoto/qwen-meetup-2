@@ -89,7 +89,7 @@ def attest_inputs(frozen: dict, challenges_path: Path, solutions_path: Path,
     scope = ({'source_scope': 'conservative_source_tree',
               'source_inventory_sha256': _sha(_canonical(source_inventory))}
              if source_root is not None else {'source_scope': 'caller_supplied_files'})
-    return {**scope, **allocation_scope, 'comparison_sha256': frozen['sha256'], 'challenges_sha256': _sha(challenges_bytes),
+    return {**scope, **allocation_scope, 'execution_ready': False, 'comparison_sha256': frozen['sha256'], 'challenges_sha256': _sha(challenges_bytes),
             'solutions_sha256': _sha(solutions_bytes), 'code_sha256': config['code_sha256'],
             'prompt_sha256': config['prompt_sha256'],
             'selected_task_sha256': {task_id: _sha(_canonical(challenges[task_id]))
