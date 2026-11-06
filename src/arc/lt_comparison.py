@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import re
+import urllib.parse
 from typing import Any
 
 from src.arc.agent import code_agent
@@ -49,7 +50,8 @@ def _digest(value: dict[str, Any]) -> str:
 def freeze_manifest(proposal: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     required = {'prompt_sha256', 'code_sha256', 'models', 'thinking', 'temperature',
                 'candidates', 'max_tokens', 'timeout_seconds', 'seed', 'max_repairs',
-                'prompt_variant', 'model_files_sha256', 'runtime_sha256', 'budget'}
+                'prompt_variant', 'model_files_sha256', 'runtime_sha256', 'budget',
+                'model_names', 'backend_url', 'sandbox'}
     ids = proposal.get('task_ids')
     if (not isinstance(ids, list) or len(ids) != 200 or
             any(not isinstance(x, str) or not x for x in ids) or len(set(ids)) != 200 or
@@ -84,6 +86,23 @@ def freeze_manifest(proposal: dict[str, Any], config: dict[str, Any]) -> dict[st
             budget['max_sandbox_per_task'] > budget['max_sandbox_starts'] or
             budget['max_seconds_per_task'] > budget['max_seconds']):
         raise ValueError('invalid model identities or execution budget')
+    model_names, sandbox = config['model_names'], config['sandbox']
+    try:
+        url = urllib.parse.urlsplit(config['backend_url'])
+        valid_url = (url.scheme == 'http' and url.hostname in ('127.0.0.1', 'localhost', '::1') and
+                     url.port is not None and 1 <= url.port <= 65535 and url.path == '/v1' and
+                     not url.username and not url.password and not url.query and not url.fragment)
+    except (TypeError, ValueError):
+        valid_url = False
+    if (not valid_url or not isinstance(model_names, dict) or set(model_names) != {'14b', '32b'} or
+            any(not isinstance(value, str) or not value for value in model_names.values()) or
+            model_names['14b'] == model_names['32b'] or not isinstance(sandbox, dict) or
+            set(sandbox) != {'image', 'timeout', 'memory_mb', 'cpus', 'pids'} or
+            not isinstance(sandbox['image'], str) or not re.fullmatch(r'sha256:[0-9a-f]{64}', sandbox['image']) or
+            any(type(sandbox[k]) is not int or sandbox[k] <= 0 for k in ('memory_mb', 'pids')) or
+            any(type(sandbox[k]) not in (int, float) or not math.isfinite(sandbox[k]) or sandbox[k] <= 0
+                for k in ('timeout', 'cpus'))):
+        raise ValueError('invalid backend or sandbox registration')
     value = {'manifest': copy.deepcopy(proposal), 'config': copy.deepcopy(config)}
     return {**value, 'sha256': _digest(value)}
 
@@ -138,8 +157,15 @@ def run_bounded_task(task: Any, backend: Any, sandbox: Any, budget: Any, *,
             getattr(sandbox, 'reserve', None) is not None):
         raise ValueError('invalid or conflicting budget configuration')
     scope = task.id
-    return run_task(task, BudgetedBackend(backend, budget, scope, max_tokens=max_tokens),
-                    BudgetedSandbox(sandbox, budget, scope), max_repairs=max_repairs)
+    original = [(component, name, getattr(component, name))
+                for component, name in ((backend, 'timeout'), (sandbox, 'timeout'), (sandbox, 'remaining'))
+                if hasattr(component, name)]
+    try:
+        return run_task(task, BudgetedBackend(backend, budget, scope, max_tokens=max_tokens),
+                        BudgetedSandbox(sandbox, budget, scope), max_repairs=max_repairs)
+    finally:
+        for component, name, value in original:
+            setattr(component, name, value)
 
 
 def summarize(task_ids: list[str], rows: list[dict[str, Any]], verifier: Verifier) -> dict[str, Any]:
