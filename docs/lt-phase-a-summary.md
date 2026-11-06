@@ -1,6 +1,6 @@
 # LT Phase A: Qwen ARC comparison status
 
-**Status as of 2026-11-07: incomplete.** Qwen3-14B has completed all 200 frozen tasks, and Qwen3-32B is running. The complete 14B result is pass@1 3/200 and pass@2 3/200, with 328/400 valid candidates, 72 invalid candidates, zero timeouts, 1,264,719 tokens, 13,160.9 seconds summed runtime, 11.07 GB process-reported peak memory, and swap unavailable. The 32B result is not yet measured. Checkpoint evidence and the frozen manifest are documented in [the progress record](lt-phase-a-progress.md) and `artifacts/lt-phase-a-frozen-20261107-01/`.
+**Status as of 2026-11-07: incomplete.** Qwen3-14B has completed all 200 frozen tasks, and Qwen3-32B is running. The complete 14B result is pass@1 3/200 and pass@2 3/200, with 328/400 valid candidates, 72 invalid candidates, zero timeouts, 1,264,719 tokens, 13,160.9 seconds summed runtime, 11.07 GB process-reported peak memory, and swap unavailable. One 32B task has completed but is not yet scored; it took 647.7 seconds and 29,038 tokens. The 32B aggregate result is not yet measured. Exact candidate-response duplicates occurred on 147/200 14B tasks and the first 32B task, so pass@2 counts recorded attempts and is not evidence of independent sampling. Checkpoint evidence and the frozen manifest are documented in [the progress record](lt-phase-a-progress.md) and `artifacts/lt-phase-a-frozen-20261107-01/`.
 
 This is an exploratory protocol separate from the original RSI experiment in issue #2. The Phase A run uses the frozen 200-task set, direct-grid agent, two candidates per task, a 4,096-token limit, and sequential model runs. Its 14B task allocation excludes development and Phase B tasks; the official public evaluation remains reserved for Phase C.
 
@@ -8,8 +8,8 @@ This is an exploratory protocol separate from the original RSI experiment in iss
 | --- | --- | --- |
 | Planned comparison tasks | 200 | 200 |
 | Frozen comparison task IDs | 200 | 200 |
-| Tasks completed | 200 | 0 |
-| Scored checkpoint | 200 | In progress |
+| Tasks completed | 200 | 1 |
+| Scored checkpoint | 200 | In progress; 1 unscored task |
 | Task-level pass@1 / pass@2 at checkpoint | 3/200 / 3/200 | Not measured |
 | Valid candidates at checkpoint | 328/400 | Not measured |
 | Tokens, runtime, peak memory and swap at checkpoint | 1,264,719; 13,160.9 s; 11.07 GB; null | Not measured |
