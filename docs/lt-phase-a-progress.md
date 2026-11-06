@@ -118,3 +118,14 @@ This is a single locally observed normal/timeout probe, not independent proof of
 container containment, absence of escaped processes, daemon correctness, or
 model-server cleanup. It does not change the live-run readiness decision. No
 model-generated code, model inference, or ARC task was used in this probe.
+
+## Source inventory observation
+
+At commit `d889256`, `python -m src.arc.lt_source --root . --part inventory`
+recorded 276 files under the existing source/config inventory rules and a
+canonical code SHA-256 of
+`f0ccbe1a180c55d7544a8c407514a76e112f2c4c2beb5760bfee874f96fb571f`.
+The same command with `--part paths` supplies the path map consumed by the
+offline preparation and scoring tools. Recapture and compare the inventory
+before any future use: this local snapshot does not prove the loaded runtime,
+external dependencies, or execution readiness.
