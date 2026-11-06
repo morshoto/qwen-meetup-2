@@ -106,6 +106,40 @@ print(json.dumps(result))
             self.assertEqual(json.loads(result.stdout), {'fork': 'denied', 'tcp': 'denied'})
             with self.assertRaises(socket.timeout): listener.accept()
 
+    @unittest.skipUnless(platform.system() == 'Darwin' and Path('/usr/bin/sandbox-exec').exists(),
+                         'Darwin sandbox required')
+    def test_synthetic_listener_rule_allows_only_registered_port(self):
+        script = """import json,socket,sys
+result={}
+for label,port in [('registered',int(sys.argv[1])),('other',int(sys.argv[2]))]:
+ try:
+  s=socket.socket(); s.bind(('127.0.0.1',port)); s.listen(1); result[label]='bound'; s.close()
+ except OSError: result[label]='denied'
+try:
+ s=socket.socket(); s.settimeout(.2); s.connect(('127.0.0.1',int(sys.argv[3]))); result['outbound']='connected'
+except OSError: result['outbound']='denied'
+print(json.dumps(result))
+"""
+        with tempfile.TemporaryDirectory(prefix='lt-profile-') as directory, socket.socket() as listener:
+            listener.bind(('127.0.0.1', 0)); listener.listen(1)
+            listener.settimeout(.2)
+            with socket.socket() as first, socket.socket() as second:
+                first.bind(('127.0.0.1', 0))
+                second.bind(('127.0.0.1', 0))
+                ports = [first.getsockname()[1], second.getsockname()[1]]
+            python = '/opt/homebrew/bin/python3.12' if Path('/opt/homebrew/bin/python3.12').exists() else sys.executable
+            dirs = [os.path.realpath(directory), sys.prefix, sys.base_prefix,
+                    str(Path(os.path.realpath(python)).parent.parent)]
+            profile = build_probe_profile(dirs, [os.path.realpath(directory)])['profile']
+            endpoint = f'localhost:{ports[0]}'
+            profile += f' (allow network-bind (local ip "{endpoint}")) (allow network-inbound (local ip "{endpoint}"))'
+            result = subprocess.run(['/usr/bin/sandbox-exec', '-p', profile, python, '-I', '-B', '-c', script,
+                                     str(ports[0]), str(ports[1]), str(listener.getsockname()[1])],
+                                    capture_output=True, text=True, close_fds=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout), {'registered': 'bound', 'other': 'denied', 'outbound': 'denied'})
+            with self.assertRaises(socket.timeout): listener.accept()
+
     @unittest.skipUnless(platform.system() == 'Darwin' and os.environ.get('LT_PROBE_MLX') == '1',
                          'requires explicit offline MLX probe')
     def test_synthetic_mlx_gpu_works_under_proposed_profile(self):
