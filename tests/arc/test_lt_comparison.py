@@ -27,7 +27,7 @@ class ComparisonTests(unittest.TestCase):
         ids = [f'task-{i:03}' for i in range(210)]
         proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
         config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
-                  'models': {'14b': 'revision-14', '32b': 'revision-32'},
+                  'models': {'14b': '1' * 40, '32b': '2' * 40},
                   'model_names': {'14b': 'model14', '32b': 'model32'}, 'backend_url': 'http://127.0.0.1:8080/v1',
                   'sandbox': {'image': 'sha256:' + '9' * 64, 'timeout': 3, 'memory_mb': 128, 'cpus': 1, 'pids': 32},
                   'thinking': 'off', 'temperature': 0.7, 'candidates': 2,
@@ -47,7 +47,7 @@ class ComparisonTests(unittest.TestCase):
         ids = [f'task-{i:03}' for i in range(210)]
         proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
         incomplete = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
-                      'models': {'14b': 'revision-14', '32b': 'revision-32'},
+                      'models': {'14b': '1' * 40, '32b': '2' * 40},
                   'model_names': {'14b': 'model14', '32b': 'model32'}, 'backend_url': 'http://127.0.0.1:8080/v1',
                   'sandbox': {'image': 'sha256:' + '9' * 64, 'timeout': 3, 'memory_mb': 128, 'cpus': 1, 'pids': 32},
                       'thinking': 'off', 'temperature': 0.7, 'candidates': 2,
@@ -58,7 +58,7 @@ class ComparisonTests(unittest.TestCase):
         ids = [f'task-{i:03}' for i in range(210)]
         proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
         config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
-                  'models': {'14b': 'revision-14', '32b': 'revision-32'},
+                  'models': {'14b': '1' * 40, '32b': '2' * 40},
                   'model_names': {'14b': 'model14', '32b': 'model32'}, 'backend_url': 'http://127.0.0.1:8080/v1',
                   'sandbox': {'image': 'sha256:' + '9' * 64, 'timeout': 3, 'memory_mb': 128, 'cpus': 1, 'pids': 32},
                   'thinking': 'off', 'temperature': 0.7, 'candidates': 2,
@@ -82,7 +82,7 @@ class ComparisonTests(unittest.TestCase):
         proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
         proposal['task_ids'] = ['duplicate'] * 200
         config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
-                  'models': {'14b': 'revision-14', '32b': 'revision-32'},
+                  'models': {'14b': '1' * 40, '32b': '2' * 40},
                   'model_names': {'14b': 'model14', '32b': 'model32'}, 'backend_url': 'http://127.0.0.1:8080/v1',
                   'sandbox': {'image': 'sha256:' + '9' * 64, 'timeout': 3, 'memory_mb': 128, 'cpus': 1, 'pids': 32},
                   'thinking': 'off', 'temperature': 0.7, 'candidates': 2,

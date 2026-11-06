@@ -21,7 +21,7 @@ class JournalTests(unittest.TestCase):
                           'test': [{'input': [[2]]}]} for x in self.ids}
         proposal = make_manifest(self.ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
         config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
-                  'models': {'14b': 'rev14', '32b': 'rev32'},
+                  'models': {'14b': '1' * 40, '32b': '2' * 40},
                   'model_names': {'14b': 'model14', '32b': 'model32'}, 'backend_url': 'http://127.0.0.1:8080/v1',
                   'sandbox': {'image': 'sha256:' + '9' * 64, 'timeout': 3, 'memory_mb': 128, 'cpus': 1, 'pids': 32}, 'thinking': 'off',
                   'temperature': 0.7, 'candidates': 2, 'max_tokens': 1000, 'timeout_seconds': 60,
@@ -89,7 +89,7 @@ class JournalTests(unittest.TestCase):
                 raise BackendError('unavailable', 'fixture')
         terminal = run_fixture_model(self.root, self.frozen, self.receipt, self.export,
                                      '14b', Backend(), FakeSandbox())
-        self.assertEqual(terminal['model_revision'], 'rev14')
+        self.assertEqual(terminal['model_revision'], '1' * 40)
         self.assertEqual(terminal['model_files_sha256'], 'd' * 64)
         self.assertEqual(terminal['runtime_sha256'], 'f' * 64)
         self.assertEqual(terminal['results_sha256'], hashlib.sha256((self.root / '14b.results.jsonl').read_bytes()).hexdigest())

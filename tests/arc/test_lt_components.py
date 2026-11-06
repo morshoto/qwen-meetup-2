@@ -11,7 +11,7 @@ class ComponentTests(unittest.TestCase):
         self.proposal = make_manifest([f't{i:03}' for i in range(200)], seed=1,
                                       development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
         self.config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
-                       'models': {'14b': 'revision14', '32b': 'revision32'},
+                       'models': {'14b': '1' * 40, '32b': '2' * 40},
                        'model_names': {'14b': 'model14', '32b': 'model32'},
                        'backend_url': 'http://127.0.0.1:8080/v1',
                        'thinking': 'off', 'temperature': 0.7, 'candidates': 2, 'max_tokens': 1000,
@@ -27,8 +27,8 @@ class ComponentTests(unittest.TestCase):
         frozen = freeze_manifest(self.proposal, self.config)
         a, sandbox_a = prepare_components(frozen, '14b')
         b, sandbox_b = prepare_components(frozen, '32b')
-        self.assertEqual((a.model, a.revision), ('model14', 'revision14'))
-        self.assertEqual((b.model, b.revision), ('model32', 'revision32'))
+        self.assertEqual((a.model, a.revision), ('model14', '1' * 40))
+        self.assertEqual((b.model, b.revision), ('model32', '2' * 40))
         self.assertEqual((a.seed, a.temperature, a.max_tokens, a.thinking), (b.seed, b.temperature, b.max_tokens, b.thinking))
         self.assertTrue(a.guarded and b.guarded)
         self.assertEqual((sandbox_a.image, sandbox_a.timeout, sandbox_a.memory_mb, sandbox_a.cpus, sandbox_a.pids),
@@ -71,7 +71,7 @@ class ComponentTests(unittest.TestCase):
 
     def test_guarded_metadata_must_match_model_and_budget(self):
         frozen = freeze_manifest(self.proposal, self.config)
-        metadata = {'model': 'model14', 'revision': 'revision14', 'token_limit': 20000000,
+        metadata = {'model': 'model14', 'revision': '1' * 40, 'token_limit': 20000000,
                     'reserved_tokens': 0, 'max_prompt_tokens': 5000, 'max_new_tokens': 1000,
                     'contract': 'same_process_token_ids_v1', 'hard_deadline': 'process_exit_v1',
                     'thinking_mode': 'off', 'thinking_modes': ['off', 'on'],
@@ -87,7 +87,8 @@ class ComponentTests(unittest.TestCase):
                 check_guarded_metadata(frozen, '14b', {**metadata, **change})
 
     def test_registration_rejects_remote_url_and_unpinned_sandbox(self):
-        for key, value in [('backend_url', 'https://example.com/v1'),
+        for key, value in [('models', {'14b': 'short', '32b': 'also-short'}),
+                           ('backend_url', 'https://example.com/v1'),
                            ('sandbox', {**self.config['sandbox'], 'image': 'arc-sandbox:local'})]:
             config = deepcopy(self.config)
             config[key] = value

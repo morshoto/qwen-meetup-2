@@ -32,7 +32,7 @@ class InputAttestationTests(unittest.TestCase):
                                  exposures={'t002'}, dataset_sha256=digest)
         config = {'prompt_sha256': hashlib.sha256(self.prompt.read_bytes()).hexdigest(),
                   'code_sha256': source_digest(self.sources),
-                  'models': {'14b': 'revision-14', '32b': 'revision-32'},
+                  'models': {'14b': '1' * 40, '32b': '2' * 40},
                   'model_names': {'14b': 'model14', '32b': 'model32'}, 'backend_url': 'http://127.0.0.1:8080/v1',
                   'sandbox': {'image': 'sha256:' + '9' * 64, 'timeout': 3, 'memory_mb': 128, 'cpus': 1, 'pids': 32},
                   'thinking': 'off', 'temperature': 0.7, 'candidates': 2,

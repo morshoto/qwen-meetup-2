@@ -63,7 +63,8 @@ def freeze_manifest(proposal: dict[str, Any], config: dict[str, Any]) -> dict[st
     if (any(not isinstance(config[k], str) or not re.fullmatch(r'[0-9a-f]{64}', config[k])
             for k in ('prompt_sha256', 'code_sha256')) or
             not isinstance(config['models'], dict) or set(config['models']) != {'14b', '32b'} or
-            any(not isinstance(v, str) or not v for v in config['models'].values()) or
+            any(not isinstance(v, str) or not re.fullmatch(r'[0-9a-f]{40}|[0-9a-f]{64}', v)
+                for v in config['models'].values()) or
             config['thinking'] not in {'on', 'off'} or config['candidates'] != 2 or
             type(config['max_tokens']) is not int or config['max_tokens'] <= 0 or
             type(config['timeout_seconds']) not in (int, float) or not math.isfinite(config['timeout_seconds']) or config['timeout_seconds'] <= 0 or
