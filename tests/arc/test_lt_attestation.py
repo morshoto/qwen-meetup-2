@@ -34,7 +34,13 @@ class InputAttestationTests(unittest.TestCase):
                   'code_sha256': source_digest(self.sources),
                   'models': {'14b': 'revision-14', '32b': 'revision-32'},
                   'thinking': 'off', 'temperature': 0.7, 'candidates': 2,
-                  'max_tokens': 1000, 'timeout_seconds': 60}
+                  'max_tokens': 1000, 'timeout_seconds': 60, 'seed': 42, 'max_repairs': 1,
+                  'prompt_variant': 'legacy', 'model_files_sha256': {'14b': 'd' * 64, '32b': 'e' * 64},
+                  'runtime_sha256': 'f' * 64, 'budget': {'max_calls': 2000,
+                  'max_reserved_tokens': 20000000, 'max_sandbox_starts': 8000,
+                  'max_seconds': 36000, 'max_calls_per_task': 10,
+                  'max_reserved_tokens_per_task': 100000, 'max_sandbox_per_task': 40,
+                  'max_seconds_per_task': 120}}
         self.frozen = freeze_manifest(proposal, config)
 
     def test_attestation_binds_data_sources_and_prompt(self):

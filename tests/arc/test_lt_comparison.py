@@ -2,7 +2,7 @@ import unittest
 
 from src.arc.data import Task, Verifier
 from src.arc.sandbox import FakeSandbox, IDENTITY_CODE
-from src.arc.lt_comparison import make_manifest, summarize, freeze_manifest, verify_manifest, run_task, run_bounded_task
+from src.arc.lt_comparison import make_manifest, summarize, freeze_manifest, verify_manifest, run_task, run_bounded_task, budget_for_model
 
 
 class ComparisonTests(unittest.TestCase):
@@ -29,11 +29,47 @@ class ComparisonTests(unittest.TestCase):
         config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
                   'models': {'14b': 'revision-14', '32b': 'revision-32'},
                   'thinking': 'off', 'temperature': 0.7, 'candidates': 2,
-                  'max_tokens': 1000, 'timeout_seconds': 60}
+                  'max_tokens': 1000, 'timeout_seconds': 60, 'seed': 42, 'max_repairs': 1,
+                  'prompt_variant': 'legacy', 'model_files_sha256': {'14b': 'd' * 64, '32b': 'e' * 64},
+                  'runtime_sha256': 'f' * 64, 'budget': {'max_calls': 2000,
+                  'max_reserved_tokens': 20000000, 'max_sandbox_starts': 8000,
+                  'max_seconds': 36000, 'max_calls_per_task': 10,
+                  'max_reserved_tokens_per_task': 100000, 'max_sandbox_per_task': 40,
+                  'max_seconds_per_task': 120}}
         frozen = freeze_manifest(proposal, config)
         verify_manifest(frozen)
         frozen['config']['max_tokens'] = 1001
         with self.assertRaises(ValueError): verify_manifest(frozen)
+
+    def test_freeze_rejects_missing_execution_budget_and_seed(self):
+        ids = [f'task-{i:03}' for i in range(210)]
+        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+        incomplete = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
+                      'models': {'14b': 'revision-14', '32b': 'revision-32'},
+                      'thinking': 'off', 'temperature': 0.7, 'candidates': 2,
+                      'max_tokens': 1000, 'timeout_seconds': 60}
+        with self.assertRaises(ValueError): freeze_manifest(proposal, incomplete)
+
+    def test_models_receive_equal_independent_frozen_budget(self):
+        ids = [f'task-{i:03}' for i in range(210)]
+        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+        config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
+                  'models': {'14b': 'revision-14', '32b': 'revision-32'},
+                  'thinking': 'off', 'temperature': 0.7, 'candidates': 2,
+                  'max_tokens': 1000, 'timeout_seconds': 60, 'seed': 42, 'max_repairs': 1,
+                  'prompt_variant': 'legacy', 'model_files_sha256': {'14b': 'd' * 64, '32b': 'e' * 64},
+                  'runtime_sha256': 'f' * 64, 'budget': {'max_calls': 2000,
+                  'max_reserved_tokens': 20000000, 'max_sandbox_starts': 8000,
+                  'max_seconds': 36000, 'max_calls_per_task': 10,
+                  'max_reserved_tokens_per_task': 100000, 'max_sandbox_per_task': 40,
+                  'max_seconds_per_task': 120}}
+        frozen = freeze_manifest(proposal, config)
+        first, second = budget_for_model(frozen, '14b'), budget_for_model(frozen, '32b')
+        self.assertEqual(first.limits, second.limits)
+        self.assertEqual(first.task_limits, second.task_limits)
+        first.reserve_call('task', 100)
+        self.assertEqual(second.finish()['calls'], 0)
+        with self.assertRaises(ValueError): budget_for_model(frozen, 'other')
 
     def test_freeze_rejects_tampered_proposal(self):
         ids = [f'task-{i:03}' for i in range(210)]
@@ -42,7 +78,13 @@ class ComparisonTests(unittest.TestCase):
         config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
                   'models': {'14b': 'revision-14', '32b': 'revision-32'},
                   'thinking': 'off', 'temperature': 0.7, 'candidates': 2,
-                  'max_tokens': 1000, 'timeout_seconds': 60}
+                  'max_tokens': 1000, 'timeout_seconds': 60, 'seed': 42, 'max_repairs': 1,
+                  'prompt_variant': 'legacy', 'model_files_sha256': {'14b': 'd' * 64, '32b': 'e' * 64},
+                  'runtime_sha256': 'f' * 64, 'budget': {'max_calls': 2000,
+                  'max_reserved_tokens': 20000000, 'max_sandbox_starts': 8000,
+                  'max_seconds': 36000, 'max_calls_per_task': 10,
+                  'max_reserved_tokens_per_task': 100000, 'max_sandbox_per_task': 40,
+                  'max_seconds_per_task': 120}}
         with self.assertRaises(ValueError): freeze_manifest(proposal, config)
 
     def test_error_row_cannot_make_run_complete(self):

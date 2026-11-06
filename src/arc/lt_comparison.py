@@ -48,7 +48,8 @@ def _digest(value: dict[str, Any]) -> str:
 
 def freeze_manifest(proposal: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     required = {'prompt_sha256', 'code_sha256', 'models', 'thinking', 'temperature',
-                'candidates', 'max_tokens', 'timeout_seconds'}
+                'candidates', 'max_tokens', 'timeout_seconds', 'seed', 'max_repairs',
+                'prompt_variant', 'model_files_sha256', 'runtime_sha256', 'budget'}
     ids = proposal.get('task_ids')
     if (not isinstance(ids, list) or len(ids) != 200 or
             any(not isinstance(x, str) or not x for x in ids) or len(set(ids)) != 200 or
@@ -66,6 +67,23 @@ def freeze_manifest(proposal: dict[str, Any], config: dict[str, Any]) -> dict[st
             type(config['timeout_seconds']) not in (int, float) or not math.isfinite(config['timeout_seconds']) or config['timeout_seconds'] <= 0 or
             type(config['temperature']) not in (int, float) or not math.isfinite(config['temperature']) or config['temperature'] <= 0):
         raise ValueError('invalid comparison configuration')
+    budget = config['budget']
+    budget_keys = {'max_calls', 'max_reserved_tokens', 'max_sandbox_starts', 'max_seconds',
+                   'max_calls_per_task', 'max_reserved_tokens_per_task', 'max_sandbox_per_task',
+                   'max_seconds_per_task'}
+    model_files = config['model_files_sha256']
+    if (type(config['seed']) is not int or type(config['max_repairs']) is not int or
+            config['max_repairs'] < 0 or config['prompt_variant'] != 'legacy' or
+            not isinstance(model_files, dict) or set(model_files) != {'14b', '32b'} or
+            any(not isinstance(x, str) or not re.fullmatch(r'[0-9a-f]{64}', x) for x in model_files.values()) or
+            not isinstance(config['runtime_sha256'], str) or not re.fullmatch(r'[0-9a-f]{64}', config['runtime_sha256']) or
+            not isinstance(budget, dict) or set(budget) != budget_keys or
+            any(type(value) is not int or value <= 0 for value in budget.values()) or
+            budget['max_calls_per_task'] > budget['max_calls'] or
+            budget['max_reserved_tokens_per_task'] > budget['max_reserved_tokens'] or
+            budget['max_sandbox_per_task'] > budget['max_sandbox_starts'] or
+            budget['max_seconds_per_task'] > budget['max_seconds']):
+        raise ValueError('invalid model identities or execution budget')
     value = {'manifest': copy.deepcopy(proposal), 'config': copy.deepcopy(config)}
     return {**value, 'sha256': _digest(value)}
 
@@ -77,6 +95,19 @@ def verify_manifest(frozen: dict[str, Any]) -> None:
             raise ValueError('comparison manifest digest differs')
     except (KeyError, TypeError) as exc:
         raise ValueError('invalid frozen comparison') from exc
+
+
+def budget_for_model(frozen: dict[str, Any], model: str) -> Any:
+    """Construct an in-memory fixture budget; this is not a resumable ledger."""
+    from src.arc.search import SearchBudget
+    verify_manifest(frozen)
+    if model not in ('14b', '32b'):
+        raise ValueError('invalid model')
+    limits = frozen['config']['budget']
+    return SearchBudget(max_seconds=limits['max_seconds'], max_calls=limits['max_calls'],
+        max_tokens=limits['max_reserved_tokens'], max_sandbox_starts=limits['max_sandbox_starts'],
+        max_calls_per_task=limits['max_calls_per_task'], max_tokens_per_task=limits['max_reserved_tokens_per_task'],
+        max_sandbox_per_task=limits['max_sandbox_per_task'], max_seconds_per_task=limits['max_seconds_per_task'])
 
 
 def run_task(task: Any, backend: Any, sandbox: Any, *, max_repairs: int) -> dict[str, Any]:
