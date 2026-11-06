@@ -94,3 +94,18 @@ it is not evidence of filesystem, network, or process isolation. The
 results and refuses to reuse a started model run. It records unknown token and
 memory values as null. Its input components and results remain unverified fixture
 evidence; no live launcher or cleanup gate is provided by this helper.
+
+## Synthetic Docker probe (2026-11-06 JST)
+
+On Docker server 24.0.6 and the image ID above, the existing `DockerSandbox`
+returned `[[1]]` for a synthetic identity function and raised `TimeoutError`
+for a synthetic infinite loop with a three-second timeout. A `docker ps -a`
+query for each exact, randomly generated container name found neither name
+before dispatch nor after return; the observations took about 0.3 and 3.1
+seconds respectively. The names were `arc-0c2081cbb61c4d868829af51c0065aec`
+and `arc-68ecac46a1ad45068aea39fd9ed7c52d`.
+
+This is a single locally observed normal/timeout probe, not independent proof of
+container containment, absence of escaped processes, daemon correctness, or
+model-server cleanup. It does not change the live-run readiness decision. No
+model-generated code, model inference, or ARC task was used in this probe.
