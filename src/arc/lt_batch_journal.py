@@ -37,6 +37,11 @@ class BatchJournal:
         remaining = []
         for task in self.ids:
             start, result = self.root / (task + '.started.json'), self.root / (task + '.result.json')
+            if start.exists():
+                try: marker = json.loads(start.read_text())
+                except (OSError, ValueError) as exc: raise ValueError('invalid start marker') from exc
+                if marker != {'task_id': task, 'identity': self.identity}:
+                    raise ValueError('start marker identity differs')
             if result.exists():
                 try: row = json.loads(result.read_text())
                 except (OSError, ValueError) as exc: raise ValueError('partial result') from exc
