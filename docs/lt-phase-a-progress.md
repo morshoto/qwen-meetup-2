@@ -297,3 +297,19 @@ comparison claim. A local wiring check used the three proposed tasks with an
 empty prediction file: both model summaries reported three selected, zero
 attempted and zero pass@1/pass@2 denominators. No predictions were fabricated,
 no accuracy was calculated, and the temporary report was not persisted.
+
+## Protecting the original RSI reservations
+
+The comparison proposal now has an explicit `protected_exclusions` set in
+addition to development, training and known-exposure exclusions. The separate
+allocation check recomputes the prior proposal and checks that the original
+200-task confirmatory and 50-task exploratory partitions, the development
+proposal, caller-supplied Phase B training IDs and known exposures are excluded.
+It does not authenticate the Phase B inventory or authorize a run.
+
+Recomputing the current local registries identified 250 original protected
+IDs. None of the three proposed development IDs overlaps them. Of the 1,000
+training IDs, 433 remain after excluding the 317 known exposures, the 250
+protected IDs and the three development IDs, before any additional Phase B
+training exclusions. The 433 are not proven unexposed. This is an allocation
+count, not a selected or frozen comparison manifest.

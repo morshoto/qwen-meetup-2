@@ -20,7 +20,9 @@ The local training dataset has 1,000 task IDs. A bounded historical inventory
 identifies 317 as known exposed, leaving 683 outside that known union. Project
 history and model-pretraining exposure remain uncertain; the 683 cannot be
 called unseen. Three development-only task IDs have been proposed from known prior exposures;
-they are not an execution-ready registration. Phase B training tasks and the
+they are not an execution-ready registration. After also excluding the original
+RSI protocol’s 250 reserved IDs, 433 training IDs remain before Phase B
+allocation; these are not proven unexposed. Phase B training tasks and the
 200 comparison tasks have not been selected or frozen. The official 120-task
 public evaluation is reserved for Phase C and was not used here.
 
