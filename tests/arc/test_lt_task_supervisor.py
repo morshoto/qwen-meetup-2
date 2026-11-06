@@ -14,3 +14,14 @@ class SupervisorTests(unittest.TestCase):
     def test_nonzero_is_failure(self):
         r=run_worker([sys.executable,'-c','raise SystemExit(7)'], timeout=5)
         self.assertEqual((r['status'],r['returncode']),('error',7))
+    def test_start_callback_and_cleanup_on_callback_failure(self):
+        seen=[]
+        r=run_worker([sys.executable,'-c','print(1)'], timeout=5, on_start=seen.append)
+        self.assertEqual(len(seen),1)
+        self.assertTrue(r['group_absent'])
+        def fail(pid):
+            seen.append(pid)
+            raise RuntimeError('cannot persist process')
+        with self.assertRaises(RuntimeError): run_worker([sys.executable,'-c','import time; time.sleep(30)'],timeout=5,on_start=fail)
+        import os
+        with self.assertRaises(ProcessLookupError): os.killpg(seen[-1],0)
