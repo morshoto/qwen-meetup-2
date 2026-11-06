@@ -1,4 +1,10 @@
+import hashlib
+import json
+import subprocess
+import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 from src.arc.lt_development import build_development_manifest, verify_development_manifest
 
@@ -24,6 +30,30 @@ class DevelopmentManifestTests(unittest.TestCase):
         with self.assertRaises(ValueError): verify_development_manifest(proposal, ids, **kwargs)
         with self.assertRaises(ValueError): build_development_manifest(ids + ['a'], **kwargs)
         with self.assertRaises(ValueError): build_development_manifest(ids, **{**kwargs, 'reserved': {'a', 'b'}})
+
+    def test_cli_binds_challenges_and_exposure_registry_without_answers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            data = {f't{i:03}': {} for i in range(10)}
+            challenges = root / 'challenges.json'
+            challenges.write_text(json.dumps(data))
+            registry = {'status': 'bounded_exposure_proposed_unverified',
+                        'task_source_sha256': hashlib.sha256(challenges.read_bytes()).hexdigest(),
+                        'known_exposed_task_ids': list(data), 'partitions': {'development': ['t000', 't001']}}
+            exposure = root / 'exposure.json'
+            exposure.write_text(json.dumps(registry))
+            command = [sys.executable, '-m', 'src.arc.lt_development', '--challenges', str(challenges),
+                       '--exposure', str(exposure), '--seed', '20261111']
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            manifest = json.loads(result.stdout)
+            self.assertTrue(set(manifest['task_ids']) <= set(data) - {'t000', 't001'})
+            self.assertEqual(manifest['exposure_sha256'], hashlib.sha256(exposure.read_bytes()).hexdigest())
+            challenges.write_text(challenges.read_text() + ' ')
+            changed = subprocess.run(command, capture_output=True, text=True)
+            self.assertNotEqual(changed.returncode, 0)
+            self.assertEqual(changed.stdout, '')
+
 
 
 if __name__ == '__main__': unittest.main()
