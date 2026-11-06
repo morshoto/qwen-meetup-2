@@ -1,6 +1,8 @@
 import hashlib
 import json
 import tempfile
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -42,6 +44,32 @@ class InputAttestationTests(unittest.TestCase):
         self.solution.write_text(self.solution.read_text() + ' ')
         with self.assertRaises(ValueError):
             verify_inputs(receipt, self.frozen, self.challenge, self.solution, self.sources, self.prompt)
+
+    def test_offline_cli_scores_bound_predictions_and_rejects_changed_answers(self):
+        root = self.challenge.parent
+        receipt = attest_inputs(self.frozen, self.challenge, self.solution, self.sources, self.prompt)
+        (root / 'frozen.json').write_text(json.dumps(self.frozen))
+        (root / 'receipt.json').write_text(json.dumps(receipt))
+        (root / 'sources.json').write_text(json.dumps({'solver.py': str(self.code)}))
+        task_id = self.frozen['manifest']['task_ids'][0]
+        row = {'comparison_sha256': self.frozen['sha256'], 'model': '14b', 'task_id': task_id,
+               'status': 'complete', 'candidates': [[[[2]]], [[[0]]]], 'tokens': 2,
+               'runtime_seconds': 1, 'peak_memory_bytes': 10, 'peak_swap_bytes': 0}
+        (root / 'results.jsonl').write_text(json.dumps(row) + '\n')
+        command = [sys.executable, '-m', 'src.arc.lt_score_cli', '--frozen', str(root / 'frozen.json'),
+                   '--receipt', str(root / 'receipt.json'), '--challenges', str(self.challenge),
+                   '--solutions', str(self.solution), '--sources', str(root / 'sources.json'),
+                   '--prompt', str(self.prompt), '--results', str(root / 'results.jsonl')]
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual(report['models']['14b']['pass_at_1'], 1)
+        self.assertEqual(report['models']['14b']['status'], 'incomplete')
+        self.assertEqual(report['models']['32b']['attempted'], 0)
+        self.solution.write_text(self.solution.read_text() + ' ')
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, '')
 
     def test_rejects_rehashed_but_nonrandom_task_selection(self):
         proposal = dict(self.frozen['manifest'])
