@@ -108,7 +108,7 @@ print(json.dumps(result))
 
     @unittest.skipUnless(platform.system() == 'Darwin' and Path('/usr/bin/sandbox-exec').exists(),
                          'Darwin sandbox required')
-    def test_synthetic_listener_rule_allows_only_registered_port(self):
+    def test_synthetic_listener_rule_allows_registered_and_rejects_other(self):
         script = """import json,socket,sys
 result={}
 for label,port in [('registered',int(sys.argv[1])),('other',int(sys.argv[2]))]:
