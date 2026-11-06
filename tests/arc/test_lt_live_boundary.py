@@ -88,5 +88,30 @@ class DockerBoundaryTests(unittest.TestCase):
             server.server_close()
             thread.join()
 
+    def test_synthetic_timeout_is_recorded_and_containers_are_absent(self):
+        from src.arc.search import SearchBudget
+        from src.arc.sandbox import DockerSandbox
+        class Backend:
+            def generate(self, prompt, *, kind, candidate):
+                return 'hypothesis' if kind == 'analysis' else 'def transform(grid):\n while True: pass'
+        identifiers = [uuid.uuid4() for _ in range(2)]
+        names = {'arc-' + item.hex for item in identifiers}
+        def present():
+            listing = subprocess.run(['docker', 'ps', '-a', '--format', '{{.Names}}'],
+                                     check=True, capture_output=True, text=True, timeout=10)
+            return names & set(listing.stdout.splitlines())
+        self.assertFalse(present())
+        budget = SearchBudget(max_seconds=30, max_calls=10, max_tokens=100000, max_sandbox_starts=4,
+                              max_calls_per_task=10, max_tokens_per_task=100000,
+                              max_sandbox_per_task=4, max_seconds_per_task=25)
+        sandbox = DockerSandbox(image=os.environ['LT_SANDBOX_IMAGE'], timeout=1.5)
+        task = Task('synthetic', (([[1]], [[1]]),), ([[2]],))
+        iterator = iter(identifiers)
+        with patch('src.arc.sandbox.uuid', SimpleNamespace(uuid4=lambda: next(iterator))):
+            row = run_bounded_task(task, Backend(), sandbox, budget, max_tokens=1000, max_repairs=0)
+        self.assertEqual(row['candidates'], ['timeout', 'timeout'])
+        self.assertEqual(budget.finish()['sandbox_starts'], 2)
+        self.assertFalse(present())
+
 
 if __name__ == '__main__': unittest.main()
