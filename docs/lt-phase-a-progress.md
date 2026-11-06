@@ -30,6 +30,14 @@ not an execution gate or a complete live runner.
   proposal and extended metadata review identifies 317 of them as exposed,
   leaving 683 outside that known union. This is a bounded inventory, not proof
   that the remaining tasks are unexposed. No Phase B training pool is frozen.
+- The [development-only proposal](../configs/lt.phase-a.development.json)
+  deterministically selects three known-exposed training IDs using seed
+  `20261111` and excludes the original #2 provisional 200-task development
+  partition. It binds the local challenge and exposure-registry hashes; no
+  challenge contents or answers are stored in the proposal. These IDs must
+  remain excluded from any Phase B training pool and the new 200-task
+  comparison. The proposal does not authorize inference or establish
+  independent source provenance.
 
 ## Remaining work before a comparison
 
