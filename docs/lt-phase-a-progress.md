@@ -58,7 +58,14 @@ not an execution gate or a complete live runner.
    those tasks will be reused for its comparison; otherwise disclose reuse as
    exploratory. No training or Phase C evaluation is included here.
 
-## Offline scoring
+## Offline preparation and scoring
+
+`python -m src.arc.lt_prepare_cli --proposal PROPOSAL.json --config CONFIG.json
+--challenges CHALLENGES.json --solutions SOLUTIONS.json --sources SOURCES.json
+--prompt PROMPT --part frozen` writes the comparison document to stdout; repeat
+with `--part receipt` to obtain the input receipt. Both invocations validate
+the same inputs. Preserve their outputs before scoring or any experiment; these
+documents alone neither verify the loaded model nor permit live execution.
 
 `python -m src.arc.lt_score_cli --frozen FROZEN.json --receipt INPUTS.json
 --challenges CHALLENGES.json --solutions SOLUTIONS.json --sources SOURCES.json
