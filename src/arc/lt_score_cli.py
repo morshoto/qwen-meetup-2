@@ -16,6 +16,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('frozen', 'receipt', 'challenges', 'solutions', 'sources', 'prompt', 'results'):
         parser.add_argument('--' + name, required=True, type=Path)
+    parser.add_argument('--format', choices=('json', 'jsonl'), default='json')
     args = parser.parse_args(argv)
     try:
         frozen = _object(args.frozen.read_bytes())
@@ -38,7 +39,13 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
         print(f'scoring failed: {type(exc).__name__}', file=sys.stderr)
         return 1
-    print(json.dumps(report, sort_keys=True, allow_nan=False))
+    if args.format == 'jsonl':
+        for row in report['rows']:
+            print(json.dumps({'record_type': 'task', **row}, sort_keys=True, allow_nan=False))
+        print(json.dumps({'record_type': 'summary', 'models': report['models'],
+                          'evidence': report['evidence']}, sort_keys=True, allow_nan=False))
+    else:
+        print(json.dumps(report, sort_keys=True, allow_nan=False))
     return 0
 
 
