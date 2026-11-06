@@ -39,7 +39,7 @@ def check_protected_allocation(proposal: dict, registry_bytes: bytes, split_byte
             exposure_sha256=_sha(registry_bytes), seed=development['seed'])
         dev = set(development['task_ids'])
         training = set(training_task_ids)
-        if (not training <= set(universe) or training & dev or
+        if (not training <= set(universe) or training & (dev | protected) or dev & protected or
                 not dev <= set(proposal['development_exclusions']) or
                 not training <= set(proposal['training_exclusions']) or
                 not known <= set(proposal['known_exposure_exclusions']) or

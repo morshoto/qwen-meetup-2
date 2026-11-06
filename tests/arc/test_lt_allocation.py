@@ -46,6 +46,9 @@ class AllocationTests(unittest.TestCase):
         self.assertEqual(audit['protected_count'], 250)
         self.assertFalse(audit['execution_ready'])
         self.assertFalse(audit['training_inventory_independently_verified'])
+        with self.assertRaises(ValueError):
+            build_comparison_proposal(self.challenges, self.registry, self.split,
+                                      self.development, [sorted(self.protected)[0]], seed=2)
         self.assertTrue(set(proposal['task_ids']).isdisjoint(self.protected | self.training | self.known))
         with self.assertRaises(ValueError):
             build_comparison_proposal(self.challenges + b' ', self.registry, self.split,
