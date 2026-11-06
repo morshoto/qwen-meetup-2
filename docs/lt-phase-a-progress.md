@@ -421,3 +421,15 @@ pass@2. Three candidates hit the token ceiling. The run recorded 55,070
 tokens, 1,027.6 seconds across tasks, 11.37 GB process-reported peak memory,
 and unknown swap. It exited normally; local records are in
 `artifacts/lt-dev-20261106-direct-v2-on-01/`.
+
+The clarified single-output example with an explicit instruction not to copy it
+was evaluated in `lt-dev-20261107-direct-v3-off-01`. All six candidates were
+valid grid arrays; task-level pass@1 and pass@2 were both 0/3. The run logged
+37,402 tokens, 347.9 seconds across tasks, 11.07 GB process-reported peak memory
+and unknown swap. Two pairs of independently requested candidates were
+identical, and seed support was not independently verified. The owned process
+exited and its observed PIDs were absent. This direct run did not execute code;
+the separate code-agent run used checked Docker containers but produced no
+valid candidates. A single code-agent end-to-end run with valid predictions
+and verified container cleanup has therefore not yet been demonstrated. No
+200-task allocation or comparison configuration has been frozen.
