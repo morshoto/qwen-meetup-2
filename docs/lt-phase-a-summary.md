@@ -6,7 +6,7 @@ an exploratory protocol separate from the original RSI experiment in issue #2.
 | Measure | Qwen3-14B | Qwen3-32B |
 | --- | --- | --- |
 | Planned comparison tasks | 200 | 200 |
-| Frozen comparison task IDs | Proposal only | Proposal only |
+| Frozen comparison task IDs | 200 | 200 |
 | Real comparison tasks attempted | 0 | 0 |
 | Task-level pass@1 / pass@2 | Not measured | Not measured |
 | Test-output accuracy | Not measured | Not measured |
@@ -40,7 +40,7 @@ called unseen. Three development-only task IDs have been proposed from known pri
 they are not an execution-ready registration. After also excluding the original
 RSI protocol’s 250 reserved IDs, 433 training IDs remain before Phase B
 allocation; these are not proven unexposed. A 100-task Phase B pool and a disjoint 200-task Phase A comparison set are
-proposed in the allocation files; run settings and the Phase B recipe are not
+registered in the frozen Phase A configuration; the Phase B recipe is not
 frozen. The official 120-task
 public evaluation is reserved for Phase C and was not used here.
 
@@ -50,7 +50,7 @@ settings and fixture journaling. A local synthetic container probe returned and
 timed out as expected, with neither probed container listed afterward. These
 are not real-model ARC results or independent proof of containment and cleanup.
 The live runner, loaded-model identity, evaluator isolation and owned-process
-cleanup remain unverified, so the frozen comparison has not started. [Details and current evidence](lt-phase-a-progress.md).
+cleanup remain unverified, and the frozen 14B comparison has started in supervised batches. [Details and current evidence](lt-phase-a-progress.md).
 
 Next, establish the local execution and cleanup boundary, demonstrate the
 existing agent on development-only data, and freeze the task and model/run
