@@ -3,8 +3,8 @@
 Status: **incomplete; no model calls or ARC evaluation performed**. This is a
 separate protocol from the strict RSI experiment in issue #2. No frozen task
 manifest, model-specific run manifests, real predictions, or comparison score
-exists yet. The utilities in `src/arc/lt_comparison.py` are offline scaffolding,
-not an execution gate or a complete runner.
+exists yet. The comparison, attestation and scoring utilities are offline scaffolding,
+not an execution gate or a complete live runner.
 
 ## Local inventory (2026-11-06)
 
@@ -38,12 +38,14 @@ not an execution gate or a complete runner.
 2. Audit exposure and select development, Phase B training and 200 comparison
    IDs without overlap. Freeze task contents, source files, prompt, runtime,
    model revisions, seeds, candidate count and all resource budgets. The
-   current manifest helper only builds a proposal and binds a partial config;
-   it does not authenticate data or establish execution readiness.
-3. Build a bounded live runner, model-specific manifests, durable prediction
-   and resource records, and an independently reproducible evaluator. The current
-   `run_task` helper accepts injected components and is a fixture seam, not a
-   safe live launcher. Verify no held-out answers enter requests or feedback.
+   current helpers bind proposed selection, configuration and supplied input,
+   model and runtime inventories. They do not authenticate provenance, prove
+   those inventories are complete, or establish execution readiness.
+3. Build a bounded live runner, model-specific manifests, and durable prediction
+   and resource records. The `run_task` and `run_bounded_task` helpers accept
+   injected components and are fixture seams, not safe live launchers. Tests
+   check held-out answers do not affect agent prompts or repair feedback; this
+   does not prove operating-system isolation.
 4. Run models sequentially with equivalent settings only after those controls
    are established. Report actual attempts, failures, denominators and costs;
    do not represent an incomplete run as a completed comparison. Do not use
@@ -51,3 +53,22 @@ not an execution gate or a complete runner.
 5. Freeze Phase B's training design before inspecting the 200-task results if
    those tasks will be reused for its comparison; otherwise disclose reuse as
    exploratory. No training or Phase C evaluation is included here.
+
+## Offline scoring
+
+`python -m src.arc.lt_score_cli --frozen FROZEN.json --receipt INPUTS.json
+--challenges CHALLENGES.json --solutions SOLUTIONS.json --sources SOURCES.json
+--prompt PROMPT --results RESULTS.jsonl` writes a JSON report to stdout only
+after rechecking the frozen selection and input receipt. `SOURCES.json` maps
+stable inventory names to local file paths. Each result row must include the
+frozen `comparison_sha256`, model key (`14b` or `32b`), task ID, status,
+candidates, tokens, runtime and peak memory/swap values; use JSON null for
+unavailable measurements. The report hashes the input results and explicitly
+marks run identity as independently unverified. Preserve the original result
+JSONL separately because the scoring report does not embed predictions.
+
+Task pass@2 requires one complete candidate to match every test output. For
+output-level pass@2, each output counts if either candidate matches that output;
+those matches can come from different candidates. Denominators reflect only
+available candidate slots, with missing tasks and candidates reported explicitly.
+A reported incomplete result must not be interpreted as a 200-task score.
