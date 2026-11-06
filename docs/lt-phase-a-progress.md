@@ -98,7 +98,7 @@ it is not evidence of filesystem, network, or process isolation. The
 results and refuses to reuse a started model run. Model-specific terminal
 records bind the task inventory, configuration identities and result-file hash;
 a consistency audit remains explicitly unverified. Token totals are recorded
-only when every reserved request reports consistent usage. Unknown token and
+only when every reserved request reports consistent fixture usage. Unknown token and
 memory values remain null. Its input components and results remain unverified fixture
 evidence; no live launcher or cleanup gate is provided by this helper.
 
