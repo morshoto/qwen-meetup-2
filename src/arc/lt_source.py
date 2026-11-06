@@ -15,3 +15,8 @@ def capture_source_tree(root: str | Path) -> dict:
         raise ValueError('source inventory changed during capture')
     return {'status': 'local_source_tree_unverified', 'execution_ready': False,
             'files': before['files'], 'code_sha256': code_sha256}
+
+
+def verify_source_tree(root: str | Path, saved: dict) -> None:
+    if capture_source_tree(root) != saved:
+        raise ValueError('source tree differs from recorded inventory')

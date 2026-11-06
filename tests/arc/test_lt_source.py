@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from src.arc.lt_source import capture_source_tree
+from src.arc.lt_source import capture_source_tree, verify_source_tree
 
 
 class SourceTreeTests(unittest.TestCase):
@@ -21,8 +21,10 @@ class SourceTreeTests(unittest.TestCase):
         self.assertEqual(len(receipt['files']), 6)
         self.assertFalse(receipt['execution_ready'])
         self.assertEqual(receipt, capture_source_tree(self.root))
+        verify_source_tree(self.root, receipt)
         (self.root / 'src' / 'example.txt').write_text('changed')
         self.assertNotEqual(receipt['code_sha256'], capture_source_tree(self.root)['code_sha256'])
+        with self.assertRaises(ValueError): verify_source_tree(self.root, receipt)
         (self.root / 'scripts' / 'added.py').write_text('new')
         self.assertNotEqual(set(receipt['files']), set(capture_source_tree(self.root)['files']))
 
