@@ -414,3 +414,10 @@ named Docker containers were absent on their post-execution checks; the owned
 model process exited. The run recorded 70,175 tokens, 414.8 seconds across
 tasks, 11.00 GB process-reported peak memory and unknown swap. These local
 observations do not establish the original strict RSI isolation gates.
+
+With the same format-example prompt and a 4,096-token ceiling, thinking-on
+produced three valid candidates out of six and scored 0/3 for pass@1 and
+pass@2. Three candidates hit the token ceiling. The run recorded 55,070
+tokens, 1,027.6 seconds across tasks, 11.37 GB process-reported peak memory,
+and unknown swap. It exited normally; local records are in
+`artifacts/lt-dev-20261106-direct-v2-on-01/`.
