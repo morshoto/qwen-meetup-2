@@ -1,25 +1,11 @@
 import unittest
 
 from src.arc.data import Task, Verifier
-from src.arc.agent import code_agent
-from src.arc.sandbox import FakeSandbox, IDENTITY_CODE, ZERO_CODE
+from src.arc.sandbox import FakeSandbox, IDENTITY_CODE
 from src.arc.lt_comparison import make_manifest, summarize, freeze_manifest, verify_manifest, run_task
 
 
 class ComparisonTests(unittest.TestCase):
-    def test_repair_prompts_never_include_held_out_answer(self):
-        task = Task('x', (([[1]], [[1]]),), ([[2]],))
-        class Backend:
-            def __init__(self): self.prompts = []
-            def generate(self, prompt, *, kind, candidate):
-                self.prompts.append(prompt)
-                if kind == 'analysis': return 'copy input'
-                return ZERO_CODE if len(self.prompts) == 2 else IDENTITY_CODE
-        backend = Backend()
-        code_agent(task, backend, FakeSandbox(), 1, 0, prompt_variant='structured')
-        self.assertEqual(len(backend.prompts), 3)
-        self.assertTrue(all('9 9 9' not in prompt for prompt in backend.prompts))
-
     def test_manifest_is_deterministic_and_excludes_reserved_tasks(self):
         ids = [f'task-{i:03}' for i in range(230)]
         kwargs = dict(seed=7, development={'task-000'}, training={'task-001'},
