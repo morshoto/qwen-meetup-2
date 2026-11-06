@@ -1,16 +1,17 @@
 # LT Phase A: Qwen ARC comparison status
 
-**Status as of 2026-11-06: the 200-task comparison is incomplete.** This is
-an exploratory protocol separate from the original RSI experiment in issue #2.
+**Status as of 2026-11-07: incomplete.** Qwen3-14B has completed the first 100 of 200 frozen tasks; Qwen3-32B has not started. On the 14B checkpoint, task pass@1 and pass@2 are each 1/100, with 169/200 valid candidate grids, 31 invalid candidates, zero timeouts, 639,336 tokens, 6,590.3 seconds summed runtime, 11.07 GB process-reported peak memory, and swap unavailable. The 200-task comparison is not complete and these are not final scores. Full checkpoint evidence and the frozen manifest are documented in [the progress record](lt-phase-a-progress.md) and `artifacts/lt-phase-a-frozen-20261107-01/`.
+
+This is an exploratory protocol separate from the original RSI experiment in issue #2. The Phase A run uses the frozen 200-task set, direct-grid agent, two candidates per task, a 4,096-token limit, and sequential model runs. Its 14B task allocation excludes development and Phase B tasks; the official public evaluation remains reserved for Phase C.
 
 | Measure | Qwen3-14B | Qwen3-32B |
 | --- | --- | --- |
 | Planned comparison tasks | 200 | 200 |
 | Frozen comparison task IDs | 200 | 200 |
-| Real comparison tasks attempted | 0 | 0 |
-| Task-level pass@1 / pass@2 | Not measured | Not measured |
-| Test-output accuracy | Not measured | Not measured |
-| Tokens, runtime, peak memory and swap | Not measured | Not measured |
+| Real comparison tasks attempted | 100 | 0 |
+| Task-level pass@1 / pass@2 | 1/100 / 1/100 | Not measured |
+| Valid candidates | 169/200 | Not measured |
+| Tokens, runtime, peak memory and swap | 639,336; 6,590.3 s; 11.07 GB; null | Not measured |
 
 A separate real 14B direct-grid development run (`lt-dev-20261106-direct-01`)
 at revision `a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4` attempted three

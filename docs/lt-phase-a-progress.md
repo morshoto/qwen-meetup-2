@@ -1,10 +1,15 @@
 # LT Phase A: exploratory ARC comparison
 
-Status: **incomplete; a three-task 14B development run has been scored**. See the [development results](lt-phase-a-summary.md). This is a
-separate protocol from the strict RSI experiment in issue #2. No frozen task
-manifest, model-specific run manifests, real predictions, or comparison score
-exists yet. The comparison, attestation and scoring utilities are offline scaffolding,
-not an execution gate or a complete live runner.
+Status as of 2026-11-07: **the frozen LT comparison is running; Qwen3-14B has completed 100 of 200 tasks, and Qwen3-32B has not started**. The first 100-task checkpoint is in `artifacts/lt-phase-a-frozen-20261107-01/score-checkpoint-14b-100.json`. This remains separate from the original strict RSI experiment in issue #2. The checkpoint is partial and does not represent a completed 200-task comparison.
+
+## Live Phase A checkpoint (2026-11-07)
+
+- The frozen comparison manifest is `artifacts/lt-phase-a-frozen-20261107-01/manifest.json`, registered as `ac03cb7a0f9d2d56c8ed03586d474e0db5cc319acc7b6668f20221e7b6672a48`. It fixes 200 task IDs, two candidates per task, the direct-grid prompt and parser, thinking off, a 4,096-token candidate cap, 1,800-second task deadline, model revisions and file hashes, source hashes, scorer, MLX settings, and 10-task batches. Seed support remains unverified.
+- The task allocation excludes the three development IDs, the frozen 100-task Phase B pool, and historical reserved IDs recorded in the allocation audit. The official 120 public evaluation tasks remain reserved for Phase C.
+- At the checkpoint, all 100 attempted 14B tasks were complete: task pass@1 **1/100**, task pass@2 **1/100**, 169/200 valid candidate grids, 31 invalid candidates, zero timeouts, 639,336 generated and prompt tokens, 6,590.3 seconds summed task runtime, 11.07 GB process-reported peak memory, and swap unavailable. These values cover only the first 100 tasks. Per-output pass counts are also in the JSON report and use a different denominator.
+- Each of those 100 task records reports its owned worker group absent and worker leader reaped. This is local process lifecycle evidence; it does not certify macOS system services or complete system isolation. The production path uses the direct-grid solver and does not execute generated Python or start Docker containers.
+- The next 14B batch is in progress. Continue from the existing run directory and journal; do not change the frozen settings based on scores. Start 32B only after all 200 14B tasks are terminal and its workers are absent. Then run the same frozen 200 tasks sequentially.
+- Original development, RSI, and comparison artifacts are preserved. Do not use the official public evaluation answers or begin Phase B training under this protocol.
 
 ## Local inventory (2026-11-06)
 
