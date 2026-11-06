@@ -1,3 +1,6 @@
+import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -27,6 +30,15 @@ class SourceTreeTests(unittest.TestCase):
         with self.assertRaises(ValueError): verify_source_tree(self.root, receipt)
         (self.root / 'scripts' / 'added.py').write_text('new')
         self.assertNotEqual(set(receipt['files']), set(capture_source_tree(self.root)['files']))
+
+    def test_cli_writes_inventory_or_source_path_map(self):
+        command = [sys.executable, '-m', 'src.arc.lt_source', '--root', str(self.root)]
+        inventory = subprocess.run(command + ['--part', 'inventory'], capture_output=True, text=True)
+        paths = subprocess.run(command + ['--part', 'paths'], capture_output=True, text=True)
+        self.assertEqual(inventory.returncode, 0, inventory.stderr)
+        self.assertEqual(paths.returncode, 0, paths.stderr)
+        from src.arc.lt_attestation import source_digest
+        self.assertEqual(source_digest(json.loads(paths.stdout)), json.loads(inventory.stdout)['code_sha256'])
 
     def test_symlinked_files_and_missing_roots_are_rejected(self):
         (self.root / 'src' / 'link').symlink_to(self.root / 'uv.lock')

@@ -20,3 +20,20 @@ def capture_source_tree(root: str | Path) -> dict:
 def verify_source_tree(root: str | Path, saved: dict) -> None:
     if capture_source_tree(root) != saved:
         raise ValueError('source tree differs from recorded inventory')
+
+
+def main() -> None:
+    import argparse
+    import json
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--root', type=Path, required=True)
+    parser.add_argument('--part', choices=('inventory', 'paths'), required=True)
+    args = parser.parse_args()
+    root = args.root.resolve()
+    inventory = capture_source_tree(root)
+    value = inventory if args.part == 'inventory' else {name: str(root / name) for name in inventory['files']}
+    print(json.dumps(value, sort_keys=True))
+
+
+if __name__ == '__main__':
+    main()
