@@ -42,3 +42,29 @@ def check_guarded_metadata(frozen: dict, model: str, metadata: dict) -> dict:
     return {'status': 'metadata_consistent_unverified', 'model': model,
             'comparison_sha256': frozen['sha256'], 'execution_ready': False,
             'server_identity_independently_verified': False}
+
+
+def probe_guarded_server(frozen: dict, model: str) -> dict:
+    """Read loopback metadata only; no generation request or trust decision is made."""
+    import hashlib
+    import urllib.error
+    import urllib.request
+    from src.arc.http_backend import _NoRedirect
+    from src.arc.lt_attestation import _object
+
+    verify_manifest(frozen)
+    if model not in ('14b', '32b'):
+        raise ValueError('invalid model')
+    url = frozen['config']['backend_url'] + '/token-budget'
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+    try:
+        with opener.open(urllib.request.Request(url, method='GET'), timeout=5) as response:
+            if response.status != 200:
+                raise ValueError('guarded server metadata unavailable')
+            raw = response.read(65537)
+        if not raw or len(raw) > 65536:
+            raise ValueError('guarded server metadata size invalid')
+        report = check_guarded_metadata(frozen, model, _object(raw))
+    except (OSError, urllib.error.URLError) as exc:
+        raise ValueError('guarded server metadata unavailable') from exc
+    return {**report, 'metadata_sha256': hashlib.sha256(raw).hexdigest()}

@@ -3,7 +3,7 @@ from copy import deepcopy
 from unittest.mock import patch
 
 from src.arc.lt_comparison import budget_for_model, freeze_manifest, make_manifest, run_bounded_task
-from src.arc.lt_components import prepare_components, check_guarded_metadata
+from src.arc.lt_components import prepare_components, check_guarded_metadata, probe_guarded_server
 
 
 class ComponentTests(unittest.TestCase):
@@ -85,6 +85,46 @@ class ComponentTests(unittest.TestCase):
                        {'max_request_seconds': 61}, {'adapter_sha256': 'unexpected'}):
             with self.subTest(change=change), self.assertRaises(ValueError):
                 check_guarded_metadata(frozen, '14b', {**metadata, **change})
+
+    def test_loopback_probe_checks_metadata_without_posting(self):
+        import json
+        import threading
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+        metadata = {'model': 'model14', 'revision': '1' * 40, 'token_limit': 20000000,
+                    'reserved_tokens': 0, 'max_prompt_tokens': 5000, 'max_new_tokens': 1000,
+                    'contract': 'same_process_token_ids_v1', 'hard_deadline': 'process_exit_v1',
+                    'thinking_mode': 'off', 'thinking_modes': ['off', 'on'],
+                    'thinking_canary': {'supported': True, 'different_token_ids': True},
+                    'max_request_seconds': 60, 'adapter_sha256': 'none'}
+        calls = []
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                calls.append(('GET', self.path))
+                data = json.dumps(metadata).encode()
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(data)
+            def do_POST(self):
+                calls.append(('POST', self.path))
+                self.send_error(500)
+            def log_message(self, *args): pass
+        server = HTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        try:
+            self.config['backend_url'] = f'http://127.0.0.1:{server.server_port}/v1'
+            frozen = freeze_manifest(self.proposal, self.config)
+            result = probe_guarded_server(frozen, '14b')
+            self.assertEqual(result['status'], 'metadata_consistent_unverified')
+            self.assertEqual(calls, [('GET', '/v1/token-budget')])
+            metadata['revision'] = '0' * 40
+            with self.assertRaises(ValueError): probe_guarded_server(frozen, '14b')
+            self.assertEqual(len(calls), 2)
+            self.assertTrue(all(method == 'GET' for method, _ in calls))
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
 
     def test_registration_rejects_remote_url_and_unpinned_sandbox(self):
         for key, value in [('models', {'14b': 'short', '32b': 'also-short'}),
