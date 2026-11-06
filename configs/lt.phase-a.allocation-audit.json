@@ -1,0 +1,10 @@
+{
+  "development_manifest_sha256": "6eb4dedaee93fc1ea0da260a22d12278f8a04d3305e0f1050437ee885258161e",
+  "execution_ready": false,
+  "prior_split_sha256": "68ef1fc9c0c081d8f90e08506a4fcbdd795715315e01736da277314c216892de",
+  "protected_count": 250,
+  "registry_sha256": "67b421802ffd521b18e8170b7f79b11f03ba2822879a49a17898a0fc67706512",
+  "status": "allocation_consistent_unverified",
+  "training_ids_sha256": "8993875030abac4f855f8ed0c08b989341d6084bf7d7c60b2580a4529733b375",
+  "training_inventory_independently_verified": false
+}
