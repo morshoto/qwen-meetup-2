@@ -84,3 +84,13 @@ output-level pass@2, each output counts if either candidate matches that output;
 those matches can come from different candidates. Denominators reflect only
 available candidate slots, with missing tasks and candidates reported explicitly.
 A reported incomplete result must not be interpreted as a 200-task score.
+
+
+The `lt_public_cli` command accepts `--frozen`, `--receipt`, and `--challenges`
+and writes only the selected public tasks to stdout. It verifies task hashes and
+rejects any test-output fields. This export reduces data passed to the solver;
+it is not evidence of filesystem, network, or process isolation. The
+`run_fixture_model` journal writes owner-only started markers and per-task
+results and refuses to reuse a started model run. It records unknown token and
+memory values as null. Its input components and results remain unverified fixture
+evidence; no live launcher or cleanup gate is provided by this helper.
