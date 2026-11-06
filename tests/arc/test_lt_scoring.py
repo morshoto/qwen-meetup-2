@@ -36,7 +36,10 @@ class ComparisonScoringTests(unittest.TestCase):
         rows = [{'model': '14b', 'task_id': 'b', 'status': 'complete',
                  'candidates': ['timeout', [[[99]]]], 'tokens': 0,
                  'runtime_seconds': 1, 'peak_memory_bytes': 0, 'peak_swap_bytes': 0}]
-        result = score_comparison(['b'], rows, self.verifier)['rows'][0]
+        report = score_comparison(['b'], rows, self.verifier)
+        self.assertEqual(report['models']['14b']['valid_candidates'], 0)
+        self.assertEqual(report['models']['14b']['candidate_denominator'], 2)
+        result = report['rows'][0]
         self.assertFalse(result['pass_at_1'])
         self.assertFalse(result['pass_at_2'])
         self.assertEqual((result['timeouts'], result['invalid']), (1, 1))
