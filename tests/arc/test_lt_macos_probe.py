@@ -177,7 +177,7 @@ print(json.dumps(result))
     @unittest.skipUnless(platform.system() == 'Darwin' and os.environ.get('LT_PROBE_MLX') == '1',
                          'requires explicit offline MLX probe')
     def test_synthetic_mlx_gpu_works_under_proposed_profile(self):
-        script = ('import json,mlx.core as mx; x=mx.array([1,2,3]); y=x+2; mx.eval(y); '
+        script = ('import json,mlx_lm,mlx.core as mx; x=mx.array([1,2,3]); y=x+2; mx.eval(y); '
                   'print(json.dumps({"device":str(mx.default_device()),"result":y.tolist()}))')
         with tempfile.TemporaryDirectory(prefix='lt-mlx-probe-') as directory:
             root = os.path.realpath(directory)
@@ -189,7 +189,7 @@ print(json.dumps(result))
                 if sandboxed:
                     command = ['/usr/bin/sandbox-exec', '-p', profile, *command]
                 with self.subTest(sandboxed=sandboxed):
-                    result = subprocess.run(command, env=env, close_fds=True, capture_output=True,
+                    result = subprocess.run(command, env=env, cwd=root, close_fds=True, capture_output=True,
                                             text=True, timeout=30)
                     self.assertEqual(result.returncode, 0, result.stderr)
                     actual = json.loads(result.stdout)
