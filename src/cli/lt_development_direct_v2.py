@@ -58,7 +58,7 @@ def main():
             try:
                 return json.dumps(normalize_direct(extract_final(text, thinking == 'on'), count), separators=(',', ':'))
             except ValueError:
-                return extract_final(text, thinking == 'on')
+                return 'null'  # Keep malformed or ambiguous output invalid in the agent.
 
     backend = Backend()
     with (out / 'results.jsonl').open('x') as stream:
