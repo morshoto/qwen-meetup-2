@@ -48,6 +48,7 @@ class InputAttestationTests(unittest.TestCase):
     def test_attestation_binds_data_sources_and_prompt(self):
         receipt = attest_inputs(self.frozen, self.challenge, self.solution, self.sources, self.prompt)
         self.assertEqual(len(receipt['selected_task_sha256']), 200)
+        self.assertEqual(receipt['allocation_scope'], 'allocation_unchecked')
         verify_inputs(receipt, self.frozen, self.challenge, self.solution, self.sources, self.prompt)
         self.solution.write_text(self.solution.read_text() + ' ')
         with self.assertRaises(ValueError):
