@@ -240,3 +240,23 @@ They do not prove that a newly observed service belongs to the probe, that no
 helper remains, or that a server is cleaned up. The probe never marks cleanup,
 ownership or execution readiness as verified and does not terminate shared
 system services. No real weights or ARC inputs were used.
+
+### Responsibility metadata limitation
+
+A read-only synthetic run queried the undocumented macOS
+`responsibility_get_pid_responsible_for_pid` interface while sampling the
+compiler-service process list. In one run, synthetic child PID 15986 and newly
+listed compiler-service PID 16002 both reported responsible PID 12160; PID
+16002 had parent PID 1, its own process group, and was absent in the final
+snapshot. A separate control started two unrelated owned sleep processes; both
+also reported responsible PID 12160. Thus a matching responsible PID is shared
+by unrelated work in this app session and cannot identify a particular run or
+prove that a service is owned by it. Other service queries returned permission
+errors, and `launchctl procinfo` and `launchctl blame` required privileges not
+available to this process. No privilege escalation was attempted.
+
+The lifecycle probe now records this API's response or an unavailable state,
+with `ownership_verified`, `cleanup_verified` and `execution_ready` always
+false. The API is undocumented, may be unavailable or race with PID exit and
+reuse, and is not an independent receipt. No model weights or ARC data were
+used; no shared service was signalled.
