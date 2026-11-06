@@ -56,6 +56,28 @@ class JournalTests(unittest.TestCase):
             run_fixture_model(self.root, self.frozen, self.receipt, self.export, '14b', backend, FakeSandbox())
         self.assertEqual(backend.calls, 5)
 
+    def test_fixture_journal_feeds_two_model_offline_scorer(self):
+        from src.arc.data import Verifier
+        from src.arc.lt_scoring import score_comparison
+        class Backend:
+            def __init__(self): self.calls = 0
+            def generate(self, prompt, *, kind, candidate):
+                self.calls += 1
+                if self.calls == 5: raise BackendError('unavailable', 'fixture')
+                return 'copy input' if kind == 'analysis' else IDENTITY_CODE
+        rows = []
+        for model in ('14b', '32b'):
+            run_fixture_model(self.root, self.frozen, self.receipt, self.export, model, Backend(), FakeSandbox())
+            rows.extend(json.loads(line) for line in (self.root / f'{model}.results.jsonl').read_text().splitlines())
+        verifier = Verifier({task_id: [[[2]]] for task_id in self.ids})
+        report = score_comparison(self.ids, rows, verifier)
+        for model in ('14b', '32b'):
+            self.assertEqual(report['models'][model]['status'], 'incomplete')
+            self.assertEqual(report['models'][model]['selected'], 200)
+            self.assertEqual(report['models'][model]['attempted'], 2)
+            self.assertEqual(report['models'][model]['pass_at_1'], 1)
+            self.assertEqual(report['models'][model]['pass_at_2'], 1)
+
     def test_interrupt_leaves_started_and_incomplete_records(self):
         class Backend:
             def generate(self, prompt, *, kind, candidate):
