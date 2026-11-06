@@ -388,3 +388,21 @@ not identify unobserved helpers, prove which run requested a shared service,
 or establish that all delegated work is complete. The probe continues to
 report `ownership_verified: false`, `cleanup_verified: false` and
 `execution_ready: false`.
+
+## Development response-format investigation
+
+The original 14B direct-grid run produced four complete JSON arrays containing
+`output` objects. The original agent expected arrays of grids and rejected the
+objects. Both `a64e4611` responses ended at 2,048 tokens with incomplete JSON.
+The LT-only normalizer accepts exact output-object wrappers and validates grids;
+it rejects duplicate or extra keys, malformed JSON, ambiguous structures and
+invalid grid values. Re-scoring the original responses under this normalizer
+produced four valid candidates out of six, with pass@1 and pass@2 both 0/3.
+The original raw records and score remain unchanged.
+
+A separate thinking-off direct run with a 4,096-token limit and a format example
+produced two valid candidates out of six and scored 0/3 for both metrics. Four
+responses copied the literal two-output format example; they were rejected
+because these tasks each have one test input. The run logged 33,294 tokens,
+169.0 seconds across tasks, 11.00 GB process-reported peak memory and unknown
+swap. Its local record is `artifacts/lt-dev-20261106-direct-v2-off-01/`.
