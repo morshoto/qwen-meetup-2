@@ -3,7 +3,7 @@ import unittest
 from src.arc.data import Task, Verifier
 from src.arc.agent import code_agent
 from src.arc.sandbox import FakeSandbox, IDENTITY_CODE, ZERO_CODE
-from src.arc.lt_comparison import make_manifest, summarize
+from src.arc.lt_comparison import make_manifest, summarize, freeze_manifest, verify_manifest
 
 
 class ComparisonTests(unittest.TestCase):
@@ -36,6 +36,24 @@ class ComparisonTests(unittest.TestCase):
             make_manifest(['x'] * 201, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
         with self.assertRaises(ValueError):
             make_manifest(['x'], seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+
+    def test_freeze_binds_manifest_config_and_detects_changes(self):
+        ids = [f'task-{i:03}' for i in range(210)]
+        proposal = make_manifest(ids, seed=1, development=set(), training=set(), exposures=set(), dataset_sha256='a' * 64)
+        config = {'prompt_sha256': 'b' * 64, 'code_sha256': 'c' * 64,
+                  'models': {'14b': 'revision-14', '32b': 'revision-32'},
+                  'thinking': 'off', 'temperature': 0.7, 'candidates': 2,
+                  'max_tokens': 1000, 'timeout_seconds': 60}
+        frozen = freeze_manifest(proposal, config)
+        verify_manifest(frozen)
+        frozen['config']['max_tokens'] = 1001
+        with self.assertRaises(ValueError): verify_manifest(frozen)
+
+    def test_error_row_cannot_make_run_complete(self):
+        verifier = Verifier({'a': [[[1]]]})
+        result = summarize(['a'], [{'task_id': 'a', 'candidates': [], 'status': 'error'}], verifier)
+        self.assertEqual(result['status'], 'incomplete')
+        self.assertEqual(result['errors'], 1)
 
     def test_summary_distinguishes_task_and_output_scores_and_missing(self):
         verifier = Verifier({'a': [[[1]], [[2]]], 'b': [[[3]]]})
