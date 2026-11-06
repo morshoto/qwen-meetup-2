@@ -313,3 +313,13 @@ training IDs, 433 remain after excluding the 317 known exposures, the 250
 protected IDs and the three development IDs, before any additional Phase B
 training exclusions. The 433 are not proven unexposed. This is an allocation
 count, not a selected or frozen comparison manifest.
+
+For a future comparison proposal, `python -m src.arc.lt_allocation` requires
+`--challenges`, `--registry`, `--split`, `--development`, `--training` (a JSON
+array of Phase B task IDs), `--seed` and `--part proposal` or `--part audit`.
+It derives known exposures and the prior 200/50 reservations from the bound
+registries, verifies the development selection, and rejects training IDs in
+those reservations or the development subset. The audit marks the supplied
+training inventory unverified: it cannot establish that the list includes all
+Phase B examples. This command has only been exercised with synthetic tasks;
+no real 200-task proposal has been created or frozen.
