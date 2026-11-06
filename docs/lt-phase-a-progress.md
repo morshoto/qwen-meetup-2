@@ -158,3 +158,35 @@ Both tests passed on the local host. Their server replies, grids and source
 code are synthetic; no Qwen weights or ARC task were used. The container
 observations are not independent cleanup or containment proof and do not
 establish model-server identity or readiness for live inference.
+
+## Synthetic macOS and Metal boundary probe
+
+On 2026-11-06, a default-deny macOS profile initially aborted even `/bin/echo`.
+The host sandbox log reported `file-read-data /`; allowing a read of the root
+directory as a literal, while keeping child paths subject to the allowlist,
+let arm64 Python start. Adding `iokit-open` let a synthetic MLX operation run on
+`Device(gpu, 0)` and produce `[3, 4, 5]`; the same operation also passed
+outside the profile. This used cached MLX 0.32.4 and MLX-LM 0.30.7 without
+loading model weights or ARC data.
+
+Synthetic probes found that the profile denied a secret file, an outside hard
+link, a symlink to the secret, a new loopback TCP connection, and `fork`. A
+hard link **inside** an allowed directory remained readable. An explicitly
+inherited file descriptor and socket also remained usable; with descriptors
+closed, those two accesses failed. The profile currently allows broad Mach and
+IOKit operations and depends on caller-supplied allowed directories. These
+observations do not exclude aliases, IPC services or escaped processes, nor do
+they establish the identity or cleanup of a model server. The profile builder
+is marked non-authorizing and is not wired to the runner.
+
+The synthetic controls, including the opt-in Metal operation, can be repeated
+from the worktree using cached dependencies:
+
+```sh
+LT_PROBE_MLX=1 uv run --offline --no-project --python /opt/homebrew/bin/python3.12 \
+  --with mlx-lm==0.30.7 python -m unittest discover \
+  -s tests/arc -p 'test_lt_macos_probe.py' -v
+```
+
+All four controls passed locally. This narrows the earlier allowlist startup
+failure but does **not** clear the live-run blocker.
