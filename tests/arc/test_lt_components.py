@@ -126,6 +126,53 @@ class ComponentTests(unittest.TestCase):
             server.server_close()
             thread.join()
 
+    def test_guarded_http_candidate_requests_are_matched_across_models(self):
+        import json
+        import threading
+        from http.server import BaseHTTPRequestHandler, HTTPServer
+        from src.arc.data import Task
+        from src.arc.sandbox import IDENTITY_CODE
+        requests = []
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                payload = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                requests.append(payload)
+                code_request = len(requests) % 2 == 0
+                response = {'model': payload['model'], 'thinking_mode': 'off',
+                            'thinking_control': 'tokenizer_template_canary_passed',
+                            'choices': [{'message': {'role': 'assistant', 'content': IDENTITY_CODE if code_request else 'copy input'},
+                                         'finish_reason': 'stop'}],
+                            'usage': {'prompt_tokens': 2, 'completion_tokens': 1, 'total_tokens': 3}}
+                raw = json.dumps(response).encode()
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+            def log_message(self, *args): pass
+        server = HTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever)
+        thread.start()
+        try:
+            self.config['backend_url'] = f'http://127.0.0.1:{server.server_port}/v1'
+            frozen = freeze_manifest(self.proposal, self.config)
+            task = Task('t000', (([[1]], [[1]]),), ([[2]],))
+            for model in ('14b', '32b'):
+                backend, sandbox = prepare_components(frozen, model)
+                with patch.object(sandbox, 'run', side_effect=lambda code, grid: grid):
+                    result = run_bounded_task(task, backend, sandbox, budget_for_model(frozen, model),
+                                              max_tokens=1000, max_repairs=1)
+                self.assertEqual(result['status'], 'complete')
+            self.assertEqual([r['seed'] for r in requests], [42, 42, 43, 43] * 2)
+            self.assertEqual([r['model'] for r in requests], ['model14'] * 4 + ['model32'] * 4)
+            self.assertTrue(all(r['max_tokens'] == 1000 and r['temperature'] == 0.7 and
+                                r['thinking_mode'] == 'off' for r in requests))
+            self.assertEqual([r['messages'] for r in requests[:4]], [r['messages'] for r in requests[4:]])
+            self.assertTrue(all('9 9 9' not in str(r['messages']) for r in requests))
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
     def test_registration_rejects_remote_url_and_unpinned_sandbox(self):
         for key, value in [('models', {'14b': 'short', '32b': 'also-short'}),
                            ('backend_url', 'https://example.com/v1'),
