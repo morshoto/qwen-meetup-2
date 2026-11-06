@@ -16,10 +16,32 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('frozen', 'receipt', 'challenges'):
         parser.add_argument('--' + name, required=True, type=Path)
+    parser.add_argument('--fixture-only', action='store_true')
+    for name in ('registry', 'split', 'development', 'training'):
+        parser.add_argument('--' + name, type=Path)
     args = parser.parse_args(argv)
+    paths = (args.registry, args.split, args.development, args.training)
+    if args.fixture_only and any(paths):
+        parser.error('fixture-only cannot be combined with allocation evidence')
+    if not args.fixture_only and not all(paths):
+        parser.error('protected allocation evidence is required')
     try:
         frozen, receipt = _object(args.frozen.read_bytes()), _object(args.receipt.read_bytes())
         verify_manifest(frozen)
+        if receipt.get('execution_ready') is not False:
+            raise ValueError('invalid receipt readiness')
+        if args.fixture_only:
+            if receipt.get('allocation_scope') != 'allocation_unchecked':
+                raise ValueError('fixture receipt scope differs')
+        else:
+            from src.arc.lt_allocation import check_protected_allocation
+            audit = check_protected_allocation(frozen['manifest'], args.registry.read_bytes(), args.split.read_bytes(),
+                _object(args.development.read_bytes()), json.loads(args.training.read_bytes()))
+            audit_bytes = json.dumps(audit, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()
+            if (receipt.get('allocation_scope') != 'prior_reservations_checked_unverified' or
+                    receipt.get('source_scope') != 'conservative_source_tree' or
+                    receipt.get('allocation_audit_sha256') != hashlib.sha256(audit_bytes).hexdigest()):
+                raise ValueError('public export allocation audit differs')
         raw = args.challenges.read_bytes()
         digest = hashlib.sha256(raw).hexdigest()
         if (receipt.get('comparison_sha256') != frozen['sha256'] or

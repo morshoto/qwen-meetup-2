@@ -83,10 +83,20 @@ class RegisteredPreparationTests(unittest.TestCase):
             result = subprocess.run(score, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertFalse(json.loads(result.stdout)['evidence']['run_identity_independently_verified'])
+            public = [sys.executable, '-m', 'src.arc.lt_public_cli', '--frozen', str(root / 'frozen'),
+                      '--receipt', str(root / 'receipt'), '--challenges', str(root / 'challenges')]
+            for name in ('registry', 'split', 'development', 'training'):
+                public += ['--' + name, str(root / name)]
+            exported = subprocess.run(public, capture_output=True, text=True)
+            self.assertEqual(exported.returncode, 0, exported.stderr)
+            self.assertEqual(set(json.loads(exported.stdout)['tasks']), set(proposal['task_ids']))
             (root / 'training').write_bytes(raw(['t0100']))
             failed = subprocess.run(score, capture_output=True, text=True)
             self.assertNotEqual(failed.returncode, 0)
             self.assertEqual(failed.stdout, '')
+            failed_export = subprocess.run(public, capture_output=True, text=True)
+            self.assertNotEqual(failed_export.returncode, 0)
+            self.assertEqual(failed_export.stdout, '')
 
 
 if __name__ == '__main__': unittest.main()

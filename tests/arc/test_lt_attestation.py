@@ -124,12 +124,23 @@ class InputAttestationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             attest_model_runtime(frozen, '32b', {'model': model14}, {'runtime': runtime})
 
-    def test_public_export_cli_only_emits_selected_challenges(self):
+    def test_public_export_rejects_unchecked_allocation_by_default(self):
         root = self.challenge.parent
         receipt = attest_inputs(self.frozen, self.challenge, self.solution, self.sources, self.prompt)
         (root / 'frozen.json').write_text(json.dumps(self.frozen))
         (root / 'receipt.json').write_text(json.dumps(receipt))
         command = [sys.executable, '-m', 'src.arc.lt_public_cli', '--frozen', str(root / 'frozen.json'),
+                   '--receipt', str(root / 'receipt.json'), '--challenges', str(self.challenge)]
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, '')
+
+    def test_public_export_cli_only_emits_selected_challenges(self):
+        root = self.challenge.parent
+        receipt = attest_inputs(self.frozen, self.challenge, self.solution, self.sources, self.prompt)
+        (root / 'frozen.json').write_text(json.dumps(self.frozen))
+        (root / 'receipt.json').write_text(json.dumps(receipt))
+        command = [sys.executable, '-m', 'src.arc.lt_public_cli', '--fixture-only', '--frozen', str(root / 'frozen.json'),
                    '--receipt', str(root / 'receipt.json'), '--challenges', str(self.challenge)]
         result = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
