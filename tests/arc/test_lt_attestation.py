@@ -71,6 +71,26 @@ class InputAttestationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             attest_model_runtime(frozen, '32b', {'model': model14}, {'runtime': runtime})
 
+    def test_offline_prepare_cli_emits_separate_reviewable_documents(self):
+        root = self.challenge.parent
+        (root / 'proposal.json').write_text(json.dumps(self.frozen['manifest']))
+        (root / 'config.json').write_text(json.dumps(self.frozen['config']))
+        (root / 'sources.json').write_text(json.dumps({'solver.py': str(self.code)}))
+        command = [sys.executable, '-m', 'src.arc.lt_prepare_cli',
+                   '--proposal', str(root / 'proposal.json'), '--config', str(root / 'config.json'),
+                   '--challenges', str(self.challenge), '--solutions', str(self.solution),
+                   '--sources', str(root / 'sources.json'), '--prompt', str(self.prompt)]
+        frozen = subprocess.run(command + ['--part', 'frozen'], capture_output=True, text=True)
+        receipt = subprocess.run(command + ['--part', 'receipt'], capture_output=True, text=True)
+        self.assertEqual(frozen.returncode, 0, frozen.stderr)
+        self.assertEqual(receipt.returncode, 0, receipt.stderr)
+        self.assertEqual(json.loads(frozen.stdout), self.frozen)
+        self.assertEqual(json.loads(receipt.stdout)['comparison_sha256'], self.frozen['sha256'])
+        self.code.write_text('changed')
+        failure = subprocess.run(command + ['--part', 'frozen'], capture_output=True, text=True)
+        self.assertNotEqual(failure.returncode, 0)
+        self.assertEqual(failure.stdout, '')
+
     def test_offline_cli_scores_bound_predictions_and_rejects_changed_answers(self):
         root = self.challenge.parent
         receipt = attest_inputs(self.frozen, self.challenge, self.solution, self.sources, self.prompt)
