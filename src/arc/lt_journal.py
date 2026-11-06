@@ -6,6 +6,8 @@ resource sampling, or permission for a live run. A started run cannot be resumed
 from __future__ import annotations
 
 import json
+import hashlib
+import stat
 import os
 import time
 from pathlib import Path
@@ -13,7 +15,7 @@ from typing import Any
 
 from src.arc.lt_comparison import budget_for_model, run_bounded_task, verify_manifest
 from src.arc.lt_public import load_public_export
-from src.arc.rsi_slot_lifecycle import _create, _directory
+from src.arc.rsi_slot_lifecycle import _create, _directory, _read
 
 
 def run_fixture_model(root: Path, frozen: dict, receipt: dict, public_export: dict,
@@ -29,12 +31,17 @@ def run_fixture_model(root: Path, frozen: dict, receipt: dict, public_export: di
     config = frozen['config']
     identity = {'model': model, 'comparison_sha256': frozen['sha256'],
                 'evidence_type': 'caller_supplied_fixture_components',
-                'run_identity_independently_verified': False}
+                'run_identity_independently_verified': False,
+                'model_revision': config['models'][model],
+                'model_files_sha256': config['model_files_sha256'][model],
+                'runtime_sha256': config['runtime_sha256'],
+                'task_hashes_sha256': _task_hash(receipt)}
     with _directory(root) as directory:
         _create(directory, f'{model}.started.json', identity)
         fd = os.open(f'{model}.results.jsonl', os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
                      0o600, dir_fd=directory)
         attempted = 0
+        result_hash = hashlib.sha256()
         try:
             os.fchmod(fd, 0o600)
             with os.fdopen(fd, 'wb', closefd=False) as stream:
@@ -47,7 +54,9 @@ def run_fixture_model(root: Path, frozen: dict, receipt: dict, public_export: di
                     row.update(model=model, comparison_sha256=frozen['sha256'], tokens=None,
                                runtime_seconds=time.monotonic() - started, peak_memory_bytes=None,
                                peak_swap_bytes=None)
-                    stream.write((json.dumps(row, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode())
+                    line = (json.dumps(row, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode()
+                    stream.write(line)
+                    result_hash.update(line)
                     stream.flush()
                     os.fsync(fd)
                     attempted += 1
@@ -60,6 +69,57 @@ def run_fixture_model(root: Path, frozen: dict, receipt: dict, public_export: di
         finally:
             os.close(fd)
         result = {**identity, 'status': 'complete' if attempted == len(task_ids) and row['status'] == 'complete'
-                  else 'incomplete', 'attempted': attempted}
+                  else 'incomplete', 'attempted': attempted, 'results_sha256': result_hash.hexdigest()}
         _create(directory, f'{model}.terminal.json', result)
         return result
+
+
+def _task_hash(receipt: dict) -> str:
+    return hashlib.sha256(json.dumps(receipt['selected_task_sha256'], sort_keys=True,
+                                     separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+
+
+def audit_fixture_run(root: Path, frozen: dict, receipt: dict, model: str) -> dict:
+    """Check journal consistency only; mutable local files are not authenticated."""
+    from src.arc.lt_attestation import _object
+    verify_manifest(frozen)
+    if (model not in ('14b', '32b') or receipt.get('comparison_sha256') != frozen['sha256'] or
+            set(receipt.get('selected_task_sha256', {})) != set(frozen['manifest']['task_ids'])):
+        raise ValueError('comparison or task identity differs')
+    config = frozen['config']
+    identity = {'model': model, 'comparison_sha256': frozen['sha256'],
+                'evidence_type': 'caller_supplied_fixture_components',
+                'run_identity_independently_verified': False, 'model_revision': config['models'][model],
+                'model_files_sha256': config['model_files_sha256'][model], 'runtime_sha256': config['runtime_sha256'],
+                'task_hashes_sha256': _task_hash(receipt)}
+    with _directory(root) as directory:
+        started = _read(directory, f'{model}.started.json')
+        terminal = _read(directory, f'{model}.terminal.json')
+        if started != identity or any(terminal.get(k) != v for k, v in identity.items()):
+            raise ValueError('run identity differs')
+        fd = os.open(f'{model}.results.jsonl', os.O_RDONLY | os.O_NOFOLLOW, dir_fd=directory)
+        with os.fdopen(fd, 'rb') as stream:
+            info = os.fstat(stream.fileno())
+            if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o600:
+                raise ValueError('results must be a private regular file')
+            raw = stream.read(64 * 1024 * 1024 + 1)
+        if len(raw) > 64 * 1024 * 1024 or hashlib.sha256(raw).hexdigest() != terminal.get('results_sha256'):
+            raise ValueError('result journal differs')
+        rows = [_object(line) for line in raw.splitlines()]
+        ids = frozen['manifest']['task_ids']
+        if len(rows) != terminal.get('attempted') or len(rows) > len(ids):
+            raise ValueError('result coverage differs')
+        for index, row in enumerate(rows):
+            marker = _read(directory, f'{model}.task-{index:03d}.started.json')
+            expected_marker = {'model': model, 'comparison_sha256': frozen['sha256'], 'task_id': ids[index]}
+            if (marker != expected_marker or row.get('model') != model or row.get('task_id') != ids[index] or
+                    row.get('comparison_sha256') != frozen['sha256'] or row.get('status') not in ('complete', 'error') or
+                    not isinstance(row.get('candidates'), list) or len(row['candidates']) > 2 or
+                    (row['status'] == 'complete' and len(row['candidates']) != 2) or
+                    (index < len(rows) - 1 and row['status'] != 'complete')):
+                raise ValueError('task journal differs')
+        expected_status = 'complete' if len(rows) == len(ids) and all(r['status'] == 'complete' for r in rows) else 'incomplete'
+        if terminal.get('status') != expected_status:
+            raise ValueError('terminal status differs')
+    return {'status': 'consistent_unverified', 'model': model, 'attempted': len(rows),
+            'run_status': expected_status, 'run_identity_independently_verified': False}

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from src.arc.http_backend import BackendError
 from src.arc.lt_comparison import freeze_manifest, make_manifest
-from src.arc.lt_journal import run_fixture_model
+from src.arc.lt_journal import run_fixture_model, audit_fixture_run
 from src.arc.lt_public import build_public_export
 from src.arc.sandbox import FakeSandbox, IDENTITY_CODE
 
@@ -55,6 +55,27 @@ class JournalTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             run_fixture_model(self.root, self.frozen, self.receipt, self.export, '14b', backend, FakeSandbox())
         self.assertEqual(backend.calls, 5)
+
+    def test_model_manifest_binds_journal_and_detects_tampering(self):
+        class Backend:
+            def generate(self, prompt, *, kind, candidate):
+                raise BackendError('unavailable', 'fixture')
+        terminal = run_fixture_model(self.root, self.frozen, self.receipt, self.export,
+                                     '14b', Backend(), FakeSandbox())
+        self.assertEqual(terminal['model_revision'], 'rev14')
+        self.assertEqual(terminal['model_files_sha256'], 'd' * 64)
+        self.assertEqual(terminal['runtime_sha256'], 'f' * 64)
+        self.assertEqual(terminal['results_sha256'], hashlib.sha256((self.root / '14b.results.jsonl').read_bytes()).hexdigest())
+        audit = audit_fixture_run(self.root, self.frozen, self.receipt, '14b')
+        self.assertEqual(audit['status'], 'consistent_unverified')
+        self.assertFalse(audit['run_identity_independently_verified'])
+        marker = self.root / '14b.task-000.started.json'
+        original_marker = marker.read_text()
+        marker.write_text(original_marker.replace(self.ids[0], 'unexpected'))
+        with self.assertRaises(ValueError): audit_fixture_run(self.root, self.frozen, self.receipt, '14b')
+        marker.write_text(original_marker)
+        with (self.root / '14b.results.jsonl').open('a') as stream: stream.write('changed\n')
+        with self.assertRaises(ValueError): audit_fixture_run(self.root, self.frozen, self.receipt, '14b')
 
     def test_fixture_journal_feeds_two_model_offline_scorer(self):
         from src.arc.data import Verifier
