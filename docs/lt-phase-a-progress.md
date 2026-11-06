@@ -26,6 +26,10 @@ not an execution gate or a complete live runner.
 - `research/rsi/bounded-exposure-proposal.json` and related reviews inventory
   prior project use, but explicitly leave historical and pretraining exposure
   uncertain. No 200 IDs have been selected for this protocol.
+  The copied challenge file contains 1,000 task IDs; the union of the bounded
+  proposal and extended metadata review identifies 317 of them as exposed,
+  leaving 683 outside that known union. This is a bounded inventory, not proof
+  that the remaining tasks are unexposed. No Phase B training pool is frozen.
 
 ## Remaining work before a comparison
 
