@@ -74,6 +74,12 @@ not an execution gate or a complete live runner.
 with `--part receipt` to obtain the input receipt. Both invocations validate
 the same inputs. Preserve their outputs before scoring or any experiment; these
 documents alone neither verify the loaded model nor permit live execution.
+By default, preparation and scoring also require `--registry`, `--split`,
+`--development`, `--training`, `--source-root` and `--source-inventory`.
+They recheck the protected allocation and complete source inventory and bind
+that audit into the receipt. The supplied training inventory remains
+independently unverified. `--fixture-only` permits unchecked test inputs and
+labels the receipt `allocation_unchecked`; it does not permit a live run.
 The configuration also binds model names and full revisions, a loopback guarded
 server URL, a digest-pinned sandbox image and its resource limits. Component
 construction and guarded-server metadata checks only compare supplied settings;
