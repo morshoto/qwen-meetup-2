@@ -217,3 +217,26 @@ service identity and service lifetime are not independently controlled or
 verified. The test-only extension and listener rules are not in the profile
 builder or a live launcher. The user-data isolation and complete cleanup
 requirements remain open.
+
+## Synthetic Metal service lifecycle observation
+
+A read-only process-list observation around a synthetic GPU forward pass saw a
+previously unlisted `MTLCompilerService` PID 14845 in its own process group
+with parent PID 1; it was absent from immediate and half-second later
+snapshots. A subsequent run of the repeatable probe at commit `749f71d` took
+20 samples, saw previously unlisted PID 15273 with parent PID 1 and its own
+process group, and did not see that PID in the final snapshot. Both synthetic
+child processes completed. Existing system compiler services were already
+present before each observation.
+
+```sh
+uv run --offline --no-project --python /opt/homebrew/bin/python3.12 \
+  --with mlx-lm==0.30.7 python -m src.cli.lt_metal_lifecycle_probe
+```
+
+These are temporal process-list observations: PID reuse, sampling gaps,
+concurrent workloads, service ownership and delegated work are not resolved.
+They do not prove that a newly observed service belongs to the probe, that no
+helper remains, or that a server is cleaned up. The probe never marks cleanup,
+ownership or execution readiness as verified and does not terminate shared
+system services. No real weights or ARC inputs were used.
