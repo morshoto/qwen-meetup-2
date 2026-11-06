@@ -39,6 +39,16 @@ not an execution gate or a complete live runner.
   comparison. The proposal does not authorize inference or establish
   independent source provenance.
 
+## Local model-file recheck (2026-11-06 20:09 JST)
+
+The locally cached 14B and 32B snapshot directories had exactly the 12 and
+14 file names, respectively, listed in `research/rsi/audits/technical-model-14b.json`
+and `technical-model-32b.json`. SHA-256 checks of every listed file, following
+its local snapshot path, matched those historical inventories, including all
+six weight shards. This is a point-in-time local consistency check, not
+independent model provenance, a loaded-model identity, a complete runtime
+closure, or verification of the live execution boundary. No model was loaded.
+
 ## Remaining work before a comparison
 
 1. Complete the development-only real-model path and verify model, template,
