@@ -53,6 +53,55 @@ class InputAttestationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             verify_inputs(receipt, self.frozen, self.challenge, self.solution, self.sources, self.prompt)
 
+    def test_full_source_attestation_rejects_added_source_after_freeze(self):
+        from src.arc.lt_source import capture_source_tree
+        root = self.challenge.parent / 'tree'
+        root.mkdir()
+        for name in ('src', 'sandbox', 'configs', 'scripts'):
+            (root / name).mkdir()
+            (root / name / 'file').write_text(name)
+        for name in ('pyproject.toml', 'uv.lock'):
+            (root / name).write_text(name)
+        inventory = capture_source_tree(root)
+        sources = {name: root / name for name in inventory['files']}
+        config = dict(self.frozen['config'])
+        config['code_sha256'] = inventory['code_sha256']
+        frozen = freeze_manifest(self.frozen['manifest'], config)
+        receipt = attest_inputs(frozen, self.challenge, self.solution, sources, self.prompt,
+                                source_root=root, source_inventory=inventory)
+        verify_inputs(receipt, frozen, self.challenge, self.solution, sources, self.prompt,
+                      source_root=root, source_inventory=inventory)
+        workspace = self.challenge.parent
+        (workspace / 'frozen.json').write_text(json.dumps(frozen))
+        (workspace / 'receipt.json').write_text(json.dumps(receipt))
+        (workspace / 'inventory.json').write_text(json.dumps(inventory))
+        (workspace / 'sources.json').write_text(json.dumps({name: str(path) for name, path in sources.items()}))
+        (workspace / 'results.jsonl').write_text('')
+        (workspace / 'proposal.json').write_text(json.dumps(frozen['manifest']))
+        (workspace / 'config.json').write_text(json.dumps(frozen['config']))
+        prepare = [sys.executable, '-m', 'src.arc.lt_prepare_cli', '--proposal', str(workspace / 'proposal.json'),
+                   '--config', str(workspace / 'config.json'), '--challenges', str(self.challenge),
+                   '--solutions', str(self.solution), '--sources', str(workspace / 'sources.json'),
+                   '--prompt', str(self.prompt), '--part', 'receipt', '--source-root', str(root),
+                   '--source-inventory', str(workspace / 'inventory.json')]
+        prepared = subprocess.run(prepare, capture_output=True, text=True)
+        self.assertEqual(prepared.returncode, 0, prepared.stderr)
+        self.assertEqual(json.loads(prepared.stdout), receipt)
+        command = [sys.executable, '-m', 'src.arc.lt_score_cli', '--frozen', str(workspace / 'frozen.json'),
+                   '--receipt', str(workspace / 'receipt.json'), '--challenges', str(self.challenge),
+                   '--solutions', str(self.solution), '--sources', str(workspace / 'sources.json'),
+                   '--prompt', str(self.prompt), '--results', str(workspace / 'results.jsonl'),
+                   '--source-root', str(root), '--source-inventory', str(workspace / 'inventory.json')]
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        (root / 'src' / 'added.py').write_text('changed source closure')
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, '')
+        with self.assertRaises(ValueError):
+            verify_inputs(receipt, frozen, self.challenge, self.solution, sources, self.prompt,
+                          source_root=root, source_inventory=inventory)
+
     def test_model_and_runtime_files_must_match_registered_hashes(self):
         model14 = self.challenge.parent / 'model14'
         model32 = self.challenge.parent / 'model32'

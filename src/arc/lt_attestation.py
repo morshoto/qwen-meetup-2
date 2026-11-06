@@ -50,8 +50,18 @@ def source_digest(sources: Mapping[str, Path]) -> str:
 
 
 def attest_inputs(frozen: dict, challenges_path: Path, solutions_path: Path,
-                  sources: Mapping[str, Path], prompt_path: Path) -> dict:
+                  sources: Mapping[str, Path], prompt_path: Path, *, source_root: Path | None = None,
+                  source_inventory: dict | None = None) -> dict:
     verify_manifest(frozen)
+    if (source_root is None) != (source_inventory is None):
+        raise ValueError('source root and inventory must be provided together')
+    if source_root is not None:
+        from src.arc.lt_source import verify_source_tree
+        root = Path(source_root).resolve()
+        verify_source_tree(root, source_inventory)
+        if (set(sources) != set(source_inventory['files']) or
+                any(Path(path).resolve() != root / name for name, path in sources.items())):
+            raise ValueError('source path map differs from source inventory')
     challenges_bytes, solutions_bytes = Path(challenges_path).read_bytes(), Path(solutions_path).read_bytes()
     challenges, solutions = _object(challenges_bytes), _object(solutions_bytes)
     manifest, config = frozen['manifest'], frozen['config']
@@ -64,7 +74,12 @@ def attest_inputs(frozen: dict, challenges_path: Path, solutions_path: Path,
         raise ValueError('task selection is not the registered selection')
     if source_digest(sources) != config['code_sha256'] or _sha(Path(prompt_path).read_bytes()) != config['prompt_sha256']:
         raise ValueError('source or prompt identity differs')
-    return {'comparison_sha256': frozen['sha256'], 'challenges_sha256': _sha(challenges_bytes),
+    if source_root is not None:
+        verify_source_tree(root, source_inventory)
+    scope = ({'source_scope': 'conservative_source_tree',
+              'source_inventory_sha256': _sha(_canonical(source_inventory))}
+             if source_root is not None else {'source_scope': 'caller_supplied_files'})
+    return {**scope, 'comparison_sha256': frozen['sha256'], 'challenges_sha256': _sha(challenges_bytes),
             'solutions_sha256': _sha(solutions_bytes), 'code_sha256': config['code_sha256'],
             'prompt_sha256': config['prompt_sha256'],
             'selected_task_sha256': {task_id: _sha(_canonical(challenges[task_id]))
@@ -72,8 +87,10 @@ def attest_inputs(frozen: dict, challenges_path: Path, solutions_path: Path,
 
 
 def verify_inputs(receipt: dict, frozen: dict, challenges_path: Path, solutions_path: Path,
-                  sources: Mapping[str, Path], prompt_path: Path) -> None:
-    if receipt != attest_inputs(frozen, challenges_path, solutions_path, sources, prompt_path):
+                  sources: Mapping[str, Path], prompt_path: Path, *, source_root: Path | None = None,
+                  source_inventory: dict | None = None) -> None:
+    if receipt != attest_inputs(frozen, challenges_path, solutions_path, sources, prompt_path,
+                                source_root=source_root, source_inventory=source_inventory):
         raise ValueError('input attestation differs')
 
 
