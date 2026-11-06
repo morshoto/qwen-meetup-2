@@ -19,8 +19,9 @@ benchmark score has been established by this Phase A work.
 The local training dataset has 1,000 task IDs. A bounded historical inventory
 identifies 317 as known exposed, leaving 683 outside that known union. Project
 history and model-pretraining exposure remain uncertain; the 683 cannot be
-called unseen. Development tasks, Phase B training tasks and the proposed 200
-comparison tasks have not yet been selected and frozen. The official 120-task
+called unseen. Three development-only task IDs have been proposed from known prior exposures;
+they are not an execution-ready registration. Phase B training tasks and the
+200 comparison tasks have not been selected or frozen. The official 120-task
 public evaluation is reserved for Phase C and was not used here.
 
 The existing agent, guarded MLX transport and bounded Docker sandbox are

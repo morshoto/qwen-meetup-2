@@ -39,7 +39,7 @@ not an execution gate or a complete live runner.
    records unresolved cleanup and evaluator-isolation findings. Fixture tests do
    not resolve them. Stop and record an incomplete run if controls cannot be
    established.
-2. Audit exposure and select development, Phase B training and 200 comparison
+2. Audit exposure and finalize development, Phase B training and 200 comparison
    IDs without overlap. Freeze task contents, source files, prompt, runtime,
    model revisions, seeds, candidate count and all resource budgets. The
    current helpers bind proposed selection, configuration and supplied input,
