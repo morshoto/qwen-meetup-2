@@ -9,7 +9,7 @@ import tempfile
 import time
 
 from src.arc.lt_macos_probe import build_probe_profile
-from src.arc.lt_metal_observation import compare_observations, parse_metal_processes
+from src.arc.lt_metal_observation import compare_observations, observe_responsibility, parse_metal_processes
 
 _SCRIPT = (
     'import time,mlx.core as mx; from mlx_lm.models.qwen3 import Model,ModelArgs; '
@@ -41,10 +41,16 @@ def main() -> int:
             cwd=root, env={'PATH': '/usr/bin:/bin', 'TMPDIR': root, 'HOME': root},
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, close_fds=True, start_new_session=True)
         samples = 0
+        responsibilities = {}
         try:
+            child_responsibility = observe_responsibility(child.pid)
             deadline = time.monotonic() + 20
             while child.poll() is None and time.monotonic() < deadline:
-                observed.update(_snapshot())
+                current = _snapshot()
+                observed.update(current)
+                for pid in set(current) - set(before):
+                    if pid not in responsibilities or responsibilities[pid]['status'] == 'unavailable':
+                        responsibilities[pid] = observe_responsibility(pid)
                 samples += 1
                 time.sleep(.05)
             if child.poll() is None:
@@ -58,7 +64,9 @@ def main() -> int:
         report = compare_observations(before, observed, after)
         report.update(child_status='completed' if child.returncode == 0 and stdout.strip() == 'synthetic-forward-complete'
                       else 'failed_or_timed_out', child_pid=child.pid, samples=samples,
-                      observed_processes={str(pid): observed[pid] for pid in report['newly_observed']})
+                      observed_processes={str(pid): observed[pid] for pid in report['newly_observed']},
+                      child_responsibility=child_responsibility,
+                      service_responsibilities={str(pid): responsibilities[pid] for pid in report['newly_observed']})
         print(json.dumps(report, sort_keys=True))
         return 0 if report['child_status'] == 'completed' else 1
 

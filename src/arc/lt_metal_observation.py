@@ -33,3 +33,34 @@ def compare_observations(before: dict, during: dict, after: dict) -> dict:
     return {'newly_observed': sorted(new), 'newly_observed_still_listed': sorted(new & set(after)),
             'ownership_verified': False, 'cleanup_verified': False, 'execution_ready': False,
             'evidence_type': 'process_list_snapshots_only'}
+
+
+def classify_responsibility(pid: int, responsible_pid: int, error: int) -> dict:
+    if (type(pid) is not int or pid <= 0 or type(responsible_pid) is not int or
+            type(error) is not int or error < 0):
+        raise ValueError('invalid responsibility observation')
+    observed = responsible_pid > 0 and error == 0
+    return {'pid': pid, 'status': 'observed_unverified' if observed else 'unavailable',
+            'responsible_pid': responsible_pid if observed else None, 'errno': error,
+            'ownership_verified': False}
+
+
+def observe_responsibility(pid: int) -> dict:
+    """Query an undocumented macOS API; results are advisory and unauthenticated."""
+    import ctypes
+    import sys
+    if type(pid) is not int or pid <= 0:
+        raise ValueError('invalid PID')
+    if sys.platform != 'darwin':
+        return classify_responsibility(pid, -1, 0)
+    try:
+        library = ctypes.CDLL('/usr/lib/libSystem.B.dylib', use_errno=True)
+        lookup = library.responsibility_get_pid_responsible_for_pid
+        lookup.argtypes = [ctypes.c_int]
+        lookup.restype = ctypes.c_int
+        ctypes.set_errno(0)
+        result = lookup(pid)
+        error = ctypes.get_errno()
+    except (OSError, AttributeError):
+        return classify_responsibility(pid, -1, 0)
+    return classify_responsibility(pid, result, error)

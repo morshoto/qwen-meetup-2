@@ -5,7 +5,7 @@ import subprocess
 import sys
 import unittest
 
-from src.arc.lt_metal_observation import parse_metal_processes, compare_observations
+from src.arc.lt_metal_observation import parse_metal_processes, compare_observations, classify_responsibility
 
 
 class MetalObservationTests(unittest.TestCase):
@@ -28,6 +28,18 @@ class MetalObservationTests(unittest.TestCase):
         self.assertFalse(report['cleanup_verified'])
         self.assertFalse(report['execution_ready'])
 
+    def test_responsibility_is_an_unverified_observation(self):
+        observed = classify_responsibility(7, 10, 0)
+        self.assertEqual(observed['responsible_pid'], 10)
+        self.assertEqual(observed['status'], 'observed_unverified')
+        self.assertFalse(observed['ownership_verified'])
+        unavailable = classify_responsibility(7, -1, 1)
+        self.assertEqual(unavailable['status'], 'unavailable')
+        self.assertIsNone(unavailable['responsible_pid'])
+        for values in ((True, 1, 0), (1, True, 0), (0, 1, 0), (1, -1, -2)):
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                classify_responsibility(*values)
+
     @unittest.skipUnless(platform.system() == 'Darwin' and os.environ.get('LT_PROBE_MLX') == '1',
                          'requires explicit offline MLX probe')
     def test_synthetic_lifecycle_probe_never_claims_cleanup(self):
@@ -37,6 +49,7 @@ class MetalObservationTests(unittest.TestCase):
         report = json.loads(result.stdout)
         self.assertEqual(report['child_status'], 'completed')
         self.assertGreater(report['samples'], 0)
+        self.assertIn(report['child_responsibility']['status'], ('observed_unverified', 'unavailable'))
         self.assertFalse(report['ownership_verified'])
         self.assertFalse(report['cleanup_verified'])
         self.assertFalse(report['execution_ready'])
