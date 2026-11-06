@@ -137,3 +137,24 @@ and scoring commands accept `--source-root ROOT --source-inventory INVENTORY`
 together to recheck the whole recorded tree, including newly added files. A
 receipt produced without those options is labeled `caller_supplied_files`.
 Neither scope authenticates external packages or proves model-server identity.
+
+## Synthetic end-to-end Docker integration
+
+At commit `64029a0`, an opt-in test used a synthetic loopback HTTP server,
+the registered `OpenAICompatibleBackend`, the existing `code_agent`, the
+pinned real Docker sandbox and the offline scorer. Both model configurations
+sent matching synthetic prompts and candidate seeds; the real sandbox ran the
+synthetic identity function and both synthetic candidate grids scored exactly.
+The same test suite recorded two synthetic infinite-loop candidates as timeouts
+and observed the exact named containers absent afterward. Run it locally with:
+
+```sh
+LT_SANDBOX_IMAGE=sha256:a3013c6339a68a667aa9a5f26377693a1f4357a7f7a12db6470a8f06732b91f1 \
+  /Users/shotomorisaki/Engineering/qwen-meetup-2/.venv/bin/python -m unittest discover \
+  -s tests/arc -p 'test_lt_live_boundary.py' -v
+```
+
+Both tests passed on the local host. Their server replies, grids and source
+code are synthetic; no Qwen weights or ARC task were used. The container
+observations are not independent cleanup or containment proof and do not
+establish model-server identity or readiness for live inference.
