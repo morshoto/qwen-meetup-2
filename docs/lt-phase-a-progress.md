@@ -95,7 +95,9 @@ and writes only the selected public tasks to stdout. It verifies task hashes and
 rejects any test-output fields. This export reduces data passed to the solver;
 it is not evidence of filesystem, network, or process isolation. The
 `run_fixture_model` journal writes owner-only started markers and per-task
-results and refuses to reuse a started model run. Model-specific terminal
+results and refuses to reuse a started model run. It accepts only the built-in
+synthetic `FixtureBackend` and `FakeSandbox`; other components are rejected
+before dispatch. Model-specific terminal
 records bind the task inventory, configuration identities and result-file hash;
 a consistency audit remains explicitly unverified. Token totals are recorded
 only when every reserved request reports consistent fixture usage. Unknown token and
