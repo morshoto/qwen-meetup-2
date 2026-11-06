@@ -79,7 +79,7 @@ class InputAttestationTests(unittest.TestCase):
         (workspace / 'results.jsonl').write_text('')
         (workspace / 'proposal.json').write_text(json.dumps(frozen['manifest']))
         (workspace / 'config.json').write_text(json.dumps(frozen['config']))
-        prepare = [sys.executable, '-m', 'src.arc.lt_prepare_cli', '--proposal', str(workspace / 'proposal.json'),
+        prepare = [sys.executable, '-m', 'src.arc.lt_prepare_cli', '--fixture-only', '--proposal', str(workspace / 'proposal.json'),
                    '--config', str(workspace / 'config.json'), '--challenges', str(self.challenge),
                    '--solutions', str(self.solution), '--sources', str(workspace / 'sources.json'),
                    '--prompt', str(self.prompt), '--part', 'receipt', '--source-root', str(root),
@@ -87,7 +87,7 @@ class InputAttestationTests(unittest.TestCase):
         prepared = subprocess.run(prepare, capture_output=True, text=True)
         self.assertEqual(prepared.returncode, 0, prepared.stderr)
         self.assertEqual(json.loads(prepared.stdout), receipt)
-        command = [sys.executable, '-m', 'src.arc.lt_score_cli', '--frozen', str(workspace / 'frozen.json'),
+        command = [sys.executable, '-m', 'src.arc.lt_score_cli', '--fixture-only', '--frozen', str(workspace / 'frozen.json'),
                    '--receipt', str(workspace / 'receipt.json'), '--challenges', str(self.challenge),
                    '--solutions', str(self.solution), '--sources', str(workspace / 'sources.json'),
                    '--prompt', str(self.prompt), '--results', str(workspace / 'results.jsonl'),
@@ -139,12 +139,25 @@ class InputAttestationTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(result.stdout, '')
 
+    def test_preparation_rejects_missing_protected_allocation_evidence(self):
+        root = self.challenge.parent
+        (root / 'proposal.json').write_text(json.dumps(self.frozen['manifest']))
+        (root / 'config.json').write_text(json.dumps(self.frozen['config']))
+        (root / 'sources.json').write_text(json.dumps({'solver.py': str(self.code)}))
+        command = [sys.executable, '-m', 'src.arc.lt_prepare_cli', '--proposal', str(root / 'proposal.json'),
+                   '--config', str(root / 'config.json'), '--challenges', str(self.challenge),
+                   '--solutions', str(self.solution), '--sources', str(root / 'sources.json'),
+                   '--prompt', str(self.prompt), '--part', 'receipt']
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, '')
+
     def test_offline_prepare_cli_emits_separate_reviewable_documents(self):
         root = self.challenge.parent
         (root / 'proposal.json').write_text(json.dumps(self.frozen['manifest']))
         (root / 'config.json').write_text(json.dumps(self.frozen['config']))
         (root / 'sources.json').write_text(json.dumps({'solver.py': str(self.code)}))
-        command = [sys.executable, '-m', 'src.arc.lt_prepare_cli',
+        command = [sys.executable, '-m', 'src.arc.lt_prepare_cli', '--fixture-only',
                    '--proposal', str(root / 'proposal.json'), '--config', str(root / 'config.json'),
                    '--challenges', str(self.challenge), '--solutions', str(self.solution),
                    '--sources', str(root / 'sources.json'), '--prompt', str(self.prompt)]
@@ -170,7 +183,7 @@ class InputAttestationTests(unittest.TestCase):
                'status': 'complete', 'candidates': [[[[2]]], [[[0]]]], 'tokens': 2,
                'runtime_seconds': 1, 'peak_memory_bytes': 10, 'peak_swap_bytes': 0}
         (root / 'results.jsonl').write_text(json.dumps(row) + '\n')
-        command = [sys.executable, '-m', 'src.arc.lt_score_cli', '--frozen', str(root / 'frozen.json'),
+        command = [sys.executable, '-m', 'src.arc.lt_score_cli', '--fixture-only', '--frozen', str(root / 'frozen.json'),
                    '--receipt', str(root / 'receipt.json'), '--challenges', str(self.challenge),
                    '--solutions', str(self.solution), '--sources', str(root / 'sources.json'),
                    '--prompt', str(self.prompt), '--results', str(root / 'results.jsonl')]

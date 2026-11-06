@@ -51,7 +51,7 @@ def source_digest(sources: Mapping[str, Path]) -> str:
 
 def attest_inputs(frozen: dict, challenges_path: Path, solutions_path: Path,
                   sources: Mapping[str, Path], prompt_path: Path, *, source_root: Path | None = None,
-                  source_inventory: dict | None = None) -> dict:
+                  source_inventory: dict | None = None, allocation: dict | None = None) -> dict:
     verify_manifest(frozen)
     if (source_root is None) != (source_inventory is None):
         raise ValueError('source root and inventory must be provided together')
@@ -77,10 +77,19 @@ def attest_inputs(frozen: dict, challenges_path: Path, solutions_path: Path,
         raise ValueError('source or prompt identity differs')
     if source_root is not None:
         verify_source_tree(root, source_inventory)
+    if allocation is None:
+        allocation_scope = {'allocation_scope': 'allocation_unchecked'}
+    else:
+        from src.arc.lt_allocation import check_protected_allocation
+        if not isinstance(allocation, dict) or set(allocation) != {'registry_bytes', 'split_bytes', 'development', 'training_task_ids'}:
+            raise ValueError('invalid allocation evidence')
+        audit = check_protected_allocation(manifest, **allocation)
+        allocation_scope = {'allocation_scope': 'prior_reservations_checked_unverified',
+                            'allocation_audit_sha256': _sha(_canonical(audit))}
     scope = ({'source_scope': 'conservative_source_tree',
               'source_inventory_sha256': _sha(_canonical(source_inventory))}
              if source_root is not None else {'source_scope': 'caller_supplied_files'})
-    return {**scope, 'comparison_sha256': frozen['sha256'], 'challenges_sha256': _sha(challenges_bytes),
+    return {**scope, **allocation_scope, 'comparison_sha256': frozen['sha256'], 'challenges_sha256': _sha(challenges_bytes),
             'solutions_sha256': _sha(solutions_bytes), 'code_sha256': config['code_sha256'],
             'prompt_sha256': config['prompt_sha256'],
             'selected_task_sha256': {task_id: _sha(_canonical(challenges[task_id]))
@@ -89,9 +98,9 @@ def attest_inputs(frozen: dict, challenges_path: Path, solutions_path: Path,
 
 def verify_inputs(receipt: dict, frozen: dict, challenges_path: Path, solutions_path: Path,
                   sources: Mapping[str, Path], prompt_path: Path, *, source_root: Path | None = None,
-                  source_inventory: dict | None = None) -> None:
+                  source_inventory: dict | None = None, allocation: dict | None = None) -> None:
     if receipt != attest_inputs(frozen, challenges_path, solutions_path, sources, prompt_path,
-                                source_root=source_root, source_inventory=source_inventory):
+                                source_root=source_root, source_inventory=source_inventory, allocation=allocation):
         raise ValueError('input attestation differs')
 
 
