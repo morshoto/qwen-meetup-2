@@ -16,6 +16,17 @@ def reconcile(journal, task):
     except ProcessLookupError: pass
     except OSError as exc: raise ValueError('process group cannot be checked') from exc
     else: raise ValueError('process group still exists')
+    if worker.exists():
+        try: row=json.loads(worker.read_bytes())
+        except (OSError, ValueError): row=None
+        model=journal.identity.rsplit(':',1)[-1]
+        if (isinstance(row,dict) and model in ('14b','32b') and row.get('task_id')==task and
+                row.get('model')==model and row.get('status')=='complete' and
+                isinstance(row.get('candidates'),list) and len(row['candidates'])==2 and
+                all(key in row for key in ('tokens','runtime_seconds','peak_memory_bytes','peak_swap_bytes'))):
+            row['cleanup']={'leader_reaped':None,'group_absent':True,'returncode':None,'reconciled':True}
+            journal.finish(task,row)
+            return 'recovered_complete'
     suffix='.interrupted-'+uuid.uuid4().hex
     if worker.exists(): os.rename(worker,root/(task+suffix+'.worker.json'))
     os.rename(process,root/(task+suffix+'.process.json'))
@@ -23,3 +34,4 @@ def reconcile(journal, task):
     fd=os.open(root,os.O_RDONLY)
     try:os.fsync(fd)
     finally:os.close(fd)
+    return 'retry_allowed'
