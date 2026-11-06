@@ -64,3 +64,65 @@ def observe_responsibility(pid: int) -> dict:
     except (OSError, AttributeError):
         return classify_responsibility(pid, -1, 0)
     return classify_responsibility(pid, result, error)
+
+
+def observe_process_identity(pid: int) -> dict:
+    """Sample macOS BSD process metadata; this does not prove ownership or cleanup."""
+    import ctypes
+    import sys
+    if type(pid) is not int or pid <= 0:
+        raise ValueError('invalid PID')
+    unavailable = {'pid': pid, 'status': 'unavailable', 'ownership_verified': False}
+    if sys.platform != 'darwin':
+        return unavailable
+
+    class BSDInfo(ctypes.Structure):
+        _fields_ = ([(name, ctypes.c_uint32) for name in ('flags', 'status', 'xstatus', 'pid', 'ppid',
+                    'uid', 'gid', 'ruid', 'rgid', 'svuid', 'svgid', 'reserved')] +
+                   [('comm', ctypes.c_char * 16), ('name', ctypes.c_char * 32)] +
+                   [(name, ctypes.c_uint32) for name in ('nfiles', 'pgid', 'pjobc', 'tdev', 'tpgid')] +
+                   [('nice', ctypes.c_int32), ('start_seconds', ctypes.c_uint64),
+                    ('start_microseconds', ctypes.c_uint64)])
+    try:
+        lib = ctypes.CDLL('/usr/lib/libSystem.B.dylib', use_errno=True)
+        call = lib.proc_pidinfo
+        call.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_int]
+        call.restype = ctypes.c_int
+        info = BSDInfo()
+        ctypes.set_errno(0)
+        size = call(pid, 3, 0, ctypes.byref(info), ctypes.sizeof(info))
+        error = ctypes.get_errno()
+    except (OSError, AttributeError):
+        return unavailable
+    if (size != ctypes.sizeof(info) or info.pid != pid or info.pgid <= 0 or
+            info.start_seconds <= 0 or info.start_microseconds >= 1000000):
+        return {**unavailable, 'errno': error}
+    return {'pid': pid, 'status': 'observed_unverified', 'ppid': info.ppid, 'pgid': info.pgid,
+            'uid': info.uid, 'start_seconds': info.start_seconds, 'start_microseconds': info.start_microseconds,
+            'ownership_verified': False}
+
+
+def merge_process_identity(previous: dict | None, observation: dict) -> dict:
+    """Retain start-time conflicts and missing samples without asserting ownership."""
+    if (not isinstance(observation, dict) or type(observation.get('pid')) is not int or
+            observation['pid'] <= 0 or observation.get('ownership_verified') is not False or
+            observation.get('status') not in ('observed_unverified', 'unavailable')):
+        raise ValueError('invalid process identity observation')
+    pid = observation['pid']
+    if previous is None:
+        previous = {'pid': pid, 'start_times': [], 'unavailable_seen': False,
+                    'conflicting_identities': False, 'ownership_verified': False}
+    if (not isinstance(previous, dict) or previous.get('pid') != pid or
+            previous.get('ownership_verified') is not False or not isinstance(previous.get('start_times'), list)):
+        raise ValueError('invalid process identity history')
+    starts = [list(value) for value in previous['start_times']]
+    if observation['status'] == 'observed_unverified':
+        seconds, micros = observation.get('start_seconds'), observation.get('start_microseconds')
+        if type(seconds) is not int or seconds <= 0 or type(micros) is not int or not 0 <= micros < 1000000:
+            raise ValueError('invalid process start time')
+        stamp = [seconds, micros]
+        if stamp not in starts:
+            starts.append(stamp)
+    return {'pid': pid, 'start_times': starts,
+            'unavailable_seen': previous.get('unavailable_seen') is True or observation['status'] == 'unavailable',
+            'conflicting_identities': len(starts) > 1, 'ownership_verified': False}
