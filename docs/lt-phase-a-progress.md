@@ -150,7 +150,7 @@ and observed the exact named containers absent afterward. Run it locally with:
 
 ```sh
 LT_SANDBOX_IMAGE=sha256:a3013c6339a68a667aa9a5f26377693a1f4357a7f7a12db6470a8f06732b91f1 \
-  /Users/shotomorisaki/Engineering/qwen-meetup-2/.venv/bin/python -m unittest discover \
+  python -m unittest discover \
   -s tests/arc -p 'test_lt_live_boundary.py' -v
 ```
 
