@@ -454,3 +454,12 @@ proposal, selected from the 433 eligible training IDs after excluding the
 registered development, known-exposure and original RSI reserved IDs. They
 have no task-ID overlap. The Phase B training recipe and the comparison run
 settings remain unfrozen; historical and pretraining exposure remain unknown.
+
+The sequential 32B direct-grid check (`lt-dev-20261107-direct-v3-32b-01`)
+used the same clarified prompt, thinking-off setting, temperature 0.6, two
+candidate requests and 4,096-token ceiling as 14B. It produced six valid grids
+and scored 0/3 for both pass metrics, with 37,402 tokens, 794.6 seconds across
+tasks, 22.61 GB process-reported peak memory, and unknown swap. Both observed
+model PIDs were absent after normal process exit. All three 32B candidate pairs
+differed; two of the three 14B pairs were identical. Seeds were requested, but
+seed support and statistical independence were not independently verified.
