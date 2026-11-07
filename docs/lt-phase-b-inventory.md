@@ -104,3 +104,13 @@ Missing or mismatched inputs, extra or missing tensors, and adapter arguments
 in the off state fail closed. Tests use synthetic loaders and tiny arrays only;
 real-model reload, inference, process teardown, and runtime attestation remain
 separate evidence that must be obtained later.
+
+### Failed collection handling
+
+Preserve a terminal worker timeout or error as a task-level journal record with
+no invented candidate or correctness result. Require the same model identity and
+owned-process cleanup evidence as successful tasks. A fully attempted collection
+with any worker failures is `collection_failed`, not a zero-yield result; a
+partially attempted collection remains incomplete. Neither status produces
+training or validation examples. Do not retry an interrupted journal entry
+without the existing recovery/reconciliation checks.
