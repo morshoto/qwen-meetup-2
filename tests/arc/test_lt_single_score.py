@@ -29,7 +29,9 @@ class SingleScoreTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             manifest = {'task_ids': ['a'], 'sha256': 'a' * 64, 'solutions_sha256': 'b' * 64,
-                        'protocol': 'lt-single-model-exploratory',
+                        'protocol': 'lt-single-model-exploratory', 'backend': {'name': 'vllm', 'version': '0.17.0'},
+                        'candidate_count': 2, 'temperature': 0.6, 'seed_base': 20261111,
+                        'max_tokens': 4096, 'thinking': 'off',
                         'model': {'model_id': 'example/model', 'revision': 'c' * 40}}
             (root / 'manifest.json').write_text(json.dumps(manifest))
             journal = root / 'single'
@@ -46,6 +48,8 @@ class SingleScoreTests(unittest.TestCase):
                 report = score_directory(root)
                 self.assertEqual(report['models']['single']['pass_at_1'], 1)
                 self.assertEqual(report['evidence']['model'], manifest['model'])
+                self.assertEqual(report['evidence']['backend'], manifest['backend'])
+                self.assertEqual(report['evidence']['task_settings']['candidate_count'], 2)
                 row['model'] = 'other'
                 (journal / 'a.result.json').write_text(json.dumps(row))
                 with self.assertRaises(ValueError): score_directory(root)
