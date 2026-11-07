@@ -7,7 +7,7 @@ from unittest.mock import patch
 from src.arc.lt_batch_journal import _create
 from src.arc.lt_phase_b_canary_config import build_canary_config
 from src.arc.lt_phase_b_canary_sample import RELOAD_SETTINGS
-from src.arc.lt_phase_b_canary_dispatch import run_canary
+from src.arc.lt_phase_b_canary_dispatch import run_canary, review_training_attempt
 from src.arc.lt_phase_b_tensor_step import observe_one_step
 from tests.arc import test_lt_phase_b_dispatch as fixtures
 from tests.arc.test_lt_phase_b_tensor_evidence import Model
@@ -88,6 +88,19 @@ class CanaryDispatchTests(unittest.TestCase):
         self.assertTrue((self.run / 'canary-training-summary.json').exists())
         with self.assertRaises(ValueError): self.invoke()
         self.assertEqual(len(self.calls), 1)
+
+    def test_training_review_recomputes_and_detects_tampering(self):
+        summary = self.invoke()
+        replay = review_training_attempt(self.run, canary=self.canary,
+            expected_canary_sha256=self.canary_sha, expected_collection_sha256=self.collection_sha)
+        self.assertEqual(replay, summary)
+        path = self.run / 'canary-observation.json'
+        observation = json.loads(path.read_text())
+        observation['observation']['log_sha256'] = '0' * 64
+        path.write_text(json.dumps(observation))
+        with self.assertRaises(ValueError):
+            review_training_attempt(self.run, canary=self.canary,
+                expected_canary_sha256=self.canary_sha, expected_collection_sha256=self.collection_sha)
 
     def test_false_success_with_mismatched_loss_never_promotes(self):
         original = self.process.side_effect
