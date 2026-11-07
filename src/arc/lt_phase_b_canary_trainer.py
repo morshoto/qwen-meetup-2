@@ -5,6 +5,7 @@ runtime identity, or authorize execution. Run only under a separately verified
 parent that records resources, cleanup, loss, and an independent adapter reload.
 """
 import hashlib
+import json
 import os
 import stat
 import sys
@@ -43,9 +44,12 @@ def run_instrumented_cli(*, config_path, expected_config_sha256, evidence_dir, t
         plan = build_canary_config(model_dir=config['model'], data_dir=config['data'], adapter_dir=config['adapter_path'])
     except KeyError as exc:
         raise ValueError('canary config is incomplete') from exc
-    if (config != plan['trainer_config'] or not callable(getattr(trainer_module, 'main', None)) or
+    canonical = lambda value: json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False)
+    if (canonical(config) != canonical(plan['trainer_config']) or not callable(getattr(trainer_module, 'main', None)) or
             not callable(getattr(trainer_module, 'train', None)) or not callable(install_policy)):
         raise ValueError('canary configuration or trainer differs')
+    if Path(evidence_dir).is_symlink():
+        raise ValueError('canary evidence directory may not be a symlink')
     model, data, adapter, evidence = (Path(config['model']), Path(config['data']),
                                       Path(config['adapter_path']), Path(evidence_dir).resolve(strict=True))
     if any(evidence == p or evidence in p.parents or p in evidence.parents for p in (model, data, adapter)):
