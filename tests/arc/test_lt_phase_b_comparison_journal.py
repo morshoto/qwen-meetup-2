@@ -61,6 +61,11 @@ class ComparisonJournalTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.run_batch()
         self.assertEqual(len(self.calls), 1)
 
+    def test_orphan_worker_artifact_fails_before_launch(self):
+        _create(self.off.root / (self.ids[0] + '.worker.json'), {'orphan': True})
+        with self.assertRaises(ValueError): self.run_batch()
+        self.assertEqual(self.calls, [])
+
     def test_failure_stops_and_does_not_start_next_state(self):
         def fail(task, adapter_state, output, on_start):
             on_start(1234)
