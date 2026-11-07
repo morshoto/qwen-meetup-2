@@ -55,6 +55,8 @@ def _check_header(path, shapes):
                 raise ValueError('adapter header size invalid')
             header = _json_object(stream.read(length))
             metadata = header.pop('__metadata__', {})
+            if metadata is None:  # MLX-LM writes null metadata in saved adapters.
+                metadata = {}
             if (not isinstance(metadata, dict) or
                     any(not isinstance(k, str) or not isinstance(v, str) for k, v in metadata.items()) or
                     set(header) != set(shapes)):
