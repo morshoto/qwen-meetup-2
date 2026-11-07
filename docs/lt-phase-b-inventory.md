@@ -404,3 +404,8 @@ tokens and memory without scoring it as ARC. Recheck identities afterward.
 The reload worker's result remains unverified until its parent reviews the
 separate resource, log and owned-process cleanup observations. Never promote
 this synthetic adapter as Gen 1.
+
+The canary descriptor must also bind the separate reload sample's exact prompt,
+seed, token ceiling, temperature and thinking-off setting before training.
+Local reload observations remain unverified until the parent rechecks the
+training evidence and its own monitored reload process.
