@@ -51,5 +51,23 @@ class TrainerPreflightTests(unittest.TestCase):
         self.assertLess(offset, len(prefix))
         self.assertIn('[[[1]]]', tokenizer.decode(tokens[offset:]))
 
+    def test_thinking_off_policy_masks_the_inference_prefix(self):
+        from mlx_lm.utils import load_tokenizer
+        from mlx_lm.tuner.datasets import ChatDataset
+        from src.arc.mlx_chat_template import install_training_template_policy
+        path = Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
+        install_training_template_policy('off')
+        tokenizer = load_tokenizer(path)
+        messages = [{'role': 'user', 'content': 'Synthetic arithmetic: 2 + 2?'},
+                    {'role': 'assistant', 'content': '4'}]
+        dataset = ChatDataset([{'messages': messages}], tokenizer, mask_prompt=True)
+        tokens, offset = dataset.process(dataset[0])
+        prefix = tokenizer.apply_chat_template(messages[:1], add_generation_prompt=True,
+            enable_thinking=False, return_dict=False)
+        self.assertEqual(tokens[:len(prefix)], prefix)
+        self.assertEqual(offset, len(prefix))
+        self.assertIn('4', tokenizer.decode(tokens[offset:]))
+        self.assertLess(len(tokens), 512)
+
 
 if __name__ == '__main__': unittest.main()
