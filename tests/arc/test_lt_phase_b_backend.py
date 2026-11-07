@@ -90,6 +90,22 @@ class BackendTests(unittest.TestCase):
                           adapter_path=self.root, adapter_sha256=digest(self.root))
         self.assertFalse(any(call[0] == 'load' for call in self.calls))
 
+    def test_invalid_tensor_layouts_are_rejected_before_loading(self):
+        base = {'layer.lora_a': {'dtype': 'F32', 'shape': [1, 1], 'data_offsets': [0, 4]},
+                'layer.lora_b': {'dtype': 'F32', 'shape': [1, 1], 'data_offsets': [4, 8]}}
+        variants = []
+        for field, value in (('dtype', 'F16'), ('shape', [2, 1]), ('data_offsets', [3, 7])):
+            changed = json.loads(json.dumps(base))
+            changed['layer.lora_b'][field] = value
+            variants.append(changed)
+        for header in variants:
+            raw = json.dumps(header).encode()
+            (self.root / 'adapters.safetensors').write_bytes(struct.pack('<Q', len(raw)) + raw + struct.pack('<ff', 1, 2))
+            with self.subTest(header=header), self.assertRaises(ValueError):
+                PhaseBBackend('model', model_manifest={}, adapter_state='on',
+                              adapter_path=self.root, adapter_sha256=digest(self.root))
+        self.assertFalse(any(call[0] == 'load' for call in self.calls))
+
     def test_changed_adapter_during_load_is_rejected(self):
         mx, loader, stream, sampler, flatten = self.runtime
         def changed(*args, **kwargs):
