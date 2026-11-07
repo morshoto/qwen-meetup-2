@@ -239,3 +239,7 @@ SFT preparation and every real-training preflight must compare the supplied solu
 ### Real-training loss replay
 
 The fixed real-training configuration reports loss every optimizer step. Replay must require the retained finite reports for steps 1 through 20 in order, in addition to checking the final loss and log hash. A missing intermediate report leaves the attempt unverified even if the last reported step is 20; retained logs are still local observations, not independent training attestation.
+
+### SFT preparation completion receipt
+
+Hold the private run lock across preparation and its input post-check. Write an exclusive start marker before materialization and a completion receipt only after the registered inputs are rechecked; bind the private preparation summary, eligibility journal and SFT manifest hashes. Training preflight must reject missing, changed or incomplete receipts and must replay the underlying collection independently. An interrupted or failed post-check requires reconciliation rather than automatic reuse.
