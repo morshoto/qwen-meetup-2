@@ -179,3 +179,7 @@ Under the same private run lock, revalidate the frozen comparison inputs, prior 
 ### Collection-to-SFT preparation handoff
 
 Reconstruct the dataset directly from a fully replayed collection journal and the selected-task verifier before private SFT materialization. Keep reconstructed records and predictions private, preserve the zero-yield status without making synthetic substitutions, and require the existing tokenizer and independent-verification audit before creating training JSONL. The source, allocation and answer-file identities remain separate preflight requirements.
+
+### Private SFT preparation
+
+Use a separately frozen data descriptor binding the collection and training-solutions file identity to reconstruct the private eligibility journal from completed collection records. Verify selected training answers offline, then materialize only independently verified examples with the native tokenizer and masking audit. Persist the eligibility journal owner-only, retain all rejection reasons, and record zero yield without creating synthetic training examples. Existing or partial artifacts require reconciliation.
