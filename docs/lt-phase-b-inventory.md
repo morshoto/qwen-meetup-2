@@ -270,3 +270,16 @@ closure. Bind the worker descriptor to the existing runtime and environment
 manifests, verify both against the executing interpreter before and after model
 generation, and reject mismatches before backend construction. Continue to
 report independent provenance and process isolation as unverified.
+
+### Collection dispatcher plan
+
+Read only the frozen public descriptor and handoff files from an owner-only
+`artifacts/lt-phase-b-<run-id>` directory. Hold an exclusive local run lock,
+recompute the allocation, model, runtime, source and public-export preflight,
+and only then dispatch one registered worker at a time with the verified Python
+and bounded supervisor. Use isolated Python mode to ignore `PYTHONPATH`; never
+pass solution files or official evaluation data to the worker. Durable journal
+markers prevent automatic replay of interrupted attempts. Fixture tests must
+show that failed preflight and concurrent ownership never launch a child. The
+local lock and consistency checks do not independently attest the runtime,
+prove complete descendant cleanup, or replace the outstanding allocation choice.
