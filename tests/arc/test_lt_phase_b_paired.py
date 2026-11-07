@@ -33,6 +33,8 @@ class PairedTests(unittest.TestCase):
         self.assertEqual(report['states']['on']['status'], 'incomplete')
         self.assertEqual(report['states']['off']['candidate_denominator'], 10)
         self.assertEqual(report['identical_candidates'], {'off': 4, 'on': 4})
+        self.assertEqual(report['uncertainty']['pass_at_1']['difference'], 0.0)
+        self.assertEqual(report['uncertainty']['pass_at_1']['interval_95'], [-1.0, 1.0])
         self.assertEqual(report['rows'][-1]['pair_status'], 'incomplete')
         self.assertNotIn('answers', str(report))
 
@@ -50,6 +52,8 @@ class PairedTests(unittest.TestCase):
         self.assertEqual(result['paired']['pass_at_1']['denominator'], 0)
         self.assertEqual(result['paired']['two_recorded_attempts']['denominator'], 0)
         self.assertEqual(result['rows'][0]['pair_status'], 'incomplete')
+        self.assertIsNone(result['uncertainty']['pass_at_1']['interval_95'])
+        self.assertIsNone(result['uncertainty']['pass_at_1']['difference'])
 
 
 if __name__ == '__main__': unittest.main()
