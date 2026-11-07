@@ -114,5 +114,29 @@ class TrainerPreflightTests(unittest.TestCase):
         self.assertLessEqual(report['maximum_tokens'], 512)
         self.assertFalse(report['training_allowed'])
 
+    def test_private_materialized_files_load_with_native_trainer(self):
+        from mlx_lm.tuner.datasets import ChatDataset, load_local_dataset
+        from mlx_lm.utils import load_tokenizer
+        from src.arc.lt_phase_b_sft_materialize import materialize_sft
+        from src.arc.mlx_chat_template import install_training_template_policy
+        from tests.arc import test_lt_phase_b_sft_preflight as fixture_module
+        fixture = fixture_module.SFTPreflightTests('test_audits_exact_verified_examples_and_prefix')
+        fixture.setUp()
+        path = Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
+        install_training_template_policy('off')
+        tokenizer = load_tokenizer(path)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); (root / 'artifacts').mkdir()
+            run = root / 'artifacts/lt-phase-b-fixture-run'; run.mkdir(mode=0o700)
+            report = materialize_sft(source_root=root, run_dir=run, dataset=fixture.dataset,
+                tasks=fixture.fixture.tasks, verifier=fixture.fixture.verifier, source=fixture.fixture.source,
+                tokenizer=tokenizer, dataset_factory=lambda example, tok: ChatDataset([example], tok, mask_prompt=True))
+            train, valid, test = load_local_dataset(run / 'sft-data', tokenizer, types.SimpleNamespace(mask_prompt=True))
+            self.assertEqual((len(train), len(valid), len(test)), (2, 1, 0))
+            tokens, offset = train.process(train[0])
+            self.assertLess(offset, len(tokens))
+            self.assertLessEqual(len(tokens), 512)
+            self.assertFalse(report['training_allowed'])
+
 
 if __name__ == '__main__': unittest.main()
