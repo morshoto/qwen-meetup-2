@@ -79,6 +79,8 @@ class ReloadDispatchTests(unittest.TestCase):
             path.write_text(json.dumps(changed))
             with self.subTest(name=name), self.assertRaises(ValueError): replay()
             path.write_text(original)
+        (f.run / 'canary-reload-summary.json').unlink()
+        with self.assertRaises(ValueError): replay()
 
     def test_reload_replay_rejects_changed_training_and_adapter(self):
         self.invoke()
