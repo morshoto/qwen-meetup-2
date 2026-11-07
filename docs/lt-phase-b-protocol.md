@@ -171,3 +171,7 @@ Under the private run lock, verify the registered collection, training-data repl
 ### Offline paired scoring handoff
 
 Before exposing comparison answers to the offline scorer, verify that both state journals are complete and replay every retained worker, identity and resource record against the fixed comparison registration. Only then pass the recorded predictions and selected held-out answers to the existing paired scorer. Missing, failed, interrupted or changed work must not be scored as a complete comparison; no answers are written into the report or sent to generation workers. Local replay does not establish independent attestation.
+
+### Offline scoring entry point
+
+Under the same private run lock, revalidate the frozen comparison inputs, prior training and reload evidence, and every completed batch marker. Require both journals to be complete and replay their records before selecting comparison answers from the registered solutions file. Write the paired per-task score and cost report once inside the private run directory; do not dispatch workers from the scoring path or include correct answers. Recheck inputs and evidence before persisting the report.
