@@ -82,7 +82,7 @@ def _replay(journal, state, registration, limits):
     return stopped
 
 
-def compare_batch(*, off_journal, on_journal, registration, limit, worker, resource_limits):
+def validate_comparison_journals(*, off_journal, on_journal, registration, resource_limits):
     keys = {'run_sha256', 'source_code_sha256', 'adapter_sha256', 'selected_task_sha256', 'selected_prompt_sha256'}
     valid = lambda value: isinstance(value, str) and bool(re.fullmatch(r'[0-9a-f]{64}', value))
     if (not isinstance(off_journal, BatchJournal) or not isinstance(on_journal, BatchJournal) or
@@ -93,12 +93,19 @@ def compare_batch(*, off_journal, on_journal, registration, limit, worker, resou
                 any(not valid(v) for v in registration[k].values()) for k in ('selected_task_sha256', 'selected_prompt_sha256')) or
             off_journal.identity != registration['run_sha256'] + ':14b:off' or
             on_journal.identity != registration['run_sha256'] + ':14b:on' or
-            type(limit) is not int or limit <= 0 or not callable(worker) or not valid_resource_limits(resource_limits)):
+            not valid_resource_limits(resource_limits)):
         raise ValueError('invalid comparison journal registration')
     for journal in (off_journal, on_journal):
         info = journal.root.stat(follow_symlinks=False)
         if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
             raise ValueError('comparison journal must be private')
+
+
+def compare_batch(*, off_journal, on_journal, registration, limit, worker, resource_limits):
+    if type(limit) is not int or limit <= 0 or not callable(worker):
+        raise ValueError('invalid comparison batch settings')
+    validate_comparison_journals(off_journal=off_journal, on_journal=on_journal,
+                                 registration=registration, resource_limits=resource_limits)
     off_stop = _replay(off_journal, 'off', registration, resource_limits)
     on_stop = _replay(on_journal, 'on', registration, resource_limits)
     off_pending, on_pending = off_journal.pending(1), on_journal.pending(1)
