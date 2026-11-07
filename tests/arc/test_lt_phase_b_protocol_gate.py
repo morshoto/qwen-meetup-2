@@ -27,7 +27,7 @@ class FrozenProtocolGateTests(unittest.TestCase):
         self.protocol['model'] = copy.deepcopy(f.spec['model_manifest'])
         self.protocol['open_gates'] = ['real_14b_canary_and_reload']
         self.protocol['registration'].update(actual_evaluation_manifest='frozen', actual_training_settings='frozen',
-            allocation=_digest(f.allocation), source_closure=f.inventory['code_sha256'],
+            allocation=_digest(f.allocation), source_closure='bound_by_collection_descriptor',
             runtime_and_environment='bound_by_collection_descriptor', protocol_hash='bound_by_source_inventory')
         (self.root / 'configs/lt.phase-b.training-pool.json').write_text(json.dumps(sorted(f.hashes)))
         (self.root / 'configs/lt.phase-b.comparison-proposal.json').write_text(json.dumps({
@@ -61,6 +61,7 @@ class FrozenProtocolGateTests(unittest.TestCase):
                        lambda p: p['canary'].__setitem__('must_record', []),
                        lambda p: p['model'].__setitem__('revision', 'wrong'),
                        lambda p: p['registration'].__setitem__('allocation', '0'*64),
+                       lambda p: p['registration'].__setitem__('source_closure', 'pending'),
                        lambda p: p['data'].__setitem__('training_pool_status', 'conflict_unresolved')):
             old = copy.deepcopy(self.protocol); mutate(self.protocol); self.save()
             with self.assertRaises(ValueError): self.validate()
