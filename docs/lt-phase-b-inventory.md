@@ -302,3 +302,15 @@ the completion. This resolves the earlier observed mask difference for that
 fixture when the policy is installed; it is not evidence of a training step or
 that every real example fits the sequence limit. Register and test the policy
 and truncation for actual datasets before training.
+
+### Canary tensor evidence plan
+
+Before and after a single optimizer step, record deterministic hashes, shapes
+and dtypes of every loaded base tensor and every expected trainable LoRA tensor.
+Require the trainable names to equal the preregistered eight-layer rank-8 LoRA
+set, require finite LoRA values, reject changed base tensors or metadata, and
+require at least one LoRA tensor to change. Capture initial and final adapter
+hashes separately from the saved artifact identity. Tests use small synthetic
+arrays and cannot attest a live model or process. A real canary also needs a
+finite loss, independent saved-adapter reload/inference, bounded resource and
+cleanup evidence; no synthetic canary adapter may be promoted as Gen 1.
