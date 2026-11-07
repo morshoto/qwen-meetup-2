@@ -144,3 +144,14 @@ malformed loss, missing samples, timeout, or log overflow. A finite loss or a
 zero exit is only an observation: adapter changes, base identity, independent
 reload, and owned-process cleanup remain separate checks. Synthetic subprocess
 tests must not be reported as a model canary or proof of escaped-child cleanup.
+
+### Distinct comparison proposal test plan
+
+Propose 50 IDs without reading outcome or answer files, using a fixed hash-based
+ordering of the eligible training-challenge IDs. Exclude the whole original
+100-ID Phase B pool, the 200 Phase A IDs, three development IDs, both strict
+RSI evaluation partitions, all 20 scheduled strict generation slots, the
+bounded known-exposure IDs, and official public-evaluation IDs. Any replacement
+training IDs must also exclude the resulting proposal. Check the source and
+input hashes separately; this selection is a proposal, not a frozen protocol or
+proof of historical non-exposure.
