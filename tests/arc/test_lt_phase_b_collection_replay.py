@@ -1,6 +1,5 @@
 import json
 import unittest
-from unittest.mock import patch
 
 from src.arc.lt_batch_journal import BatchJournal, _create
 from src.arc.lt_phase_b_collection import collect_batch
@@ -65,6 +64,10 @@ class CollectionReplayTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.replay()
         path.unlink()
         self.assertRaises(ValueError, self.replay)
+
+    def test_invalid_manifest_counts_are_rejected(self):
+        with self.assertRaises(ValueError): self.replay(manifest={**self.manifest, 'valid_count': True})
+        with self.assertRaises(ValueError): self.replay(manifest={**self.manifest, 'train_jsonl_sha256': '0' * 64})
 
     def test_incorrect_verifier_and_extra_files_fail(self):
         from src.arc.data import Verifier
