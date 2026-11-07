@@ -49,12 +49,19 @@ class DatasetTests(unittest.TestCase):
         self.assertEqual(out, self.build(rows))
 
     def test_zero_and_small_yields_are_explicit(self):
-        empty = self.build([row('a', [self.bad, None])])
+        empty = self.build([row(x, [self.bad, None]) for x in self.tasks])
         self.assertEqual(empty['yield_status'], 'insufficient_verified_self_solutions')
         self.assertEqual(empty['train'], [])
-        small = self.build([row('a', [self.good, self.bad])])
+        small = self.build([row('a', [self.good, self.bad])] +
+                           [row(x, [self.bad, None]) for x in ('b', 'c', 'd')])
         self.assertEqual(small['yield_status'], 'overfitting_only')
         self.assertEqual(small['valid'], [])
+
+    def test_incomplete_collection_never_declares_zero_yield(self):
+        result = self.build([row('a', [self.bad, None])])
+        self.assertEqual(result['yield_status'], 'collection_incomplete')
+        self.assertEqual(result['train'], [])
+        self.assertEqual(result['valid'], [])
 
     def test_reject_overlap_duplicate_unknown_and_incomplete_provenance(self):
         with self.assertRaises(ValueError): self.build([], comparison_ids={'a'})
