@@ -16,6 +16,8 @@ before creating its task journal and checks it again in each worker. Do not star
 research gates and authorization are met.
 
 ```sh
+# For the Ubuntu-based image; install a compiler before model download.
+apt-get update && apt-get install -y build-essential
 nvidia-smi
 # Clone this repository and check out the reviewed commit containing #11.
 git clone https://github.com/morshoto/qwen-meetup-2.git
@@ -24,6 +26,9 @@ python3 -m venv .venv-vllm
 . .venv-vllm/bin/activate
 python -m pip install 'vllm==0.33.0' 'transformers>=5.8.0' huggingface_hub
 python -c 'import importlib.metadata as m; print("vllm", m.version("vllm"), "transformers", m.version("transformers"))'
+python -m src.cli.lt_h100_preflight --vllm-version 0.33.0
+# For an uv-created virtual environment without pip, record packages with:
+uv pip freeze --python "$(command -v python)" > artifacts/runtime-packages.txt
 ```
 
 Manually place `arc-agi_training_challenges.json` and
@@ -131,3 +136,37 @@ retry it. Preserve the entire pilot directory and system/runtime evidence before
 terminating the instance. This harness does not enforce a spending cap: monitor
 cost and time externally, allow enough budget for evidence transfer and cleanup,
 and destroy the instance and any billed storage at the deadline.
+
+## Cost and teardown gate
+
+Before renting, check current credit, exchange rate, offer price, requested disk,
+download and upload rates, and applicable fees. Budget for the full model
+download and retain a reserve for evidence transfer and teardown. If the
+remaining funds cannot cover a bounded pilot and the reserve, do not rent.
+Use an on-demand instance and record its exact ID and start time.
+
+From the local control machine, start the watchdog immediately after creation,
+using a positive delay calculated from the remaining budget and the offer's
+total hourly cost (do not include the angle brackets):
+
+```sh
+nohup python -m src.cli.lt_vast_watchdog <INSTANCE_ID> --after-seconds <SECONDS> > artifacts/h100-watchdog.log 2>&1 < /dev/null &
+```
+
+Verify the process remains alive and the log contains the correct instance ID.
+Keep the control machine awake and connected; the watchdog is not a provider-side
+spending limit, and machine sleep, network loss, authentication failure or API
+failure can prevent teardown. Its command has only been tested with a fake CLI,
+not a real H100. Monitor elapsed time, credit and the watchdog log independently.
+On completion or failure, copy evidence and destroy the named instance manually:
+
+```sh
+vastai destroy instance <INSTANCE_ID> --yes --raw
+vastai show instances --raw
+vastai show volumes --raw
+```
+
+Verify the target is absent, inspect and remove any pilot-owned billed volumes,
+and record the final account balance. A failed watchdog or uncertain teardown
+requires immediate manual inspection; do not assume the credit balance is a
+hard spending cap. Stop or cancel the watchdog only after teardown is verified.
