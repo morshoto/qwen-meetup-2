@@ -418,3 +418,9 @@ the frozen synthetic sample settings and record a separate one-shot start, PID,
 resource observation and result. Recheck the adapter and local identities after
 reload. Never convert a local sample into verified ARC improvement; incomplete,
 failed or interrupted reloads remain non-promotable and require reconciliation.
+
+The tiny-model integration also passed through the adapter-aware backend using
+actual MLX adapter loading, tensor comparison and a four-token generation. The
+model loader and tensor shapes were replaced with tiny fixtures; the pinned 14B
+weights were not loaded. This checks API compatibility only and is not a 14B
+reload result or a scored ARC prediction.
