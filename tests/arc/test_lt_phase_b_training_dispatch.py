@@ -95,6 +95,24 @@ class TrainingDispatchTests(unittest.TestCase):
         self.assertTrue((self.fixture.run / 'training-observation.json').exists())
         with self.assertRaises(ValueError): self.invoke()
 
+    def test_changed_inputs_during_training_block_summary(self):
+        worker = self.mock['worker'].side_effect
+        def mutate(*args, **kwargs):
+            result = worker(*args, **kwargs)
+            self.solution.write_text('{"changed": true}')
+            return result
+        self.mock['worker'].side_effect = mutate
+        with self.assertRaises(ValueError): self.invoke()
+        self.assertTrue((self.fixture.run / 'training-observation.json').exists())
+        self.assertFalse((self.fixture.run / 'training-summary.json').exists())
+        with self.assertRaises(ValueError): self.invoke()
+
+    def test_preflight_identity_mismatch_refuses_start(self):
+        self.mock['preflight_training_data'].return_value = {**self.preflight_value, 'dataset_manifest_sha256': '0' * 64}
+        with self.assertRaises(ValueError): self.invoke()
+        self.mock['worker'].assert_not_called()
+        self.assertFalse((self.fixture.run / 'training-started.json').exists())
+
     def test_log_tampering_rejected(self):
         self.invoke()
         path = self.fixture.run / 'training-observation.json'
