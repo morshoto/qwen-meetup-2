@@ -86,6 +86,18 @@ class CanaryDispatchTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.invoke()
         self.assertEqual(len(self.calls), 1)
 
+    def test_false_success_with_mismatched_loss_never_promotes(self):
+        original = self.process.side_effect
+        def forged(*args, **kwargs):
+            result = original(*args, **kwargs)
+            result['observation']['loss']['last_loss'] = .5
+            return result
+        self.process.side_effect = forged
+        with self.assertRaises(ValueError): self.invoke()
+        self.assertTrue((self.run / 'canary-observation.json').exists())
+        self.assertFalse((self.run / 'canary-training-summary.json').exists())
+        with self.assertRaises(ValueError): self.invoke()
+
     def test_preflight_failure_never_starts(self):
         self.preflight_check.side_effect = ValueError('fixture mismatch')
         with self.assertRaises(ValueError): self.invoke()
