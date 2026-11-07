@@ -15,7 +15,8 @@ def build(root: Path, model: dict) -> dict:
     }:
         raise ValueError('invalid model configuration')
     files = model['files_sha256']
-    if (not isinstance(model['model_id'], str) or not model['model_id'].strip() or
+    if (not isinstance(model['model_id'], str) or
+            not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*', model['model_id']) or
             not isinstance(model['revision'], str) or
             not re.fullmatch(r'[0-9a-f]{40}|[0-9a-f]{64}', model['revision']) or
             not isinstance(model['chat_template_sha256'], str) or
