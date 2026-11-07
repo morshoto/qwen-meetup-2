@@ -45,7 +45,12 @@ class RegisteredWorkerTests(unittest.TestCase):
                      'settings': {'seed': 20261111, 'max_tokens': 4096, 'temperature': 0.6,
                                   'thinking': 'off', 'candidate_count': 2,
                                   'mlx_memory_limit_bytes': 48 * 1024**3,
-                                  'mlx_lm_version': '0.30.7', 'mlx_version': '0.32.4'}}
+                                  'mlx_lm_version': '0.30.7', 'mlx_version': '0.32.4',
+                                  'task_timeout_seconds': 300, 'monitor_interval_seconds': 1,
+                                  'sample_timeout_seconds': 2, 'termination_grace_seconds': 1,
+                                  'resource_limits': {'timeout_seconds': 300, 'minimum_disk_gib': 20,
+                                      'minimum_free_memory_percent': 20, 'maximum_swap_growth_mib': 512,
+                                      'maximum_process_rss_gib': 32, 'sample_interval_seconds': 5}}}
         self.created = []
         self.patcher = patch('src.arc.lt_phase_b_registered_worker.verify_source_tree')
         self.verify_source = self.patcher.start()
@@ -87,6 +92,7 @@ class RegisteredWorkerTests(unittest.TestCase):
     def test_invalid_registration_never_loads_model(self):
         for changed in (dict(self.spec, status='draft'), dict(self.spec, allocation_audit_sha256='bad'),
                         dict(self.spec, settings={**self.spec['settings'], 'candidate_count': 1}),
+                        dict(self.spec, settings={**self.spec['settings'], 'task_timeout_seconds': 301}),
                         dict(self.spec, selected_task_sha256={}), dict(self.spec, source_code_sha256='c' * 64),
                         dict(self.spec, environment_manifest={'interpreter_realpath': '/wrong', 'interpreter_sha256': 'd' * 64})):
             with self.subTest(changed=changed), self.assertRaises(ValueError): self.run_task(changed)
