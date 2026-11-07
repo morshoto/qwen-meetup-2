@@ -61,6 +61,14 @@ class TrainingProposalTests(unittest.TestCase):
         self.assertEqual(self.preflight.call_count, 2)
         self.assertEqual(self.mock['review_reload_attempt'].call_count, 2)
 
+    def test_proposal_replays_real_fixture_collection_and_dataset(self):
+        from src.arc.lt_phase_b_training_preflight import preflight_training_data
+        self.preflight.side_effect = preflight_training_data
+        result = self.invoke()
+        self.assertEqual(result['eligible_tasks'], 3)
+        self.assertFalse(result['training_allowed'])
+        self.assertEqual(result['spec']['dataset_manifest_sha256'], self.fixture.training['dataset_manifest_sha256'])
+
     def test_missing_canary_or_changed_dataset_refuses_proposal(self):
         self.mock['review_reload_attempt'].side_effect = ValueError('canary missing')
         with self.assertRaises(ValueError): self.invoke()
