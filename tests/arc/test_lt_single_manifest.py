@@ -57,6 +57,8 @@ class SingleManifestTests(unittest.TestCase):
         config = {'model': self.config, 'backend': {'name': 'vllm', 'version': '0.16.0'}}
         manifest = build(Path('.'), config)
         self.assertEqual(manifest['backend'], config['backend'])
+        self.assertEqual(manifest['backend_settings'], {'dtype': 'bfloat16', 'max_model_len': 16384, 'tensor_parallel_size': 1})
+        self.assertNotIn('mlx_lm_version', manifest)
         self.assertEqual(manifest['model'], self.config)
         verify(Path('.'), manifest)
         changed = copy.deepcopy(manifest)
