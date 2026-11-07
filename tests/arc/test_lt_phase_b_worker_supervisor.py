@@ -53,6 +53,21 @@ class WorkerSupervisorTests(unittest.TestCase):
         self.assertTrue(result['leader_reaped'])
         self.assertTrue(result['observation']['samples'])
 
+    def test_training_mode_requires_one_finite_loss(self):
+        def run(code):
+            return run_monitored_worker([sys.executable, '-u', '-c', code], root='.', timeout=3,
+                baseline_sampler=lambda _: state(), process_sampler=lambda _root, _pid: state(),
+                interval_seconds=.05, sample_timeout_seconds=.2, terminate_grace_seconds=.1, training=True)
+        good = run('print("Iter 1: Train loss 0.125, x", flush=True)')
+        self.assertEqual(good['status'], 'complete')
+        self.assertEqual(good['observation']['loss']['last_step'], 1)
+        self.assertIn('Train loss 0.125', good['stdout'])
+        empty = run('print("finished", flush=True)')
+        self.assertEqual(empty['status'], 'error')
+        nonfinite = run('import time; print("Iter 1: Train loss nan, x", flush=True); time.sleep(5)')
+        self.assertEqual(nonfinite['status'], 'error')
+        self.assertEqual(nonfinite['observation']['stop_reason'], 'nonfinite_loss')
+
     def test_invalid_monitor_settings_are_rejected_before_spawning(self):
         with patch('src.arc.lt_phase_b_worker_supervisor.subprocess.Popen') as popen:
             for settings in ({'interval_seconds': 0}, {'sample_timeout_seconds': float('nan')},
