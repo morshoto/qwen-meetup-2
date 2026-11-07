@@ -16,10 +16,10 @@ from src.arc.rsi_model_identity import _json_file
 from src.arc.rsi_training_resources import training_resource_decision, valid_resource_limits
 
 
-def replay_collection_dataset(*, journal_dir, tasks, comparison_tasks, verifier, source, manifest, resource_limits):
+def reconstruct_collection_dataset(*, journal_dir, tasks, comparison_tasks, verifier, source, resource_limits):
+    """Return sensitive reconstructed records only to the trusted caller."""
     if (not isinstance(tasks, dict) or not tasks or not isinstance(source, dict) or
-            not isinstance(source.get('run_sha256'), str) or not valid_resource_limits(resource_limits) or
-            not isinstance(manifest, dict)):
+            not isinstance(source.get('run_sha256'), str) or not valid_resource_limits(resource_limits)):
         raise ValueError('invalid collection replay inputs')
     directory = Path(journal_dir)
     try:
@@ -72,23 +72,32 @@ def replay_collection_dataset(*, journal_dir, tasks, comparison_tasks, verifier,
                 raise ValueError('collection worker and result differ')
             rows.append(row)
         dataset = build_dataset(tasks, rows, verifier, source=source, comparison_tasks=comparison_tasks)
-        hashes = {key: hashlib.sha256(''.join(_json(example) + '\n' for example in dataset[key]).encode()).hexdigest()
-                  for key in ('train', 'valid')}
-        eligible = {r['task_id']: r['solution_lineage_sha256'] for r in dataset['journal']
-                    if r['verification_status'] == 'eligible'}
-        if (dataset['yield_status'] not in ('disjoint_split', 'overfitting_only') or
-                manifest.get('status') != 'private_sft_materialized_unverified' or manifest.get('training_allowed') is not False or
-                manifest.get('token_audit_status') != 'dataset_tokens_consistent_unverified' or
-                manifest.get('source') != source or manifest.get('yield_status') != dataset['yield_status'] or
-                manifest.get('split_task_ids') != dataset['split_task_ids'] or
-                manifest.get('solution_lineage_sha256') != eligible or
-                type(manifest.get('train_count')) is not int or manifest['train_count'] != len(dataset['train']) or
-                type(manifest.get('valid_count')) is not int or manifest['valid_count'] != len(dataset['valid']) or
-                manifest.get('train_jsonl_sha256') != hashes['train'] or
-                manifest.get('valid_jsonl_sha256') != (hashes['valid'] if dataset['valid'] else None)):
-            raise ValueError('materialized dataset differs from collection')
-        return {'status': 'collection_dataset_consistent_unverified', 'training_allowed': False,
-                'attempted_tasks': len(ids), 'eligible_tasks': len(eligible), 'yield_status': dataset['yield_status'],
-                'train_jsonl_sha256': hashes['train'], 'valid_jsonl_sha256': hashes['valid'] if dataset['valid'] else None}
+        return dataset
     except (OSError, KeyError, TypeError) as exc:
         raise ValueError('collection replay unavailable') from exc
+
+
+def replay_collection_dataset(*, journal_dir, tasks, comparison_tasks, verifier, source, manifest, resource_limits):
+    if not isinstance(manifest, dict):
+        raise ValueError('invalid collection manifest')
+    dataset = reconstruct_collection_dataset(journal_dir=journal_dir, tasks=tasks, comparison_tasks=comparison_tasks,
+                                             verifier=verifier, source=source, resource_limits=resource_limits)
+    ids = sorted(tasks)
+    hashes = {key: hashlib.sha256(''.join(_json(example) + '\n' for example in dataset[key]).encode()).hexdigest()
+              for key in ('train', 'valid')}
+    eligible = {r['task_id']: r['solution_lineage_sha256'] for r in dataset['journal']
+                if r['verification_status'] == 'eligible'}
+    if (dataset['yield_status'] not in ('disjoint_split', 'overfitting_only') or
+            manifest.get('status') != 'private_sft_materialized_unverified' or manifest.get('training_allowed') is not False or
+            manifest.get('token_audit_status') != 'dataset_tokens_consistent_unverified' or
+            manifest.get('source') != source or manifest.get('yield_status') != dataset['yield_status'] or
+            manifest.get('split_task_ids') != dataset['split_task_ids'] or
+            manifest.get('solution_lineage_sha256') != eligible or
+            type(manifest.get('train_count')) is not int or manifest['train_count'] != len(dataset['train']) or
+            type(manifest.get('valid_count')) is not int or manifest['valid_count'] != len(dataset['valid']) or
+            manifest.get('train_jsonl_sha256') != hashes['train'] or
+            manifest.get('valid_jsonl_sha256') != (hashes['valid'] if dataset['valid'] else None)):
+        raise ValueError('materialized dataset differs from collection')
+    return {'status': 'collection_dataset_consistent_unverified', 'training_allowed': False,
+            'attempted_tasks': len(ids), 'eligible_tasks': len(eligible), 'yield_status': dataset['yield_status'],
+            'train_jsonl_sha256': hashes['train'], 'valid_jsonl_sha256': hashes['valid'] if dataset['valid'] else None}
