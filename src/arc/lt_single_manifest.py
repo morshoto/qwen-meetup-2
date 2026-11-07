@@ -41,6 +41,7 @@ def build(root: Path, model: dict) -> dict:
                  model=copy.deepcopy(model),
                  single_source_sha256={name: sha((root / name).read_bytes()) for name in SOURCE_FILES})
     if backend is not None:
+        value['single_source_sha256']['src/arc/lt_vllm_backend.py'] = sha((root / 'src/arc/lt_vllm_backend.py').read_bytes())
         value['backend'] = copy.deepcopy(backend)
     return {**value, 'sha256': sha(canonical(value))}
 

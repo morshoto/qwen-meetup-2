@@ -4,6 +4,7 @@ import fcntl
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
 
 from src.arc.data import load_arc
@@ -21,7 +22,9 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def verify_model(manifest):
     root = verify_phase_a_model({'models': {'single': manifest['model']}}, 'single')
-    template = json.loads((root / 'tokenizer_config.json').read_bytes()).get('chat_template')
+    template_file = root / 'chat_template.jinja'
+    template = (template_file.read_text() if template_file.is_file() else
+                json.loads((root / 'tokenizer_config.json').read_bytes()).get('chat_template'))
     if not isinstance(template, str) or not template or sha(template.encode()) != manifest['model']['chat_template_sha256']:
         raise ValueError('chat template identity differs')
     return root
@@ -37,6 +40,21 @@ def prepare(directory, config):
     for name, value in (('manifest.json', manifest), ('receipt.json', receipt), ('export.json', export)):
         _create(directory / name, value)
     return manifest['sha256']
+
+
+def worker_command(manifest, directory, task, output, model_path):
+    backend = manifest.get('backend')
+    if backend is None:
+        argv = ['uv', 'run', '--offline', '--no-project', '--python', '/opt/homebrew/bin/python3.12',
+                '--with', 'mlx-lm==0.30.7', 'python']
+    else:
+        argv = [sys.executable]
+    argv += ['-m', 'src.cli.lt_single_worker', '--export', str(directory / 'export.json'),
+             '--receipt', str(directory / 'receipt.json'), '--output', str(output),
+             '--task', task, '--model-path', str(model_path)]
+    if backend is not None:
+        argv += ['--backend', backend['name'], '--backend-version', backend['version']]
+    return argv
 
 
 def run(directory):
@@ -57,10 +75,7 @@ def run(directory):
         model_path = verify_model(manifest)
         journal = BatchJournal(directory / 'single', manifest['task_ids'], manifest['sha256'] + ':single')
         def worker(task, output):
-            argv = ['uv', 'run', '--offline', '--no-project', '--python', '/opt/homebrew/bin/python3.12',
-                    '--with', 'mlx-lm==0.30.7', 'python', '-m', 'src.cli.lt_single_worker',
-                    '--export', str(directory / 'export.json'), '--receipt', str(directory / 'receipt.json'),
-                    '--output', str(output), '--task', task, '--model-path', str(model_path)]
+            argv = worker_command(manifest, directory, task, output, model_path)
             def record_process(pid):
                 _create(journal.root / (task + '.process.json'),
                         {'task_id': task, 'identity': journal.identity, 'pid': pid})
@@ -99,7 +114,9 @@ def score_directory(directory):
     report = score_single(manifest['task_ids'], rows, verifier)
     report['evidence'] = {'comparison_sha256': manifest['sha256'], 'results_sha256': hashes,
                           'solutions_sha256': manifest['solutions_sha256'], 'protocol': manifest['protocol'],
-                          'model': manifest['model'], 'started_without_result': interrupted}
+                          'model': manifest['model'], 'backend': manifest.get('backend', {'name': 'mlx', 'version': manifest['mlx_lm_version']}),
+                          'task_settings': {key: manifest[key] for key in ('task_ids', 'candidate_count', 'temperature', 'seed_base', 'max_tokens', 'thinking')},
+                          'started_without_result': interrupted}
     return report
 
 
