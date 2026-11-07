@@ -243,3 +243,7 @@ The fixed real-training configuration reports loss every optimizer step. Replay 
 ### SFT preparation completion receipt
 
 Hold the private run lock across preparation and its input post-check. Write an exclusive start marker before materialization and a completion receipt only after the registered inputs are rechecked; bind the private preparation summary, eligibility journal and SFT manifest hashes. Training preflight must reject missing, changed or incomplete receipts and must replay the underlying collection independently. An interrupted or failed post-check requires reconciliation rather than automatic reuse.
+
+### Eligibility journal replay
+
+Before training, compare the retained private eligibility records and their data and collection identities with an independent reconstruction from the collection. A completion receipt binds the retained bytes, while replay checks that the recorded decisions and rejection reasons match the verifier's reconstruction. Expose only a digest, never the private records, in the replay summary.
