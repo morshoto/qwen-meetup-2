@@ -22,7 +22,7 @@ from src.arc.lt_phase_b_tensor_evidence import compare_tensor_states
 from src.arc.lt_phase_b_training_preflight import preflight_training_data
 from src.arc.lt_phase_b_training_config import _private_file
 from src.arc.lt_phase_b_worker_supervisor import run_monitored_worker
-from src.arc.rsi_loss_watch import TrainingLossWatch
+from src.arc.rsi_loss_watch import TrainingLossWatch, _REPORT
 from src.arc.rsi_training_resources import training_resource_decision
 
 _BOOTSTRAP = ('import sys; sys.path.insert(0, sys.argv.pop(1)); '
@@ -65,6 +65,9 @@ def review_real_training_attempt(directory, *, training, expected_training_sha25
     watch.finish()
     if watch.snapshot() != loss:
         raise ValueError('training loss differs from log')
+    steps = [int(match.group(1)) for line in log.split('\n') if (match := _REPORT.match(line))]
+    if steps != list(range(1, 21)):
+        raise ValueError('training loss reports are incomplete')
     evidence = directory / 'training-evidence'
     before, after = (_read_object(evidence / name) for name in ('tensor-before.json', 'tensor-after.json'))
     checked = compare_tensor_states(before, after)
