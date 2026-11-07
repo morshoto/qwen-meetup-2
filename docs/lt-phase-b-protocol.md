@@ -235,3 +235,7 @@ An opt-in local check may assemble a hypothetical frozen protocol in a temporary
 ### Frozen answer-file binding
 
 SFT preparation and every real-training preflight must compare the supplied solutions-file hash with the exact frozen protocol file bound by the collection source inventory, in addition to checking their data or training descriptors. Read only the registered protocol and file hash for this check; a later descriptor cannot replace the protocol's answer-file identity.
+
+### Real-training loss replay
+
+The fixed real-training configuration reports loss every optimizer step. Replay must require the retained finite reports for steps 1 through 20 in order, in addition to checking the final loss and log hash. A missing intermediate report leaves the attempt unverified even if the last reported step is 20; retained logs are still local observations, not independent training attestation.
