@@ -35,6 +35,8 @@ class TrainingPreflightTests(unittest.TestCase):
             'status': 'preflight_consistent_unverified', 'execution_ready': False, 'run_sha256': self.collection_sha,
             'selected_tasks': 4, 'evidence_type': 'local_files_and_caller_supplied_registration'})
         self.collection_preflight = patcher.start(); self.addCleanup(patcher.stop)
+        patcher = patch('src.arc.lt_phase_b_training_preflight.require_protocol_solutions')
+        self.protocol_solutions = patcher.start(); self.addCleanup(patcher.stop)
 
     def invoke(self, **kwargs):
         args = {'training_spec': self.training, 'expected_training_sha256': _digest(self.training),
@@ -60,6 +62,12 @@ class TrainingPreflightTests(unittest.TestCase):
             training = {**self.training, **change}
             with self.subTest(change=change), self.assertRaises(ValueError):
                 self.invoke(training_spec=training, expected_training_sha256=_digest(training))
+
+    def test_protocol_solution_mismatch_refuses_before_eligibility_replay(self):
+        self.protocol_solutions.side_effect = ValueError('protocol solutions differ')
+        with patch('src.arc.lt_phase_b_training_preflight.replay_collection_dataset') as replay:
+            with self.assertRaises(ValueError): self.invoke()
+            replay.assert_not_called()
 
     def test_wrong_training_answers_or_comparison_content_fail(self):
         values = json.loads(self.solutions); values['a'] = [[[9]]]

@@ -23,6 +23,8 @@ class PrepareSFTTests(unittest.TestCase):
             'status': 'preflight_consistent_unverified', 'execution_ready': False, 'run_sha256': f.collection_sha,
             'selected_tasks': 4, 'evidence_type': 'local_files_and_caller_supplied_registration'})
         self.preflight = p.start(); self.addCleanup(p.stop)
+        p = patch('src.arc.lt_phase_b_prepare_sft.require_protocol_solutions')
+        self.protocol_solutions = p.start(); self.addCleanup(p.stop)
 
     def invoke(self, **kwargs):
         f = self.fixture
@@ -58,6 +60,12 @@ class PrepareSFTTests(unittest.TestCase):
         self.assertEqual(result['eligible_tasks'], 0)
         self.assertFalse((self.run / 'sft-data').exists())
         self.assertTrue((self.run / 'eligibility.json').is_file())
+
+    def test_protocol_solution_mismatch_writes_nothing(self):
+        self.protocol_solutions.side_effect = ValueError('protocol solutions differ')
+        with self.assertRaises(ValueError): self.invoke()
+        self.assertFalse((self.run / 'eligibility.json').exists())
+        self.assertFalse((self.run / 'sft-data').exists())
 
     def test_changed_input_and_interrupted_artifact_refuse_preparation(self):
         with self.assertRaises(ValueError): self.invoke(solution_bytes=b'{}')
