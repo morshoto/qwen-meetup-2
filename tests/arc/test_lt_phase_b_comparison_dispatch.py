@@ -105,6 +105,15 @@ class ComparisonDispatchTests(unittest.TestCase):
         self.assertNotIn('answers', str(report))
         with self.assertRaises(ValueError): self.invoke(score_only=True)
 
+    def test_offline_scoring_rejects_interrupted_batch_marker(self):
+        self.invoke(50); self.invoke(50)
+        marker = self.run / 'comparison-batches/00000001.complete.json'
+        marker.unlink()
+        calls = len(self.calls)
+        with self.assertRaises(ValueError): self.invoke(score_only=True)
+        self.assertEqual(len(self.calls), calls)
+        self.assertFalse((self.run / 'comparison-score.json').exists())
+
     def test_bad_export_and_preflight_fail_before_launch(self):
         path = self.run / 'comparison-export.json'; value = json.loads(path.read_text())
         value['tasks'][next(iter(value['tasks']))]['test'][0]['output'] = [[1]]
