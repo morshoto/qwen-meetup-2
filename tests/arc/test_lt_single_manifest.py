@@ -1,4 +1,5 @@
 import copy
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -27,6 +28,19 @@ class SingleManifestTests(unittest.TestCase):
         changed['model']['revision'] = '4' * 40
         with self.assertRaises(ValueError):
             verify(Path('.'), changed)
+
+    @patch('src.arc.lt_single_manifest.build_phase_a')
+    def test_registration_rejects_changed_single_model_source(self, base):
+        base.return_value = self.base
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / 'runner.py'
+            source.write_text('original')
+            with patch('src.arc.lt_single_manifest.SOURCE_FILES', ('runner.py',)):
+                manifest = build(root, self.config)
+                source.write_text('changed')
+                with self.assertRaises(ValueError):
+                    verify(root, manifest)
 
     @patch('src.arc.lt_single_manifest.build_phase_a')
     def test_rejects_unpinned_revision_and_unsafe_inventory(self, base):
