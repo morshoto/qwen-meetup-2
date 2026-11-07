@@ -24,8 +24,7 @@ def _read_object(path):
     return _json_file(path, _hash_file(path))
 
 
-def run_collection(*, source_root, run_dir, expected_run_sha256, challenge_path, official_archive,
-                   python_executable, model_path, limit):
+def _private_run_directory(source_root, run_dir):
     root = Path(source_root).resolve(strict=True)
     artifacts = root / 'artifacts'
     directory = Path(run_dir)
@@ -36,6 +35,12 @@ def run_collection(*, source_root, run_dir, expected_run_sha256, challenge_path,
     if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077 or
             directory.parent != artifacts.resolve(strict=True)):
         raise ValueError('run directory must be private and directly under artifacts')
+    return root, directory
+
+
+def run_collection(*, source_root, run_dir, expected_run_sha256, challenge_path, official_archive,
+                   python_executable, model_path, limit):
+    root, directory = _private_run_directory(source_root, run_dir)
     if type(limit) is not int or not 0 < limit <= 100:
         raise ValueError('invalid batch limit')
     lockfd = os.open(directory / 'run.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
