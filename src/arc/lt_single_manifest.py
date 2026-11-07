@@ -41,6 +41,9 @@ def build(root: Path, model: dict) -> dict:
                  model=copy.deepcopy(model),
                  single_source_sha256={name: sha((root / name).read_bytes()) for name in SOURCE_FILES})
     if backend is not None:
+        for key in ('mlx_memory_limit_bytes', 'mlx_lm_version', 'mlx_version'):
+            value.pop(key, None)
+        value['backend_settings'] = {'dtype': 'bfloat16', 'max_model_len': 16384, 'tensor_parallel_size': 1}
         value['single_source_sha256']['src/arc/lt_vllm_backend.py'] = sha((root / 'src/arc/lt_vllm_backend.py').read_bytes())
         value['backend'] = copy.deepcopy(backend)
     return {**value, 'sha256': sha(canonical(value))}
