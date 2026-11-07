@@ -68,6 +68,12 @@ class TrainingProposalTests(unittest.TestCase):
         (self.run / 'sft-data/train.jsonl').write_text('tampered')
         with self.assertRaises(ValueError): self.invoke()
 
+    def test_changed_canary_after_preflight_rejects_proposal(self):
+        before = self.mock['review_reload_attempt'].return_value
+        self.mock['review_reload_attempt'].side_effect = [before, {**before, 'reload_verified': True}]
+        with self.assertRaises(ValueError): self.invoke()
+        self.assertFalse((self.run / 'training-spec.json').exists())
+
     def test_unfrozen_or_changed_data_registration_is_rejected(self):
         for change in ({'status': 'draft'}, {'solution_sha256': 'f'*64}, {'collection_sha256': 'f'*64}):
             data = {**self.data, **change}
