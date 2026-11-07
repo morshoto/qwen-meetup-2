@@ -35,7 +35,9 @@ class DispatchTests(unittest.TestCase):
         with zipfile.ZipFile(self.archive, 'w') as z:
             z.writestr('arc-agi_evaluation_challenges.json', '{}')
         self.preflight = patch('src.arc.lt_phase_b_dispatch.preflight_collection',
-                               return_value={'status': 'preflight_consistent_unverified', 'execution_ready': False})
+                               return_value={'status': 'preflight_consistent_unverified', 'execution_ready': False,
+                                             'run_sha256': self.sha, 'selected_tasks': 100,
+                                             'evidence_type': 'local_files_and_caller_supplied_registration'})
         self.check = self.preflight.start(); self.addCleanup(self.preflight.stop)
         self.calls = []
         def worker(argv, *, root, timeout, on_start, **kwargs):
@@ -71,6 +73,12 @@ class DispatchTests(unittest.TestCase):
 
     def test_failed_preflight_never_dispatches(self):
         self.check.side_effect = ValueError('fixture mismatch')
+        with self.assertRaises(ValueError): self.invoke()
+        self.assertEqual(self.calls, [])
+        self.assertFalse((self.run / 'collection').exists())
+
+    def test_unexpected_preflight_result_never_dispatches(self):
+        self.check.return_value = {'status': 'other', 'execution_ready': True}
         with self.assertRaises(ValueError): self.invoke()
         self.assertEqual(self.calls, [])
         self.assertFalse((self.run / 'collection').exists())
