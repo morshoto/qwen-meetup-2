@@ -56,6 +56,9 @@ class FrozenProtocolGateTests(unittest.TestCase):
     def test_model_settings_or_task_inventory_mismatch_refuse(self):
         for mutate in (lambda p: p['inference'].__setitem__('seed_base', 1),
                        lambda p: p['training'].__setitem__('rank', 4),
+                       lambda p: p['training'].__setitem__('selection', 'best validation score'),
+                       lambda p: p['evaluation'].__setitem__('metrics', []),
+                       lambda p: p['canary'].__setitem__('must_record', []),
                        lambda p: p['model'].__setitem__('revision', 'wrong'),
                        lambda p: p['registration'].__setitem__('allocation', '0'*64),
                        lambda p: p['data'].__setitem__('training_pool_status', 'conflict_unresolved')):
