@@ -155,3 +155,7 @@ Replay the registered data, synthetic canary and completed training evidence bef
 ### Comparison reload evidence handoff
 
 Before a matched comparison uses a real adapter, replay the saved real-reload start and process markers, monitored output and sample, prior training and canary evidence, and the saved summary. Reject missing or altered records. This handoff only reports local consistency; it does not promote the adapter or establish independent cleanup or evaluation validity.
+
+### Matched public comparison worker
+
+A frozen comparison descriptor must bind the distinct 50 public task identities, the existing direct-grid prompt and generation settings, source/runtime/model manifests, the real training and canary identities, and the saved real adapter hash. For each task, use the same descriptor and backend settings for adapter-off and adapter-on, changing only adapter state and its hash. The worker receives no evaluation answers. Its local checks and output are not independent attestation or scored evidence; a supervised journal and offline paired scorer remain necessary.
