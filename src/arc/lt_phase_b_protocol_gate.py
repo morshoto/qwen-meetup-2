@@ -35,8 +35,8 @@ def validate_frozen_protocol(*, source_root, spec, source_inventory, allocation_
             registration.get('actual_evaluation_manifest') != 'frozen' or
             registration.get('actual_training_settings') != 'frozen' or
             registration.get('allocation') != _digest(allocation_receipt) or
-            registration.get('source_closure') != source_inventory.get('code_sha256') or
-            registration.get('source_closure') != spec['source_code_sha256'] or
+            registration.get('source_closure') != 'bound_by_collection_descriptor' or
+            source_inventory.get('code_sha256') != spec['source_code_sha256'] or
             registration.get('runtime_and_environment') != 'bound_by_collection_descriptor' or
             registration.get('protocol_hash') != 'bound_by_source_inventory' or
             json.dumps(protocol.get('model'), sort_keys=True, separators=(',', ':')) !=
