@@ -12,6 +12,7 @@ from src.arc.lt_batch_journal import BatchJournal, _create
 from src.arc.lt_benchmark_manifest import canonical, sha
 from src.arc.lt_development_export import load_development_export
 from src.arc.lt_public import load_public_export
+from src.arc.lt_vllm_backend import VLLM_SETTINGS
 from src.arc.lt_single_supervision import supervised_batch
 from src.arc.lt_task_supervisor import run_worker
 from src.cli.lt_single import verify_model
@@ -53,7 +54,7 @@ def _manifest(export, receipt, model, version):
     value = {'purpose': 'development_only', 'task_ids': ids, 'model': model, 'backend_version': version,
              'export_sha256': sha(canonical(export)), 'receipt_sha256': sha(canonical(receipt)),
              'sources_sha256': {p: sha((ROOT / p).read_bytes()) for p in SOURCES},
-             'settings': {'dtype': 'bfloat16', 'max_model_len': 16384, 'temperature': 0.6,
+             'settings': {**VLLM_SETTINGS, 'temperature': 0.6,
                           'max_tokens': 4096, 'candidate_count': 2, 'seed_base': 20261111, 'thinking': 'off'}}
     return {**value, 'sha256': sha(canonical(value))}
 

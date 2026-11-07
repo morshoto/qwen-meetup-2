@@ -4,12 +4,14 @@ import json
 from src.arc.lt_direct_format import normalize_direct
 from src.arc.lt_live_backend import PROMPT
 
+VLLM_SETTINGS = {'dtype': 'bfloat16', 'max_model_len': 16384, 'tensor_parallel_size': 1,
+                 'language_model_only': True, 'enforce_eager': True, 'max_num_seqs': 1}
+
 
 class VLLMBackend:
     def __init__(self, model_path, *, seed=20261111, max_tokens=4096, temperature=0.6):
         from vllm import LLM, SamplingParams
-        self.llm = LLM(model=str(model_path), dtype='bfloat16', max_model_len=16384,
-                       trust_remote_code=False, tensor_parallel_size=1)
+        self.llm = LLM(model=str(model_path), trust_remote_code=False, **VLLM_SETTINGS)
         self.tokenizer = self.llm.get_tokenizer()
         self.sampling_params = SamplingParams
         self.seed, self.max_tokens, self.temperature = seed, max_tokens, temperature
