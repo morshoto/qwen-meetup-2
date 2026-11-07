@@ -187,3 +187,10 @@ fields. It is not independent proof against PID reuse, escaped descendants, or
 system-owned services. A run with an extant or inaccessible post-reap group is
 refused. Any actual canary or collection report must preserve both observations
 and their limitations.
+
+At source commit `b57f80e`, a one-second synthetic Python child was run on
+2026-11-07 with the actual local macOS resource sampler. The supervisor reported
+`process_exited`, five samples, a reaped leader and an absent process group in
+the post-reap signal-zero lookup. `escaped_processes_excluded` remained false.
+Only this summary was retained; it is not model, canary, independent cleanup,
+or peak-resource evidence. The synthetic check used no ARC data or model.
