@@ -1,6 +1,6 @@
 # LT Phase A: Qwen ARC comparison status
 
-**Status as of 2026-11-07: incomplete.** Qwen3-14B has completed all 200 frozen tasks; Qwen3-32B has completed 190. The complete 14B result is pass@1 3/200 and pass@2 3/200, with 328/400 valid candidates, 72 invalid candidates, zero timeouts, 1,264,719 tokens, 13,160.9 seconds summed runtime, 11.07 GB process-reported peak memory, and swap unavailable. At 190/200 tasks, 32B is at pass@1 2/190 and pass@2 4/190, with 317/380 valid candidates, 63 invalid candidates, zero timeouts, 1,188,801 tokens, 26,997.4 seconds summed runtime, 22.61 GB peak memory, and swap unavailable. Exact candidate-response duplicates occurred on 147/200 14B tasks and 50/190 32B tasks, so pass@2 counts recorded attempts and is not evidence of independent sampling. Checkpoint evidence and the frozen manifest are documented in [the progress record](lt-phase-a-progress.md) and `artifacts/lt-phase-a-frozen-20261107-01/`.
+**Phase A comparison complete as of 2026-11-07.** Both Qwen3-14B and Qwen3-32B completed the same frozen 200 tasks with two recorded candidates per task. Qwen3-14B scored pass@1 3/200 and pass@2 3/200, with 328/400 valid candidates (82.0%), 1,264,719 tokens, 13,160.9 seconds summed runtime, and 11.07 GB process-reported peak memory. Qwen3-32B scored 2/200 and 4/200, with 335/400 valid candidates (83.75%), 1,241,566 tokens, 28,066.8 seconds summed runtime, and 22.61 GB peak memory. Neither run had errors or timeouts; swap was unavailable. Exact raw candidate duplicates occurred on 147/200 14B tasks and 56/200 32B tasks, so pass@2 counts attempts and does not establish independent sampling. Full score and frozen manifest are in `artifacts/lt-phase-a-frozen-20261107-01/score-final.json`; protocol and lifecycle details are in [the progress record](lt-phase-a-progress.md).
 
 This is an exploratory protocol separate from the original RSI experiment in issue #2. The Phase A run uses the frozen 200-task set, direct-grid agent, two candidates per task, a 4,096-token limit, and sequential model runs. Its 14B task allocation excludes development and Phase B tasks; the official public evaluation remains reserved for Phase C.
 
@@ -8,11 +8,11 @@ This is an exploratory protocol separate from the original RSI experiment in iss
 | --- | --- | --- |
 | Planned comparison tasks | 200 | 200 |
 | Frozen comparison task IDs | 200 | 200 |
-| Tasks completed | 200 | 190 |
-| Scored checkpoint | 200 | 190; partial |
-| Task-level pass@1 / pass@2 at checkpoint | 3/200 / 3/200 | 2/190 / 4/190 |
-| Valid candidates at checkpoint | 328/400 | 317/380 |
-| Tokens, runtime, peak memory and swap at checkpoint | 1,264,719; 13,160.9 s; 11.07 GB; null | 1,188,801; 26,997.4 s; 22.61 GB; null |
+| Tasks completed | 200 | 200 |
+| Scored checkpoint | 200; complete | 200; complete |
+| Task-level pass@1 / pass@2 | 3/200 / 3/200 | 2/200 / 4/200 |
+| Valid candidates | 328/400 (82.0%) | 335/400 (83.75%) |
+| Tokens, runtime, peak memory and swap | 1,264,719; 13,160.9 s; 11.07 GB; null | 1,241,566; 28,066.8 s; 22.61 GB; null |
 
 A separate real 14B direct-grid development run (`lt-dev-20261106-direct-01`)
 at revision `a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4` attempted three
@@ -31,9 +31,10 @@ configuration and SHA-256 hashes of the receipt, raw results and score. The
 run record is a local observation, and model and cleanup identities were not
 independently verified.
 
-Zero attempts is not a zero-percent accuracy result. No baseline or model
-ranking can be inferred, and no ARC improvement, training success or official
-benchmark score has been established by this Phase A work.
+The 14B model solved one more task at pass@1; 32B had one more task at pass@2
+because it solved two additional tasks only when considering either recorded
+candidate. Two pass@1 tasks were shared. This exploratory comparison does not
+establish an official benchmark score or training effect.
 
 The local training dataset has 1,000 task IDs. A bounded historical inventory
 identifies 317 as known exposed, leaving 683 outside that known union. Project
@@ -46,17 +47,15 @@ registered in the frozen Phase A configuration; the Phase B recipe is not
 frozen. The official 120-task
 public evaluation is reserved for Phase C and was not used here.
 
-The existing agent, guarded MLX transport and bounded Docker sandbox are
-available as components. Offline tests cover task isolation, scoring, frozen
-settings and fixture journaling. A local synthetic container probe returned and
-timed out as expected, with neither probed container listed afterward. These
-are not real-model ARC results or independent proof of containment and cleanup.
-The live runner, loaded-model identity, evaluator isolation and owned-process
-cleanup remain unverified, and the frozen 14B comparison has started in supervised batches. [Details and current evidence](lt-phase-a-progress.md).
-
-The development-only direct-grid baseline now produces valid candidate grids
-and the frozen comparison is registered. The code agent produced 0/6 valid
-candidates in its last three-task run with zero repair attempts; keep that
-failure separate from the direct-grid score. Continue 32B in resumable 10-task
-batches without changing the frozen settings. Do not begin Phase B training or
-evaluate the official 120 tasks under this protocol.
+The latest three-task development run (`lt-dev-20261107-direct-v3-off-01`)
+produced 6/6 valid direct-grid candidates but 0/3 pass@1 and pass@2. The
+zero-repair code-agent run (`lt-dev-20261106-code-off-01`) and the subsequent
+one-repair run (`lt-dev-20261107-code-repair-14b-01`) each produced 0/6 valid
+predictions and 0/3 pass@1 and pass@2. The zero-repair candidates ran but
+returned incorrect grids for the training examples; the recorded failures
+were not syntax, API, runtime, or formatting failures. Repair feedback did not
+make the candidates scoreable. No generated Python was used in the frozen
+comparison. All 200 task records per model confirm owned worker cleanup; this
+does not certify macOS system services or complete system isolation. Phase B
+training was not started, and the official 120 public tasks remain reserved for
+Phase C. [Full protocol and lifecycle evidence](lt-phase-a-progress.md).

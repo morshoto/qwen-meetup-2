@@ -1,11 +1,11 @@
 # LT Phase A: exploratory ARC comparison
 
-Status as of 2026-11-07: **Qwen3-14B has completed 200 of 200 tasks; Qwen3-32B has completed 190 of 200 tasks**. Scored checkpoints at 100, 120, 150, 160, 170, 180, 190, and 200 tasks for 14B, plus 10-task 32B checkpoints through 190, are in `artifacts/lt-phase-a-frozen-20261107-01/`. This remains separate from the original strict RSI experiment in issue #2. The overall two-model comparison is incomplete.
+Status as of 2026-11-07: **Qwen3-14B and Qwen3-32B have each completed all 200 frozen tasks**. Both runs use the same 200 task IDs and two recorded candidates per task. The complete score is `artifacts/lt-phase-a-frozen-20261107-01/score-final.json`; 10-task 32B checkpoints and the complete 14B result are retained alongside it. This remains an exploratory protocol separate from the original strict RSI experiment in issue #2.
 
 ## Live Phase A checkpoint (2026-11-07)
 
 - The frozen comparison manifest is `artifacts/lt-phase-a-frozen-20261107-01/manifest.json`, registered as `ac03cb7a0f9d2d56c8ed03586d474e0db5cc319acc7b6668f20221e7b6672a48`. It fixes 200 task IDs, two candidates per task, the direct-grid prompt and parser, thinking off, a 4,096-token candidate cap, 1,800-second task deadline, model revisions and file hashes, source hashes, scorer, MLX settings, and 10-task batches. Seed support remains unverified.
-- The task allocation excludes the three development IDs, the frozen 100-task Phase B pool, and historical reserved IDs recorded in the allocation audit. The official 120 public evaluation tasks remain reserved for Phase C.
+- The task allocation excludes the three development IDs, the allocated 100-task Phase B pool, and historical reserved IDs recorded in the allocation audit. The official 120 public evaluation tasks remain reserved for Phase C.
 - At 100 tasks, task pass@1/pass@2 were **1/100**, with 169/200 valid candidates and 639,336 tokens. At 120 tasks they were **1/120**, with 200/240 valid candidates and 785,053 tokens. At 150 tasks they were **3/150**, with 249/300 valid candidates and 956,787 tokens. At 160 tasks they were **3/160**, with 264/320 valid candidates and 1,010,353 tokens. At 180 tasks they were **3/180**, with 300/360 valid candidates and 1,118,865 tokens. At 190 tasks they were **3/190**, with 313/380 valid candidates and 1,209,919 tokens. At 200 tasks, pass@1 and pass@2 were **3/200**, with 328/400 valid candidates, 72 invalid candidates, zero timeouts, 1,264,719 tokens, 13,160.9 seconds summed runtime, 11.07 GB process-reported peak memory, and swap unavailable. Per-output pass counts use a different denominator; see checkpoint JSON files.
 - The first 32B batch completed 10/200 tasks: pass@1 and pass@2 are **0/10**, with 16/20 valid candidates, four invalid candidates, zero timeouts, 81,576 tokens, 1,995.5 seconds summed task runtime, 22.61 GB process-reported peak memory, and swap unavailable. Both requests returned identical raw text on 2/10 tasks. All ten task records report the owned worker group absent and leader reaped. This is a partial checkpoint and pass@2 is not an independence claim.
 - At 20/200 32B tasks, pass@1 and pass@2 remain **0/20**; 34/40 candidates are valid, six are invalid, with zero timeouts, 153,956 tokens, 3,384.9 seconds summed task runtime, 22.61 GB peak memory, and swap unavailable. Exact duplicate pairs occurred on 5/20 tasks. All 20 task records confirm worker cleanup. See `score-checkpoint-32b-20.json`.
@@ -26,9 +26,10 @@ Status as of 2026-11-07: **Qwen3-14B has completed 200 of 200 tasks; Qwen3-32B h
 - At 170/200 32B tasks, pass@1 is **2/170** and pass@2 is **4/170**; 286/340 candidates are valid, 54 are invalid, with zero timeouts, 1,051,473 tokens, 24,273.4 seconds summed task runtime, 22.61 GB peak memory, and swap unavailable. Exact duplicate pairs occurred on 46/170 tasks. All 170 task records confirm worker cleanup. See `score-checkpoint-32b-170.json`.
 - At 180/200 32B tasks, pass@1 is **2/180** and pass@2 is **4/180**; 301/360 candidates are valid, 59 are invalid, with zero timeouts, 1,107,489 tokens, 25,548.9 seconds summed task runtime, 22.61 GB peak memory, and swap unavailable. Exact duplicate pairs occurred on 49/180 tasks. All 180 task records confirm worker cleanup. See `score-checkpoint-32b-180.json`.
 - At 190/200 32B tasks, pass@1 is **2/190** and pass@2 is **4/190**; 317/380 candidates are valid, 63 are invalid, with zero timeouts, 1,188,801 tokens, 26,997.4 seconds summed task runtime, 22.61 GB peak memory, and swap unavailable. Exact duplicate pairs occurred on 50/190 tasks. All 190 task records confirm worker cleanup. See `score-checkpoint-32b-190.json`.
+- At 200/200 32B tasks, pass@1 is **2/200** and pass@2 is **4/200**; 335/400 candidates are valid, 65 are invalid, with zero errors or timeouts, 1,241,566 tokens, 28,066.8 seconds summed task runtime, 22.61 GB process-reported peak memory, and swap unavailable. Exact duplicate pairs occurred on 56/200 tasks. All 200 task records confirm the worker group absent and leader reaped. See `score-final.json`.
 - All 200 completed 14B task records report their owned worker group absent and worker leader reaped. This is local process lifecycle evidence; it does not certify macOS system services or complete system isolation. The production path uses the direct-grid solver and does not execute generated Python or start Docker containers.
 - Exact raw-response comparison found duplicate candidate pairs in 147 of 200 14B tasks. The first 32B task (`05a7bcf2`) also produced identical raw responses for its two requests. Count these as two recorded attempts, but do not describe them as independent samples; seed/sampling independence is not demonstrated. The frozen settings remain unchanged.
-- The 32B run continues in 10-task batches on the same frozen task IDs and settings. Partial score files through task 190 are `score-checkpoint-32b-{10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190}.json`.
+- The 32B run completed in resumable 10-task batches on the same frozen task IDs and settings. Partial score files through task 190 are `score-checkpoint-32b-{10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190}.json`; `score-final.json` records both complete models.
 - Original development, RSI, and comparison artifacts are preserved. Do not use the official public evaluation answers or begin Phase B training under this protocol.
 
 ## Local inventory (2026-11-06)
@@ -50,8 +51,9 @@ Status as of 2026-11-07: **Qwen3-14B has completed 200 of 200 tasks; Qwen3-32B h
   Image availability alone does not verify containment or cleanup.
 - `research/rsi/bounded-exposure-proposal.json` and related reviews inventory
   prior project use, but explicitly leave historical and pretraining exposure
-  uncertain. A separate 200-task proposal and 100-task training pool are now
-  recorded under `configs/`; their run settings remain unfrozen.
+  uncertain. The separate 200-task comparison set and 100-task Phase B pool
+  are bound by the frozen manifest; the Phase B training recipe remains
+  unfrozen.
   The copied challenge file contains 1,000 task IDs; the union of the bounded
   proposal and extended metadata review identifies 317 of them as exposed,
   leaving 683 outside that known union. This is a bounded inventory, not proof
@@ -75,32 +77,37 @@ six weight shards. This is a point-in-time local consistency check, not
 independent model provenance, a loaded-model identity, a complete runtime
 closure, or verification of the live execution boundary. No model was loaded.
 
-## Remaining work before a comparison
+## Completed Phase A and remaining gates
 
-1. Complete the development-only real-model path and verify model, template,
-   budget, sandbox and process cleanup on the actual host. The existing
-   [execution-boundary review](../research/rsi/execution-boundary-migration-20261106.md)
-   records unresolved cleanup and evaluator-isolation findings. Fixture tests do
-   not resolve them. Stop and record an incomplete run if controls cannot be
-   established.
-2. Audit exposure and finalize development, Phase B training and 200 comparison
-   IDs without overlap. Freeze task contents, source files, prompt, runtime,
-   model revisions, seeds, candidate count and all resource budgets. The
-   current helpers bind proposed selection, configuration and supplied input,
-   model and runtime inventories. They do not authenticate provenance, prove
-   those inventories are complete, or establish execution readiness.
-3. Build a bounded live runner, model-specific manifests, and durable prediction
-   and resource records. The `run_task` and `run_bounded_task` helpers accept
-   injected components and are fixture seams, not safe live launchers. Tests
-   check held-out answers do not affect agent prompts or repair feedback; this
-   does not prove operating-system isolation.
-4. Run models sequentially with equivalent settings only after those controls
-   are established. Report actual attempts, failures, denominators and costs;
-   do not represent an incomplete run as a completed comparison. Do not use
-   the official 120-task evaluation set here.
-5. Freeze Phase B's training design before inspecting the 200-task results if
-   those tasks will be reused for its comparison; otherwise disclose reuse as
-   exploratory. No training or Phase C evaluation is included here.
+The frozen manifest fixes the same 200 task IDs for both models, two attempts
+per task, the direct-grid prompt and parser, thinking off, the 4,096-token
+candidate cap, 1,800-second task deadline, model revisions and file hashes,
+source hashes, scoring rules, and sequential 10-task batches. Its registered
+SHA-256 is `ac03cb7a0f9d2d56c8ed03586d474e0db5cc319acc7b6668f20221e7b6672a48`.
+The task allocation excludes the development IDs and disjoint 100-task Phase B
+pool; official public evaluation IDs remain reserved for Phase C. The Phase B
+task pool is allocated, but its training recipe is not frozen and no training
+was started.
+
+Both model runs completed all 200 tasks sequentially with two recorded
+requests per task, no runner errors or timeouts, identical task-ID sets, and
+all owned worker groups absent with leaders reaped. The 14B run yielded
+pass@1/pass@2 of 3/200, 328/400 valid candidates, 1,264,719 tokens, and
+13,160.9 seconds summed task runtime. The 32B run yielded 2/200 and 4/200,
+335/400 valid candidates, 1,241,566 tokens, and 28,066.8 seconds. Peak
+process-reported memory was 11.07 GB and 22.61 GB, respectively; swap was not
+available. Raw candidate pairs were byte-identical for 147/200 14B tasks and
+56/200 32B tasks, so pass@2 counts recorded attempts and does not establish
+independent samples. These lifecycle observations do not certify macOS-owned
+Metal compiler services or complete system isolation.
+
+The latest three-task development direct-grid run produced 6/6 valid
+candidates but scored 0/3 at both pass@1 and pass@2. The code-agent baseline
+produced 0/6 valid candidates and 0/3 at both pass measures; no repair attempts
+were configured for that run. Keep those development outcomes separate from
+the 200-task comparison. Do not start Phase B training until its training
+protocol is frozen; do not evaluate the official 120 public tasks before the
+separate Phase C registration and authorization.
 
 ## Offline preparation and scoring
 
@@ -457,8 +464,8 @@ identical, and seed support was not independently verified. The owned process
 exited and its observed PIDs were absent. This direct run did not execute code;
 the separate code-agent run used checked Docker containers but produced no
 valid candidates. A single code-agent end-to-end run with valid predictions
-and verified container cleanup has therefore not yet been demonstrated. No
-200-task allocation or comparison configuration has been frozen.
+was not demonstrated in these development runs. This was the state before the
+final 200-task direct-grid registration and comparison below.
 
 ## One-repair code-agent development
 
@@ -470,15 +477,17 @@ example-based repair per candidate. It again produced zero valid predictions
 out of six, with pass@1 and pass@2 both 0/3; all 40 named containers were
 absent on post-execution checks and the model process exited. The run recorded
 149,432 tokens, 882.9 seconds across tasks, 13.64 GB process-reported peak
-memory and unknown swap. The clarified direct-grid agent is the comparison
-candidate; the 32B development check must finish before its settings can be
-frozen.
+memory and unknown swap. The clarified direct-grid agent remained the
+comparison candidate; the subsequent 32B development check and frozen
+comparison are recorded below.
 
 The allocation files record 100 Phase B training IDs and a 200-ID Phase A
 proposal, selected from the 433 eligible training IDs after excluding the
 registered development, known-exposure and original RSI reserved IDs. They
-have no task-ID overlap. The Phase B training recipe and the comparison run
-settings remain unfrozen; historical and pretraining exposure remain unknown.
+have no task-ID overlap. At this stage the Phase B training recipe and
+comparison settings were not frozen. The comparison settings were subsequently
+frozen in the manifest below; the Phase B recipe remains unfrozen. Historical
+and pretraining exposure remain unknown.
 
 The sequential 32B direct-grid check (`lt-dev-20261107-direct-v3-32b-01`)
 used the same clarified prompt, thinking-off setting, temperature 0.6, two
