@@ -27,8 +27,8 @@ def _trainer_runtime():
     return lora, install_training_template_policy, tree_flatten, mx.eval
 
 
-def run_registered_canary(*, canary_spec, expected_canary_sha256, collection_spec, expected_collection_sha256,
-                          source_inventory, source_root, allocation_receipt, receipt, config_path, evidence_dir):
+def validate_canary_descriptor(*, canary_spec, expected_canary_sha256, collection_spec, expected_collection_sha256,
+                               source_inventory, allocation_receipt, receipt, config_path):
     settings, model = validate_descriptor(spec=collection_spec, expected_run_sha256=expected_collection_sha256,
         source_inventory=source_inventory, receipt=receipt, allocation_receipt=allocation_receipt)
     keys = {'protocol', 'status', 'run_id', 'collection_sha256', 'source_code_sha256', 'runtime_manifest',
@@ -60,6 +60,15 @@ def run_registered_canary(*, canary_spec, expected_canary_sha256, collection_spe
     if canonical(config) != canonical(plan['trainer_config']) or plan['dataset_sha256'] != canary_spec['dataset_sha256']:
         raise ValueError('canary config or dataset identity differs')
     _validate_dataset(Path(config['data']), plan['dataset_jsonl'])
+    return settings, model, config
+
+
+def run_registered_canary(*, canary_spec, expected_canary_sha256, collection_spec, expected_collection_sha256,
+                          source_inventory, source_root, allocation_receipt, receipt, config_path, evidence_dir):
+    settings, model, config = validate_canary_descriptor(canary_spec=canary_spec,
+        expected_canary_sha256=expected_canary_sha256, collection_spec=collection_spec,
+        expected_collection_sha256=expected_collection_sha256, source_inventory=source_inventory,
+        allocation_receipt=allocation_receipt, receipt=receipt, config_path=config_path)
     verify_runtime_identity(sys.executable, canary_spec['runtime_manifest'])
     verify_environment(sys.executable, canary_spec['environment_manifest'])
     verify_model_manifest(config['model'], model, model_key='14b')
