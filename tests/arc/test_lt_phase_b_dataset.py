@@ -7,7 +7,7 @@ from src.arc.lt_phase_b_dataset import build_dataset
 
 
 def task(name):
-    value = ord(name[0]) % 10
+    value = 4 if name == 'x' else ord(name[0]) % 10
     return Task(name, (([[value]], [[1]]),), ([[value]],))
 
 

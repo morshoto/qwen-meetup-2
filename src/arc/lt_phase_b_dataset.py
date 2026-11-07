@@ -7,7 +7,7 @@ import hashlib
 import json
 import re
 
-from src.arc.data import Task
+from src.arc.data import Task, validate_grid
 from src.arc.lt_live_backend import PROMPT
 from src.arc.lt_direct_format import normalize_direct
 from src.arc.lt_phase_b_eligibility import assess_candidates
@@ -20,14 +20,38 @@ def _json(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False)
 
 
-def build_dataset(tasks, rows, verifier, *, source, comparison_ids):
-    if (not isinstance(tasks, dict) or not tasks or
+def _task_content(task):
+    try:
+        if not task.train or not task.test_inputs:
+            raise ValueError('empty task')
+        train = sorted(_json({'input': validate_grid(i), 'output': validate_grid(o)}) for i, o in task.train)
+        test = sorted(_json(validate_grid(i)) for i in task.test_inputs)
+        return _json({'train': train, 'test': test})
+    except (TypeError, ValueError) as exc:
+        raise ValueError('invalid visible task content') from exc
+
+
+def _check_task_sets(training, comparison):
+    groups = (training, comparison)
+    if (any(not isinstance(group, dict) or not group or
             any(not isinstance(k, str) or not k or not isinstance(v, Task) or v.id != k
-                for k, v in tasks.items()) or not isinstance(rows, list) or
-            not isinstance(comparison_ids, set) or not comparison_ids or
-            any(not isinstance(x, str) or not x for x in comparison_ids) or
-            set(tasks) & comparison_ids):
+                for k, v in group.items()) for group in groups) or set(training) & set(comparison)):
         raise ValueError('invalid or overlapping task sets')
+    content = [set() for _ in groups]
+    for index, group in enumerate(groups):
+        for task in group.values():
+            item = _task_content(task)
+            if item in content[index]:
+                raise ValueError('repeated visible task content')
+            content[index].add(item)
+    if content[0] & content[1]:
+        raise ValueError('visible task content overlaps')
+
+
+def build_dataset(tasks, rows, verifier, *, source, comparison_tasks):
+    _check_task_sets(tasks, comparison_tasks)
+    if not isinstance(rows, list):
+        raise ValueError('invalid result rows')
     if (not isinstance(source, dict) or source.get('model_id') != _MODEL or
             source.get('model_revision') != _REVISION or
             not isinstance(source.get('source_code_sha256'), str) or

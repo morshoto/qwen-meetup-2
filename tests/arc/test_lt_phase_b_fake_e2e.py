@@ -46,7 +46,7 @@ class FakeEndToEnd(unittest.TestCase):
                 'source_code_sha256': 'a' * 64, 'run_id': 'fixture'})
             self.assertEqual(output['yield_status'], 'disjoint_split')
             self.assertEqual(output['eligible_task_count'], 3)
-            self.assertEqual(output['train'][0]['messages'][0]['content'], backend.prompt)
+            self.assertEqual(output['train'][-1]['messages'][0]['content'], backend.prompt)
             paired = [dict(r, adapter_state=s) for r in rows for s in ('off', 'on')]
             score = score_paired(ids, paired, verifier)
             self.assertEqual(score['paired']['pass_at_1']['unchanged_right'], 3)
