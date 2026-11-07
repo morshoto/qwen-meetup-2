@@ -45,7 +45,10 @@ verification, private SFT preparation, trainer instrumentation, adapter
 reload, sequential paired collection and offline scoring. Optional native
 MLX-LM checks have exercised a freshly constructed tiny model and synthetic
 fixture tasks, including a 20-step trainer path and a separate adapter reload.
-Those checks did not load the pinned 14B weights, collect real ARC predictions,
+An additional local integration check passed the frozen-protocol and collection
+preflight using an ephemeral pool and temporary source copy while preserving
+the historical Phase A proposal. That fixture is not a real allocation decision.
+These checks did not load the pinned 14B weights, collect real ARC predictions,
 or establish ARC improvement. Exact test counts and the current PR head are
 reported in the PR validation section.
 
