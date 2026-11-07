@@ -25,7 +25,7 @@ def _post_reap_group_absent(pgid):
     return False
 
 
-def run_monitored_worker(argv, *, root, timeout, on_start=None, resource_limits=None,
+def run_monitored_worker(argv, *, root, timeout, cwd=None, on_start=None, resource_limits=None,
                          baseline_sampler=sample_baseline, process_sampler=sample_process,
                          interval_seconds=1.0, sample_timeout_seconds=1.0, terminate_grace_seconds=1.0):
     if (not isinstance(argv, list) or not argv or
@@ -47,7 +47,7 @@ def run_monitored_worker(argv, *, root, timeout, on_start=None, resource_limits=
     if reason is not None:
         return {'status': 'preflight_refused', 'reason': reason, 'baseline': baseline}
     process = subprocess.Popen(argv, start_new_session=True, stdin=subprocess.DEVNULL,
-                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True)
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True, cwd=cwd)
     try:
         if on_start is not None:
             on_start(process.pid)
