@@ -12,9 +12,8 @@ from src.arc.lt_batch_journal import BatchJournal, _create
 from src.arc.lt_benchmark_manifest import canonical, sha
 from src.arc.lt_single_manifest import build, verify
 from src.arc.lt_public import build_public_export, load_public_export
-from src.arc.lt_supervised_batch import supervised_batch
+from src.arc.lt_single_supervision import supervised_batch, reconcile
 from src.arc.lt_task_supervisor import run_worker
-from src.arc.lt_batch_recovery import reconcile
 from src.cli.lt_benchmark import verify_model as verify_phase_a_model
 
 ROOT = Path(__file__).resolve().parents[2]

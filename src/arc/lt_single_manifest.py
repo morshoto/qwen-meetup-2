@@ -5,7 +5,7 @@ from pathlib import Path
 
 from src.arc.lt_benchmark_manifest import build as build_phase_a, canonical, sha
 
-SOURCE_FILES = ('src/arc/lt_single_manifest.py', 'src/arc/lt_single_score.py',
+SOURCE_FILES = ('src/arc/lt_single_manifest.py', 'src/arc/lt_single_score.py', 'src/arc/lt_single_supervision.py',
                 'src/cli/lt_single.py', 'src/cli/lt_single_worker.py')
 
 
