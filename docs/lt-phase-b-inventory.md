@@ -247,3 +247,14 @@ are checked by the backend. The descriptor and source inventory are local
 consistency claims: the parent still must validate the full allocation, exposure
 ledger and preregistration before dispatch. No descriptor is frozen by this PR
 until the allocation conflict is resolved.
+
+### Allocation receipt gate plan
+
+Before any dispatch, recompute a receipt from the source challenge bytes, the
+strict-RSI split and scheduled slots, bounded exposure, official evaluation IDs,
+the Phase A frozen set, the training selection and the distinct comparison
+proposal. Require exactly 100 permitted training IDs, 50 comparison IDs, no
+exact ID or visible-content overlaps with protected groups, and a hash binding
+the result to the worker descriptor. The existing preallocated pool must fail
+this check while the five scheduled-slot overlaps remain. A synthetic or
+alternative set used in tests does not amend the pool or authorize execution.
