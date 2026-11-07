@@ -155,3 +155,15 @@ bounded known-exposure IDs, and official public-evaluation IDs. Any replacement
 training IDs must also exclude the resulting proposal. Check the source and
 input hashes separately; this selection is a proposal, not a frozen protocol or
 proof of historical non-exposure.
+
+### Monitored collection worker plan
+
+Reuse the existing macOS host/process sampling, resource decision, owned-session
+watcher and bounded stream capture for a Phase B worker. Check the baseline
+before spawning; start a fresh owned session, record its PID, continuously
+sample while it runs, and stop on timeout, pressure, missing samples or log
+failure. Keep the process observation and samples; do not commit a worker result
+unless termination and group cleanup are observed. Escaped descendants and
+system-owned Metal services remain explicitly unproven. Tests use synthetic
+children and controlled samples, not Qwen inference. The per-task 300-second
+ceiling is a conservative preflight proposal and is not yet a frozen run cap.
