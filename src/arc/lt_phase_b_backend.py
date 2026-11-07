@@ -3,11 +3,15 @@
 File and tensor checks bind this local load to caller-supplied identities. They
 are not independent process attestation or evidence of training or improvement.
 """
+import os
+import stat
+import struct
 from pathlib import Path
 
 from src.arc.lt_live_backend import MLXBackend
 from src.arc.rsi_adapter_structure import _expected_shapes as _rsi_shapes
-from src.arc.rsi_model_identity import _hash_file, _json_file, verify_adapter_identity, verify_model_manifest
+from src.arc.rsi_model_identity import _hash_file, _json_file, _signature, verify_adapter_identity, verify_model_manifest
+from src.arc.rsi_transport_audit import _json_object
 
 
 def _runtime():
@@ -36,6 +40,47 @@ def _configuration(root):
             type(parameters.get('scale')) not in (int, float) or
             type(parameters.get('dropout')) not in (int, float)):
         raise ValueError('adapter configuration differs')
+
+
+def _check_header(path, shapes):
+    """Bound and validate safetensors structure before MLX loads model data."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        with os.fdopen(fd, 'rb') as stream:
+            info = os.fstat(stream.fileno())
+            if not stat.S_ISREG(info.st_mode) or not 8 < info.st_size <= 256 * 1024**2:
+                raise ValueError('adapter weights size invalid')
+            length = struct.unpack('<Q', stream.read(8))[0]
+            if not 2 <= length <= 1024**2 or 8 + length > info.st_size:
+                raise ValueError('adapter header size invalid')
+            header = _json_object(stream.read(length))
+            metadata = header.pop('__metadata__', {})
+            if (not isinstance(metadata, dict) or
+                    any(not isinstance(k, str) or not isinstance(v, str) for k, v in metadata.items()) or
+                    set(header) != set(shapes)):
+                raise ValueError('adapter tensor names differ')
+            extents = []
+            for name, shape in shapes.items():
+                value = header[name]
+                if (not isinstance(value, dict) or set(value) != {'dtype', 'shape', 'data_offsets'} or
+                        value['dtype'] != 'F32' or value['shape'] != shape or
+                        any(type(x) is not int for x in value['shape']) or
+                        not isinstance(value['data_offsets'], list) or len(value['data_offsets']) != 2 or
+                        any(type(x) is not int for x in value['data_offsets'])):
+                    raise ValueError('adapter tensor structure differs')
+                start, end = value['data_offsets']
+                if start < 0 or end - start != shape[0] * shape[1] * 4:
+                    raise ValueError('adapter tensor extent differs')
+                extents.append((start, end))
+            offset = 0
+            for start, end in sorted(extents):
+                if start != offset:
+                    raise ValueError('adapter tensor extents overlap or have gaps')
+                offset = end
+            if offset != info.st_size - 8 - length or _signature(os.fstat(stream.fileno())) != _signature(info):
+                raise ValueError('adapter tensor size or identity differs')
+    except (OSError, struct.error, KeyError, TypeError) as exc:
+        raise ValueError('invalid adapter weights') from exc
 
 
 def _match_factors(mx, flatten, model, saved, shapes):
@@ -74,6 +119,8 @@ class PhaseBBackend(MLXBackend):
         if root is not None:
             verify_adapter_identity(root, adapter_sha256)
             _configuration(root)
+            _check_header(root / 'adapters.safetensors', _expected_shapes())
+            verify_adapter_identity(root, adapter_sha256)
         mx, load, stream, sampler, flatten = _runtime()
         mx.set_memory_limit(48 * 1024**3)
         kwargs = {'adapter_path': str(root)} if root is not None else {}
