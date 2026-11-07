@@ -37,10 +37,15 @@ def build_proposal(root, challenge_bytes, official_challenge_bytes):
     challenges, official = _object(challenge_bytes), set(_object(official_challenge_bytes))
     if _sha(challenge_bytes) != a['challenges_sha256']:
         raise ValueError('challenge digest differs')
-    existing, _ = build_comparison_proposal(challenge_bytes, raw['registry'], raw['strict_split'], dev, training,
-                                             seed=20261108)
-    if (existing != json.loads((root / 'configs/lt.phase-a.comparison-proposal.json').read_bytes()) or
-            existing['task_ids'] != a['task_ids']):
+    historical = json.loads((root / 'configs/lt.phase-a.comparison-proposal.json').read_bytes())
+    historical_training = historical.get('training_exclusions') if isinstance(historical, dict) else None
+    if (not isinstance(historical_training, list) or len(historical_training) != 100 or
+            any(not isinstance(x, str) for x in historical_training) or len(set(historical_training)) != 100 or
+            _sha(json.dumps(sorted(historical_training), separators=(',', ':')).encode()) != a.get('training_ids_sha256')):
+        raise ValueError('Phase A historical training exclusions differ')
+    existing, _ = build_comparison_proposal(challenge_bytes, raw['registry'], raw['strict_split'], dev,
+                                             historical_training, seed=20261108)
+    if existing != historical or existing['task_ids'] != a['task_ids']:
         raise ValueError('Phase A proposal differs')
     generation = registry['partitions']['generation']
     scheduled = {slot['task_id'] for index in (0, 1) for slot in generation_slots(generation, index)}
