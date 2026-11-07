@@ -3,6 +3,8 @@
 This reuses the Phase A scorer. It does not attest the generation settings,
 model, adapter or journal; callers must verify those before making comparisons.
 """
+import math
+
 from src.arc.lt_scoring import score_comparison
 
 
@@ -49,6 +51,14 @@ def score_paired(task_ids, rows, verifier):
                             row['candidates'][0] == row['candidates'][1]
                             for (task, s), row in originals.items() if s == state)
                  for state in aliases}
-    return {'rows': result_rows, 'paired': paired,
+    uncertainty = {}
+    for metric, counts in paired.items():
+        n = counts['denominator']
+        difference = (counts['improved'] - counts['regressed']) / n if n else None
+        radius = math.sqrt(2 * math.log(40) / n) if n else None
+        interval = [max(-1., difference - radius), min(1., difference + radius)] if n else None
+        uncertainty[metric] = {'difference': difference, 'interval_95': interval,
+            'method': 'Hoeffding; assumes independent paired task observations'}
+    return {'rows': result_rows, 'paired': paired, 'uncertainty': uncertainty,
             'states': {state: scored['models'][alias] for state, alias in aliases.items()},
             'identical_candidates': identical}
