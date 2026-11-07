@@ -199,3 +199,7 @@ Build a draft collection descriptor only after recomputing the 100-task allocati
 ### Draft registration integration check
 
 A local, opt-in integration check may assemble a draft descriptor using an ephemeral eligible fixture pool and the installed runtime and model-file inventory. It must keep the pool in memory only, load no model weights or solution answers, write no run artifacts, and assert that the result remains draft and non-authorizing. This fixture is not a decision about the five overlapping IDs or a real experiment registration.
+
+### Draft registration operator handoff
+
+An operator command may save the draft proposal once in a private `lt-phase-b-<run-id>` artifact directory, using an explicitly supplied pool file and public challenge inventories. It must refuse existing output, print only status, counts and hashes, and leave the proposed descriptor marked draft. The command must not choose replacement IDs, freeze a run, expose answers, or launch a model.
