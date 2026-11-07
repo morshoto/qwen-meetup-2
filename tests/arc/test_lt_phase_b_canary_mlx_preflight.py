@@ -3,6 +3,8 @@ import hashlib
 import io
 import json
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -43,8 +45,11 @@ class TinyCanaryIntegration(unittest.TestCase):
             config = root / 'config.json'; config.write_text(json.dumps(plan['trainer_config'], sort_keys=True)); config.chmod(0o600)
             config_sha = hashlib.sha256(config.read_bytes()).hexdigest()
             original_train = lora.train
+            tiny = Model(args)
+            base_file = root / 'tiny-base.safetensors'
+            mx.save_safetensors(str(base_file), dict(tree_flatten(tiny.parameters())))
             output = io.StringIO()
-            with patch.object(lora, 'load', return_value=(Model(args), tokenizer)) as loader, \
+            with patch.object(lora, 'load', return_value=(tiny, tokenizer)) as loader, \
                  patch('src.arc.lt_phase_b_tensor_evidence._expected_shapes', return_value=shapes), \
                  redirect_stdout(output):
                 result = run_instrumented_cli(config_path=config, expected_config_sha256=config_sha,
@@ -59,6 +64,28 @@ class TinyCanaryIntegration(unittest.TestCase):
             self.assertFalse(result['training_verified'])
             self.assertTrue((root / 'adapter/adapters.safetensors').is_file())
             self.assertTrue((root / 'adapter/adapter_config.json').is_file())
+            reload_script = """import json,sys
+import mlx.core as mx
+import numpy as np
+from mlx.utils import tree_flatten
+from mlx_lm.models.qwen3 import Model,ModelArgs
+from mlx_lm.tuner.utils import load_adapters
+a=ModelArgs(model_type='qwen3',hidden_size=16,num_hidden_layers=8,intermediate_size=32,num_attention_heads=2,rms_norm_eps=1e-6,vocab_size=151936,num_key_value_heads=1,max_position_embeddings=512,rope_theta=10000.,head_dim=8,tie_word_embeddings=True)
+m=Model(a);m.load_weights(sys.argv[1],strict=True);m=load_adapters(m,sys.argv[2]);m.eval()
+saved=mx.load(sys.argv[2]+'/adapters.safetensors')
+loaded={k:v for k,v in tree_flatten(m.parameters()) if k.endswith(('.lora_a','.lora_b'))}
+assert set(saved)==set(loaded) and saved
+for k in saved:
+ mx.eval(saved[k],loaded[k]);assert np.array_equal(np.asarray(saved[k]),np.asarray(loaded[k]))
+logits=m(mx.array([[1,2]],dtype=mx.int32));mx.eval(logits)
+print(json.dumps({'count':len(saved),'finite_logits':bool(mx.all(mx.isfinite(logits)).item())}))
+"""
+            child = subprocess.run([sys.executable, '-I', '-B', '-c', reload_script,
+                                    str(base_file), str(root / 'adapter')], capture_output=True,
+                                   text=True, timeout=60, check=True)
+            reloaded = json.loads(child.stdout)
+            self.assertEqual(reloaded['count'], len(shapes))
+            self.assertTrue(reloaded['finite_logits'])
 
 
 if __name__ == '__main__': unittest.main()
