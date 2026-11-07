@@ -1,0 +1,12 @@
+{
+  "protocol": "lt-phase-a-exploratory",
+  "training_pool_count": 100,
+  "training_selection_seed": 20261107,
+  "training_selection_rule": "Python random.Random(seed).sample from sorted eligible IDs; sort result",
+  "comparison_selection_seed": 20261108,
+  "eligibility": "ARC training IDs excluding registered development IDs, bounded known exposure IDs, and the original RSI 200 and 50 reservations",
+  "training_pool_status": "reserved task IDs only; training recipe and eligibility remain unfrozen",
+  "comparison_status": "proposal; run settings and independent provenance remain unverified",
+  "unknown_pretraining_and_project_exposure": true,
+  "official_public_evaluation": "reserved for Phase C; not used"
+}

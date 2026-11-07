@@ -1,5 +1,7 @@
 import unittest
 import json
+import tempfile
+from pathlib import Path
 from src.arc.agent import FakeLLM, code_agent, direct
 from src.arc.data import load_arc
 from src.arc.sandbox import FakeSandbox, IDENTITY_CODE, ZERO_CODE
@@ -24,6 +26,35 @@ class AgentTests(unittest.TestCase):
         result = code_agent(tasks['toy_001'], RepairLLM(), FakeSandbox(), 1, 0)
         self.assertEqual(len(result.history), 2)
         self.assertIsNone(result.error)
+
+    def test_model_prompts_and_repair_feedback_ignore_held_out_outputs(self):
+        class CapturingLLM:
+            def __init__(self): self.calls = []
+            def generate(self, prompt, *, kind, candidate):
+                self.calls.append((kind, prompt))
+                if kind == 'direct': return '[[[2]]]'
+                if kind == 'analysis': return 'copy input'
+                return ZERO_CODE if sum(k == 'code' for k, _ in self.calls) == 1 else IDENTITY_CODE
+        with tempfile.TemporaryDirectory() as directory:
+            challenges = Path(directory) / 'challenges.json'
+            solutions = Path(directory) / 'solutions.json'
+            challenges.write_text(json.dumps({'task': {'train': [{'input': [[1]], 'output': [[1]]}],
+                                                        'test': [{'input': [[2]]}]}}))
+            prompts = []
+            for answer in ([[9, 9, 9]], [[8, 8, 8]]):
+                solutions.write_text(json.dumps({'task': [answer]}))
+                tasks, verifier = load_arc(challenges, solutions)
+                self.assertTrue(verifier.matches('task', [answer]))
+                backend = CapturingLLM()
+                direct(tasks['task'], backend, 0)
+                code_agent(tasks['task'], backend, FakeSandbox(), 1, 0, prompt_variant='structured')
+                self.assertEqual([k for k, _ in backend.calls], ['direct', 'analysis', 'code', 'code'])
+                prompts.append(backend.calls)
+            self.assertEqual(prompts[0], prompts[1])
+            self.assertIn('Previous attempts and training-pair feedback', prompts[0][-1][1])
+            for _, prompt in prompts[0]:
+                self.assertNotIn('9 9 9', prompt)
+                self.assertNotIn('8 8 8', prompt)
 
     def test_timeout_is_preserved_for_scoring(self):
         from src.arc.scoring import score

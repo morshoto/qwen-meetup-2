@@ -1,0 +1,15 @@
+{
+  "dataset_sha256": "779eaba89790ebad9af02514a7efc0aefaf2cf8236f046a31bbf8b9ec48f20f5",
+  "execution_ready": false,
+  "exposure_sha256": "67b421802ffd521b18e8170b7f79b11f03ba2822879a49a17898a0fc67706512",
+  "known_exposed": true,
+  "pretraining_exposure_unknown": true,
+  "protocol": "lt-phase-a-development",
+  "seed": 20261111,
+  "status": "proposed_dev_only",
+  "task_ids": [
+    "84db8fc4",
+    "a64e4611",
+    "e5c44e8f"
+  ]
+}
