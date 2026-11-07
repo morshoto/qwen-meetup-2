@@ -314,3 +314,9 @@ hashes separately from the saved artifact identity. Tests use small synthetic
 arrays and cannot attest a live model or process. A real canary also needs a
 finite loss, independent saved-adapter reload/inference, bounded resource and
 cleanup evidence; no synthetic canary adapter may be promoted as Gen 1.
+
+The pinned 14B model files contain BF16 and U32 tensors. A local native-MLX
+fixture showed that direct NumPy conversion of MLX BF16 fails; the tensor
+snapshot code now hashes a lossless U16 bit view and preserves the logical BF16
+dtype. A synthetic MLX-array test detects both an adapter change and a base
+change. No 14B model was loaded for this check.
