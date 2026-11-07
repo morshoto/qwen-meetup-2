@@ -37,7 +37,7 @@ class BackendTests(unittest.TestCase):
                                   load=lambda p: self.saved, eval=lambda *a: None)
         def loader(path, **kwargs):
             self.calls.append(('load', path, kwargs))
-            return SimpleNamespace(parameters=lambda: self.loaded), object()
+            return SimpleNamespace(parameters=lambda: self.loaded if kwargs.get('adapter_path') else {'base.weight': np.array([1])}), object()
         self.runtime = (self.mx, loader, lambda *a, **k: None, lambda **k: None,
                         lambda x: list(x.items()))
         for name, obj in [('src.arc.lt_phase_b_backend._runtime', lambda: self.runtime),
