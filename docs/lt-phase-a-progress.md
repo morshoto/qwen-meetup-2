@@ -1,6 +1,6 @@
 # LT Phase A: exploratory ARC comparison
 
-Status as of 2026-11-07: **Qwen3-14B has completed 200 of 200 tasks; Qwen3-32B has completed 100 of 200 tasks**. Scored checkpoints at 100, 120, 150, 160, 170, 180, 190, and 200 tasks for 14B, plus 10-task 32B checkpoints through 100, are in `artifacts/lt-phase-a-frozen-20261107-01/`. This remains separate from the original strict RSI experiment in issue #2. The overall two-model comparison is incomplete.
+Status as of 2026-11-07: **Qwen3-14B has completed 200 of 200 tasks; Qwen3-32B has completed 110 of 200 tasks**. Scored checkpoints at 100, 120, 150, 160, 170, 180, 190, and 200 tasks for 14B, plus 10-task 32B checkpoints through 110, are in `artifacts/lt-phase-a-frozen-20261107-01/`. This remains separate from the original strict RSI experiment in issue #2. The overall two-model comparison is incomplete.
 
 ## Live Phase A checkpoint (2026-11-07)
 
@@ -17,9 +17,10 @@ Status as of 2026-11-07: **Qwen3-14B has completed 200 of 200 tasks; Qwen3-32B h
 - At 80/200 32B tasks, pass@1 and pass@2 remain **1/80**; 132/160 candidates are valid, 28 are invalid, with zero timeouts, 501,449 tokens, 11,595.6 seconds summed task runtime, 22.61 GB peak memory, and swap unavailable. Exact duplicate pairs occurred on 21/80 tasks. All 80 task records confirm worker cleanup. See `score-checkpoint-32b-80.json`.
 - At 90/200 32B tasks, pass@1 is **1/90** and pass@2 is **2/90**; 150/180 candidates are valid, 30 are invalid, with zero timeouts, 557,344 tokens, 12,648.7 seconds summed task runtime, 22.61 GB peak memory, and swap unavailable. Exact duplicate pairs occurred on 24/90 tasks. All 90 task records confirm worker cleanup. See `score-checkpoint-32b-90.json`.
 - At 100/200 32B tasks, pass@1 is **1/100** and pass@2 is **2/100**; 167/200 candidates are valid, 33 are invalid, with zero timeouts, 638,644 tokens, 15,016.9 seconds summed task runtime, 22.61 GB peak memory, and swap unavailable. Exact duplicate pairs occurred on 30/100 tasks. All 100 task records confirm worker cleanup. See `score-checkpoint-32b-100.json`.
+- At 110/200 32B tasks, pass@1 is **1/110** and pass@2 is **2/110**; 180/220 candidates are valid, 40 are invalid, with zero timeouts, 695,292 tokens, 16,483.3 seconds summed task runtime, 22.61 GB peak memory, and swap unavailable. Exact duplicate pairs occurred on 32/110 tasks. All 110 task records confirm worker cleanup. See `score-checkpoint-32b-110.json`.
 - All 200 completed 14B task records report their owned worker group absent and worker leader reaped. This is local process lifecycle evidence; it does not certify macOS system services or complete system isolation. The production path uses the direct-grid solver and does not execute generated Python or start Docker containers.
 - Exact raw-response comparison found duplicate candidate pairs in 147 of 200 14B tasks. The first 32B task (`05a7bcf2`) also produced identical raw responses for its two requests. Count these as two recorded attempts, but do not describe them as independent samples; seed/sampling independence is not demonstrated. The frozen settings remain unchanged.
-- The 32B run continues in 10-task batches on the same frozen task IDs and settings. Partial score files through task 100 are `score-checkpoint-32b-{10,20,30,40,50,60,70,80,90,100}.json`.
+- The 32B run continues in 10-task batches on the same frozen task IDs and settings. Partial score files through task 110 are `score-checkpoint-32b-{10,20,30,40,50,60,70,80,90,100,110}.json`.
 - Original development, RSI, and comparison artifacts are preserved. Do not use the official public evaluation answers or begin Phase B training under this protocol.
 
 ## Local inventory (2026-11-06)
