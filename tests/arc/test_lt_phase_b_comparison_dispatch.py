@@ -77,6 +77,11 @@ class ComparisonDispatchTests(unittest.TestCase):
         self.assertEqual([s for _, s in self.calls], ['off', 'off'])
         self.assertEqual(self.mock['preflight_training_data'].call_count, 4)
 
+    def test_full_off_batch_precedes_on_batch(self):
+        self.assertEqual(self.invoke(50), {'completed': 50, 'stop_reason': 'state_complete', 'state': 'off'})
+        self.assertEqual(self.invoke(1), {'completed': 1, 'stop_reason': 'batch_limit', 'state': 'on'})
+        self.assertEqual([state for _, state in self.calls], ['off'] * 50 + ['on'])
+
     def test_bad_export_and_preflight_fail_before_launch(self):
         path = self.run / 'comparison-export.json'; value = json.loads(path.read_text())
         value['tasks'][next(iter(value['tasks']))]['test'][0]['output'] = [[1]]
