@@ -195,3 +195,7 @@ Read the registered data and collection descriptors from the private run directo
 ### Collection registration proposal
 
 Build a draft collection descriptor only after recomputing the 100-task allocation against public inventories, then capture local source, 14B model, interpreter and environment identities and construct the public-only task export. Validate the assembled shape against the existing collection contract. The builder writes no run artifacts and returns a draft, non-authorizing proposal; it neither resolves the current allocation conflict nor freezes or starts an experiment. Recompute the full preflight when a future run is actually registered.
+
+### Draft registration integration check
+
+A local, opt-in integration check may assemble a draft descriptor using an ephemeral eligible fixture pool and the installed runtime and model-file inventory. It must keep the pool in memory only, load no model weights or solution answers, write no run artifacts, and assert that the result remains draft and non-authorizing. This fixture is not a decision about the five overlapping IDs or a real experiment registration.
