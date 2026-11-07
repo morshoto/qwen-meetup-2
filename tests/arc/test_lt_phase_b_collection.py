@@ -64,6 +64,16 @@ class CollectionTests(unittest.TestCase):
         self.assertFalse((self.root / 'a.result.json').exists())
         with self.assertRaises(ValueError): self.journal.pending(1)
 
+    def test_success_claim_with_unsafe_samples_is_not_committed(self):
+        def worker(task, output, on_start):
+            value = self.worker(task, output, on_start)
+            value['observation']['samples'] = [state(free=10)]
+            return value
+        with self.assertRaises(ValueError): collect_batch(self.journal, limit=2, worker=worker)
+        self.assertFalse((self.root / 'a.result.json').exists())
+        self.assertTrue((self.root / 'a.resources.json').exists())
+        with self.assertRaises(ValueError): self.journal.pending(1)
+
     def test_preflight_refusal_is_not_a_started_attempt_result(self):
         def worker(task, output, on_start):
             return {'status': 'preflight_refused', 'reason': 'insufficient_disk', 'baseline': {}}
