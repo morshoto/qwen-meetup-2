@@ -23,7 +23,7 @@ class SFTMaterializeTests(unittest.TestCase):
     def materialize(self, dataset=None):
         return materialize_sft(source_root=self.root, run_dir=self.run,
             dataset=self.fixture.dataset if dataset is None else dataset,
-            tasks=self.fixture.fixture.tasks, verifier=self.fixture.fixture.verifier,
+            tasks=self.fixture.fixture.tasks, verifier=self.fixture.fixture.verifier, source=self.fixture.fixture.source,
             tokenizer=fixtures.Tokenizer(), dataset_factory=fixtures.Dataset)
 
     def test_writes_private_exact_jsonl_once(self):

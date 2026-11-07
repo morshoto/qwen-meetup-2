@@ -107,7 +107,7 @@ class TrainerPreflightTests(unittest.TestCase):
         install_training_template_policy('off')
         tokenizer = load_tokenizer(path)
         report = audit_sft_dataset(dataset=fixture.dataset, tasks=fixture.fixture.tasks,
-            verifier=fixture.fixture.verifier, tokenizer=tokenizer,
+            verifier=fixture.fixture.verifier, source=fixture.fixture.source, tokenizer=tokenizer,
             dataset_factory=lambda example, tok: ChatDataset([example], tok, mask_prompt=True))
         self.assertEqual((report['train_count'], report['valid_count']), (2, 1))
         self.assertGreater(report['maximum_tokens'], 0)

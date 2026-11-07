@@ -28,7 +28,7 @@ class SFTPreflightTests(unittest.TestCase):
 
     def audit(self, dataset=None, tokenizer=None, dataset_factory=None):
         return audit_sft_dataset(dataset=self.dataset if dataset is None else dataset,
-            tasks=self.fixture.tasks, verifier=self.fixture.verifier, tokenizer=tokenizer or Tokenizer(), dataset_factory=dataset_factory or Dataset)
+            tasks=self.fixture.tasks, verifier=self.fixture.verifier, source=self.fixture.source, tokenizer=tokenizer or Tokenizer(), dataset_factory=dataset_factory or Dataset)
 
     def test_audits_exact_verified_examples_and_prefix(self):
         result = self.audit()
@@ -49,6 +49,14 @@ class SFTPreflightTests(unittest.TestCase):
         for factory in (TooLong, WrongMask, WrongPrefix):
             with self.subTest(factory=factory), self.assertRaises(ValueError):
                 self.audit(dataset_factory=factory)
+
+    def test_eligible_record_must_match_registered_source(self):
+        for field, value in (('source_model_revision', 'wrong'), ('source_code_sha256', 'd' * 64),
+                             ('run_sha256', 'd' * 64), ('run_id', 'other'), ('adapter_state', 'on')):
+            changed = copy.deepcopy(self.dataset)
+            record = next(x for x in changed['journal'] if x['verification_status'] == 'eligible')
+            record[field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError): self.audit(changed)
 
     def test_correctness_claim_is_rechecked_by_verifier(self):
         changed = copy.deepcopy(self.dataset)
