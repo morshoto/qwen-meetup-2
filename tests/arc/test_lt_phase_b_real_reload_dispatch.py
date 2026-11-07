@@ -6,7 +6,7 @@ from unittest.mock import patch
 from src.arc.lt_batch_journal import _create
 from src.arc.lt_phase_b_canary_sample import RELOAD_SETTINGS
 from src.arc.lt_phase_b_registered_worker import _digest
-from src.arc.lt_phase_b_real_reload_dispatch import run_real_reload_dispatch
+from src.arc.lt_phase_b_real_reload_dispatch import run_real_reload_dispatch, review_real_reload_attempt
 from tests.arc import test_lt_phase_b_training_dispatch as fixtures
 from tests.arc.test_rsi_process_monitor import state
 
@@ -65,6 +65,36 @@ class RealReloadDispatchTests(unittest.TestCase):
         self.assertTrue((self.fixture.fixture.run / 'real-reload-summary.json').exists())
         with self.assertRaises(ValueError): self.invoke()
         self.worker.assert_called_once()
+
+    def test_replay_rejects_missing_or_changed_evidence(self):
+        result = self.invoke()
+        f = self.fixture; c = f.fixture
+        def replay():
+            return review_real_reload_attempt(c.run, training=f.spec, canary=c.canary,
+                expected_training_sha256=f.training_sha, expected_canary_sha256=c.canary_sha,
+                expected_collection_sha256=c.collection_sha)
+        self.assertEqual(replay(), result)
+        for name, field, value in (('real-reload-started.json', 'training_sha256', '0'*64),
+                                   ('real-reload-process.json', 'pid', 0),
+                                   ('real-reload-observation.json', 'group_absent', False),
+                                   ('real-reload-result.json', 'sample_format_valid', False),
+                                   ('real-reload-summary.json', 'reload_verified', True)):
+            path = c.run / name
+            original = path.read_text(); changed = json.loads(original); changed[field] = value
+            path.write_text(json.dumps(changed))
+            with self.subTest(name=name), self.assertRaises(ValueError): replay()
+            path.write_text(original)
+        (c.run / 'real-reload-summary.json').unlink()
+        with self.assertRaises(ValueError): replay()
+
+    def test_replay_detects_changed_training_and_canary(self):
+        self.invoke()
+        f = self.fixture; c = f.fixture
+        self.mock['review_real_training_attempt'].return_value = {**self.summary, 'yield_status': 'overfitting_only'}
+        with self.assertRaises(ValueError):
+            review_real_reload_attempt(c.run, training=f.spec, canary=c.canary,
+                expected_training_sha256=f.training_sha, expected_canary_sha256=c.canary_sha,
+                expected_collection_sha256=c.collection_sha)
 
     def test_failed_preflight_does_not_start(self):
         self.mock['preflight_training_data'].side_effect = ValueError('mismatch')
