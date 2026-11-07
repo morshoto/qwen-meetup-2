@@ -393,3 +393,14 @@ The tiny trainer fixture also exposed that installed MLX-LM writes
 accepts that form and compares every saved tensor hash against the final
 in-memory snapshot; the fixture passed the check. This remains a synthetic model
 result, not a 14B canary or independent runtime attestation.
+
+### Separate canary reload plan
+
+After a locally observed canary step, start a fresh supervised process that
+rechecks the frozen canary and collection identities, saved-adapter hashes
+against the final tensor snapshot, source/runtime/model files and the loaded
+adapter tensors. Generate a short fixed synthetic sample and record raw output,
+tokens and memory without scoring it as ARC. Recheck identities afterward.
+The reload worker's result remains unverified until its parent reviews the
+separate resource, log and owned-process cleanup observations. Never promote
+this synthetic adapter as Gen 1.
