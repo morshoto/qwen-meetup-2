@@ -72,6 +72,13 @@ class CanaryTrainerTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.run_cli()
         self.assertEqual(self.steps, 0)
 
+    def test_boolean_step_count_is_not_an_integer_configuration(self):
+        bad = dict(self.plan['trainer_config'], iters=True)
+        self.config.write_text(json.dumps(bad, sort_keys=True))
+        self.config_sha = hashlib.sha256(self.config.read_bytes()).hexdigest()
+        with self.assertRaises(ValueError): self.run_cli()
+        self.assertEqual(self.steps, 0)
+
     def test_config_tampering_and_validation_dataset_fail_closed(self):
         self.config.write_text('{}')
         with self.assertRaises(ValueError): self.run_cli()
