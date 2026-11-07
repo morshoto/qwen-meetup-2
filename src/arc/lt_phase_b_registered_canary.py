@@ -27,8 +27,8 @@ def _trainer_runtime():
     return lora, install_training_template_policy, tree_flatten, mx.eval
 
 
-def validate_canary_descriptor(*, canary_spec, expected_canary_sha256, collection_spec, expected_collection_sha256,
-                               source_inventory, allocation_receipt, receipt, config_path):
+def validate_canary_identity(*, canary_spec, expected_canary_sha256, collection_spec, expected_collection_sha256,
+                             source_inventory, allocation_receipt, receipt):
     settings, model = validate_descriptor(spec=collection_spec, expected_run_sha256=expected_collection_sha256,
         source_inventory=source_inventory, receipt=receipt, allocation_receipt=allocation_receipt)
     keys = {'protocol', 'status', 'run_id', 'collection_sha256', 'source_code_sha256', 'runtime_manifest',
@@ -50,6 +50,14 @@ def validate_canary_descriptor(*, canary_spec, expected_canary_sha256, collectio
                 for k in ('runtime_manifest', 'environment_manifest', 'model_manifest')) or
             not valid_hash(canary_spec.get('config_sha256')) or not valid_hash(canary_spec.get('dataset_sha256'))):
         raise ValueError('invalid canary descriptor')
+    return settings, model
+
+
+def validate_canary_descriptor(*, canary_spec, expected_canary_sha256, collection_spec, expected_collection_sha256,
+                               source_inventory, allocation_receipt, receipt, config_path):
+    settings, model = validate_canary_identity(canary_spec=canary_spec, expected_canary_sha256=expected_canary_sha256,
+        collection_spec=collection_spec, expected_collection_sha256=expected_collection_sha256,
+        source_inventory=source_inventory, allocation_receipt=allocation_receipt, receipt=receipt)
     config_path = Path(config_path)
     _private_file(config_path)
     config = _json_file(config_path, canary_spec['config_sha256'])
@@ -57,6 +65,7 @@ def validate_canary_descriptor(*, canary_spec, expected_canary_sha256, collectio
         plan = build_canary_config(model_dir=config['model'], data_dir=config['data'], adapter_dir=config['adapter_path'])
     except KeyError as exc:
         raise ValueError('canary config incomplete') from exc
+    canonical = lambda x: json.dumps(x, sort_keys=True, separators=(',', ':'), allow_nan=False)
     if canonical(config) != canonical(plan['trainer_config']) or plan['dataset_sha256'] != canary_spec['dataset_sha256']:
         raise ValueError('canary config or dataset identity differs')
     _validate_dataset(Path(config['data']), plan['dataset_jsonl'])
