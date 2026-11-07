@@ -44,7 +44,7 @@ class CanaryDispatchTests(unittest.TestCase):
         self.preflight_check = self.preflight.start(); self.addCleanup(self.preflight.stop)
         self.adapter_check = patch('src.arc.lt_phase_b_canary_dispatch.inspect_adapter_artifact', return_value={
             'status': 'adapter_files_consistent_unverified', 'adapter_sha256': 'f' * 64,
-            'weights_sha256': 'e' * 64, 'config_sha256': 'd' * 64,
+            'weights_sha256': 'e' * 64, 'config_sha256': 'd' * 64, 'matched_tensor_count': 2,
             'reload_verified': False, 'promotion_allowed': False})
         self.adapter_check.start(); self.addCleanup(self.adapter_check.stop)
         self.shapes = patch('src.arc.lt_phase_b_tensor_evidence._expected_shapes',
@@ -123,6 +123,14 @@ class CanaryDispatchTests(unittest.TestCase):
         self.process.side_effect = forged
         with self.assertRaises(ValueError): self.invoke()
         self.assertTrue((self.run / 'canary-observation.json').exists())
+        self.assertFalse((self.run / 'canary-training-summary.json').exists())
+
+    def test_incomplete_adapter_inspection_never_creates_summary(self):
+        self.adapter_check.return_value = {
+            'status': 'adapter_files_consistent_unverified', 'adapter_sha256': 'f' * 64,
+            'weights_sha256': 'e' * 64, 'config_sha256': 'd' * 64, 'matched_tensor_count': 1,
+            'reload_verified': False, 'promotion_allowed': False}
+        with self.assertRaises(ValueError): self.invoke()
         self.assertFalse((self.run / 'canary-training-summary.json').exists())
 
     def test_preflight_failure_never_starts(self):
