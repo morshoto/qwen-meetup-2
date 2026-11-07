@@ -7,7 +7,8 @@ from src.arc.lt_phase_b_dataset import build_dataset
 
 
 def task(name):
-    return Task(name, (([[0]], [[1]]),), ([[0]],))
+    value = ord(name[0]) % 10
+    return Task(name, (([[value]], [[1]]),), ([[value]],))
 
 
 def row(name, candidates):
@@ -29,7 +30,7 @@ class DatasetTests(unittest.TestCase):
 
     def build(self, rows, **kw):
         return build_dataset(self.tasks, rows, self.verifier, source=self.source,
-                             comparison_ids=kw.get('comparison_ids', {'evaluation'}))
+                             comparison_tasks=kw.get('comparison_tasks', {'x': task('x')}))
 
     def test_full_correct_only_one_lineage_and_disjoint_split(self):
         rows = [row('a', [self.good, self.good]), row('b', [self.bad, self.good]),
@@ -94,14 +95,25 @@ class DatasetTests(unittest.TestCase):
         self.assertEqual(result['train'], [])
         self.assertEqual(result['valid'], [])
 
+    def test_reject_duplicate_content_even_with_different_ids_or_example_order(self):
+        duplicate = Task('x', self.tasks['a'].train, self.tasks['a'].test_inputs)
+        with self.assertRaises(ValueError): self.build([], comparison_tasks={'x': duplicate})
+        duplicated = dict(self.tasks, b=Task('b', self.tasks['a'].train, self.tasks['a'].test_inputs))
+        with self.assertRaises(ValueError):
+            build_dataset(duplicated, [], self.verifier, source=self.source, comparison_tasks={'x': task('x')})
+        a = Task('a', (([[0]], [[1]]), ([[2]], [[3]])), ([[4]], [[5]]))
+        other = Task('x', tuple(reversed(a.train)), tuple(reversed(a.test_inputs)))
+        with self.assertRaises(ValueError):
+            build_dataset({'a': a}, [], self.verifier, source=self.source, comparison_tasks={'x': other})
+
     def test_reject_overlap_duplicate_unknown_and_incomplete_provenance(self):
-        with self.assertRaises(ValueError): self.build([], comparison_ids={'a'})
+        with self.assertRaises(ValueError): self.build([], comparison_tasks={'a': self.tasks['a']})
         with self.assertRaises(ValueError): self.build([row('a', [self.good, self.bad])] * 2)
         with self.assertRaises(ValueError): self.build([row('x', [self.good, self.bad])])
         for source in (dict(self.source, model_id='other'), dict(self.source, source_code_sha256='x'),
                        dict(self.source, run_id='')):
             with self.subTest(source=source), self.assertRaises(ValueError):
-                build_dataset(self.tasks, [], self.verifier, source=source, comparison_ids={'eval'})
+                build_dataset(self.tasks, [], self.verifier, source=source, comparison_tasks={'x': task('x')})
 
 
 if __name__ == '__main__': unittest.main()

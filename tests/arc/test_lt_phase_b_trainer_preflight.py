@@ -18,13 +18,13 @@ class TrainerPreflightTests(unittest.TestCase):
         from src.arc.data import Task, Verifier
         from src.arc.lt_phase_b_dataset import build_dataset
         ids = ['a', 'b', 'c']
-        tasks = {x: Task(x, (([[0]], [[1]]),), ([[0]],)) for x in ids}
+        tasks = {x: Task(x, (([[ord(x) % 10]], [[1]]),), ([[ord(x) % 10]],)) for x in ids}
         calls = [{'candidate': i, 'raw': '[[[1]]]', 'usage': None, 'error': None} for i in (0, 1)]
         rows = [{'task_id': x, 'model': '14b', 'status': 'complete',
                  'candidates': [[[[1]]], [[[1]]]], 'calls': calls,
                  'cleanup': {'leader_reaped': True, 'group_absent': True}} for x in ids]
         output = build_dataset(tasks, rows, Verifier({x: [[[1]]] for x in ids}),
-            comparison_ids={'eval'}, source={'model_id': 'mlx-community/Qwen3-14B-4bit',
+            comparison_tasks={'x': Task('x', (([[0]], [[1]]),), ([[0]],))}, source={'model_id': 'mlx-community/Qwen3-14B-4bit',
             'model_revision': 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4',
             'source_code_sha256': 'a' * 64, 'run_id': 'synthetic'})
         messages = output['train'][0]['messages']

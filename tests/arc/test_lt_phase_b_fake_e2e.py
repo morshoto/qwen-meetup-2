@@ -27,7 +27,7 @@ class FakeBackend:
 class FakeEndToEnd(unittest.TestCase):
     def test_journal_resume_verified_dataset_and_paired_score(self):
         ids = ['a', 'b', 'c']
-        tasks = {x: Task(x, (([[0]], [[1]]),), ([[0]],)) for x in ids}
+        tasks = {x: Task(x, (([[ord(x) % 10]], [[1]]),), ([[ord(x) % 10]],)) for x in ids}
         verifier = Verifier({x: [[[1]]] for x in ids})
         backend = FakeBackend()
         with tempfile.TemporaryDirectory() as tmp:
@@ -40,7 +40,7 @@ class FakeEndToEnd(unittest.TestCase):
             resumed = BatchJournal(Path(tmp), ids, 'fixture-identity')
             self.assertEqual(resumed.pending(10), [])
             rows = [json.loads((Path(tmp) / (x + '.result.json')).read_text()) for x in ids]
-            output = build_dataset(tasks, rows, verifier, comparison_ids={'other'}, source={
+            output = build_dataset(tasks, rows, verifier, comparison_tasks={'x': Task('x', (([[0]], [[1]]),), ([[0]],))}, source={
                 'model_id': 'mlx-community/Qwen3-14B-4bit',
                 'model_revision': 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4',
                 'source_code_sha256': 'a' * 64, 'run_id': 'fixture'})
