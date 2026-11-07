@@ -25,7 +25,7 @@ class CollectionTests(unittest.TestCase):
                 'returncode': 0, 'elapsed_seconds': 1., 'stdout': '', 'stderr': None,
                 'baseline': state(), 'observation': {'stop_reason': 'process_exited', 'exit_code': 0,
                 'group_signals_confirmed': True, 'stream_complete': True,
-                'cleanup_observation': {'group_cleanup_verified': True},
+                'cleanup_observation': {'group_cleanup_verified': False}, 'post_reap_group_absent': True,
                 'samples': [state()], 'escaped_processes_excluded': False}}
 
     def test_success_persists_observation_and_resumes(self):

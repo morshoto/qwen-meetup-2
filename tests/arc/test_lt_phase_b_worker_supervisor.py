@@ -23,7 +23,19 @@ class WorkerSupervisorTests(unittest.TestCase):
         self.assertTrue(result['leader_reaped'])
         self.assertEqual(len(pids), 1)
         self.assertFalse(result['observation']['escaped_processes_excluded'])
-        self.assertEqual(result['status'], 'complete' if result['group_absent'] else 'error')
+        self.assertTrue(result['observation']['post_reap_group_absent'])
+        self.assertTrue(result['group_absent'])
+        self.assertEqual(result['status'], 'complete')
+        self.assertFalse(result['observation']['cleanup_observation']['group_cleanup_verified'])
+
+    def test_post_reap_group_probe_fails_closed_if_inaccessible(self):
+        from src.arc.lt_phase_b_worker_supervisor import _post_reap_group_absent
+        with patch('src.arc.lt_phase_b_worker_supervisor.os.killpg', side_effect=PermissionError):
+            self.assertIsNone(_post_reap_group_absent(1234))
+        with patch('src.arc.lt_phase_b_worker_supervisor.os.killpg', return_value=None):
+            self.assertFalse(_post_reap_group_absent(1234))
+        with patch('src.arc.lt_phase_b_worker_supervisor.os.killpg', side_effect=ProcessLookupError):
+            self.assertTrue(_post_reap_group_absent(1234))
 
     def test_live_resource_failure_terminates_child(self):
         result = self.run_worker('import time; time.sleep(5)', sampler=lambda _root, _pid: state(free=10))
