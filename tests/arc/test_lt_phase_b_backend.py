@@ -1,5 +1,6 @@
 import hashlib
 import json
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -27,7 +28,10 @@ class BackendTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         (self.root / 'adapter_config.json').write_text(json.dumps({'fine_tune_type': 'lora',
             'num_layers': 8, 'lora_parameters': {'rank': 8, 'scale': 2.0, 'dropout': 0.0}}))
-        (self.root / 'adapters.safetensors').write_bytes(b'synthetic')
+        header = {'layer.lora_a': {'dtype': 'F32', 'shape': [1, 1], 'data_offsets': [0, 4]},
+                  'layer.lora_b': {'dtype': 'F32', 'shape': [1, 1], 'data_offsets': [4, 8]}}
+        raw = json.dumps(header).encode()
+        (self.root / 'adapters.safetensors').write_bytes(struct.pack('<Q', len(raw)) + raw + struct.pack('<ff', 1, 2))
         self.hash = digest(self.root)
         self.saved = {'layer.lora_a': np.array([[1]], dtype=np.float32),
                       'layer.lora_b': np.array([[2]], dtype=np.float32)}
@@ -78,6 +82,13 @@ class BackendTests(unittest.TestCase):
         with patch('src.arc.lt_phase_b_backend._runtime', return_value=(mx, loader, stream, sampler, flatten)):
             with self.assertRaises(ValueError):
                 PhaseBBackend('model', model_manifest={}, adapter_state='off')
+
+    def test_malformed_weight_file_is_rejected_before_loading_model(self):
+        (self.root / 'adapters.safetensors').write_bytes(b'invalid')
+        with self.assertRaises(ValueError):
+            PhaseBBackend('model', model_manifest={}, adapter_state='on',
+                          adapter_path=self.root, adapter_sha256=digest(self.root))
+        self.assertFalse(any(call[0] == 'load' for call in self.calls))
 
     def test_changed_adapter_during_load_is_rejected(self):
         mx, loader, stream, sampler, flatten = self.runtime
