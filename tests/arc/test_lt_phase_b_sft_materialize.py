@@ -16,7 +16,7 @@ class SFTMaterializeTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name); (self.root / 'artifacts').mkdir()
-        self.run = self.root / 'artifacts/lt-phase-b-fixture'; self.run.mkdir(mode=0o700)
+        self.run = self.root / 'artifacts/lt-phase-b-fixture-run'; self.run.mkdir(mode=0o700)
         self.fixture = fixtures.SFTPreflightTests('test_audits_exact_verified_examples_and_prefix')
         self.fixture.setUp()
 
