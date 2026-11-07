@@ -50,3 +50,19 @@ class SingleManifestTests(unittest.TestCase):
                        {'files_sha256': {}}, {'chat_template_sha256': 'bad'}):
             with self.subTest(update=update), self.assertRaises(ValueError):
                 build(Path('.'), {**self.config, **update})
+
+    @patch('src.arc.lt_single_manifest.build_phase_a')
+    def test_vllm_registration_binds_runtime_and_rejects_tampering(self, base):
+        base.return_value = self.base
+        config = {'model': self.config, 'backend': {'name': 'vllm', 'version': '0.16.0'}}
+        manifest = build(Path('.'), config)
+        self.assertEqual(manifest['backend'], config['backend'])
+        self.assertEqual(manifest['model'], self.config)
+        verify(Path('.'), manifest)
+        changed = copy.deepcopy(manifest)
+        changed['backend']['version'] = '0.17.0'
+        with self.assertRaises(ValueError):
+            verify(Path('.'), changed)
+        for backend in ({'name': 'unknown', 'version': '1.0'}, {'name': 'vllm', 'version': 'latest'}):
+            with self.subTest(backend=backend), self.assertRaises(ValueError):
+                build(Path('.'), {'model': self.config, 'backend': backend})
