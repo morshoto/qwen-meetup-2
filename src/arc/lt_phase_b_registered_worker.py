@@ -17,10 +17,16 @@ from src.arc.lt_phase_b_public_worker import execute_public_worker
 from src.arc.lt_source import verify_source_tree
 from src.arc.rsi_environment_identity import verify_environment
 from src.arc.rsi_runtime_identity import verify_runtime_identity
+from src.arc.rsi_training_resources import valid_resource_limits
 
 _SETTINGS = {'seed': 20261111, 'max_tokens': 4096, 'temperature': 0.6, 'thinking': 'off',
              'candidate_count': 2, 'mlx_memory_limit_bytes': 48 * 1024**3,
-             'mlx_lm_version': '0.30.7', 'mlx_version': '0.32.4'}
+             'mlx_lm_version': '0.30.7', 'mlx_version': '0.32.4',
+             'task_timeout_seconds': 300, 'monitor_interval_seconds': 1,
+             'sample_timeout_seconds': 2, 'termination_grace_seconds': 1,
+             'resource_limits': {'timeout_seconds': 300, 'minimum_disk_gib': 20,
+                 'minimum_free_memory_percent': 20, 'maximum_swap_growth_mib': 512,
+                 'maximum_process_rss_gib': 32, 'sample_interval_seconds': 5}}
 _MODEL = 'mlx-community/Qwen3-14B-4bit'
 _REVISION = 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
 
@@ -53,6 +59,7 @@ def validate_descriptor(*, spec, expected_run_sha256, source_inventory, receipt,
     runtime, environment = spec['runtime_manifest'], spec['environment_manifest']
     if (not isinstance(settings, dict) or settings != _SETTINGS or
             any(type(settings[key]) is not type(value) for key, value in _SETTINGS.items()) or
+            not valid_resource_limits(settings['resource_limits']) or
             not isinstance(tasks, dict) or len(tasks) != 100 or
             any(not isinstance(key, str) or not re.fullmatch(r'[0-9a-f]{8}', key) or not _valid_hash(value)
                 for key, value in tasks.items()) or (task_id is not None and task_id not in tasks) or
