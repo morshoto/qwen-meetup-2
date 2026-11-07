@@ -15,7 +15,9 @@ class ComparisonProposalTests(unittest.TestCase):
         f = self.fixture
         self.challenge = json.dumps(f.export['tasks']).encode()
         self.solutions = b'{"fixture":[]}'
-        self.training = {'solution_sha256': hashlib.sha256(self.solutions).hexdigest(),
+        self.training = {'protocol': 'lt-phase-b-real-training-v1', 'status': 'frozen',
+                         'collection_sha256': f.collection_sha, 'canary_sha256': f.canary_sha,
+                         'solution_sha256': hashlib.sha256(self.solutions).hexdigest(),
                          'dataset_manifest_sha256': 'd'*64, 'yield_status': 'disjoint_split'}
         self.training_sha = _digest(self.training)
         patches = {'validate_canary_identity': (f.collection['settings'], f.collection['model_manifest']),
@@ -57,6 +59,14 @@ class ComparisonProposalTests(unittest.TestCase):
         self.assertTrue(all(set(item) == {'input'} for task in result['export']['tasks'].values() for item in task['test']))
         self.assertNotIn('fixture', str(result['export']))
         self.assertEqual(self.preflight.call_count, 2)
+
+    def test_draft_cannot_be_used_as_live_comparison(self):
+        result = self.invoke()
+        with self.assertRaises(ValueError):
+            self.fixture.invoke(comparison_spec=result['spec'], expected_comparison_sha256=result['spec_sha256'],
+                comparison_receipt=result['receipt'], export=result['export'], training_spec=self.training,
+                expected_training_sha256=self.training_sha)
+        self.assertEqual(self.fixture.loads, [])
 
     def test_tampered_public_inventory_or_reload_fails(self):
         with self.assertRaises(ValueError): self.invoke(challenge_bytes=b'{}')
