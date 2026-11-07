@@ -5,6 +5,9 @@ from pathlib import Path
 
 from src.arc.lt_benchmark_manifest import build as build_phase_a, canonical, sha
 
+SOURCE_FILES = ('src/arc/lt_single_manifest.py', 'src/arc/lt_single_score.py',
+                'src/cli/lt_single.py', 'src/cli/lt_single_worker.py')
+
 
 def build(root: Path, model: dict) -> dict:
     if not isinstance(model, dict) or set(model) != {
@@ -26,7 +29,8 @@ def build(root: Path, model: dict) -> dict:
     value = {key: copy.deepcopy(val) for key, val in phase_a.items()
              if key not in ('models', 'sha256')}
     value.update(protocol='lt-single-model-exploratory', phase_a_sha256=phase_a['sha256'],
-                 model=copy.deepcopy(model))
+                 model=copy.deepcopy(model),
+                 single_source_sha256={name: sha((root / name).read_bytes()) for name in SOURCE_FILES})
     return {**value, 'sha256': sha(canonical(value))}
 
 
