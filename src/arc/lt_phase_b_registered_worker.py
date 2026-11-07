@@ -9,11 +9,14 @@ import hashlib
 import importlib.metadata
 import json
 import re
+import sys
 
 from src.arc.lt_live_backend import PROMPT
 from src.arc.lt_phase_b_backend import PhaseBBackend
 from src.arc.lt_phase_b_public_worker import execute_public_worker
 from src.arc.lt_source import verify_source_tree
+from src.arc.rsi_environment_identity import verify_environment
+from src.arc.rsi_runtime_identity import verify_runtime_identity
 
 _SETTINGS = {'seed': 20261111, 'max_tokens': 4096, 'temperature': 0.6, 'thinking': 'off',
              'candidate_count': 2, 'mlx_memory_limit_bytes': 48 * 1024**3,
@@ -32,7 +35,8 @@ def _valid_hash(value):
 
 def validate_descriptor(*, spec, expected_run_sha256, source_inventory, receipt, allocation_receipt, task_id=None):
     keys = {'protocol', 'status', 'run_id', 'source_code_sha256', 'allocation_audit_sha256',
-            'prompt_sha256', 'selected_task_sha256', 'model_manifest', 'settings'}
+            'prompt_sha256', 'selected_task_sha256', 'model_manifest', 'settings',
+            'runtime_manifest', 'environment_manifest'}
     if (not isinstance(spec, dict) or set(spec) != keys or spec.get('protocol') != 'lt-phase-b-collection-v1' or
             spec.get('status') != 'frozen' or not isinstance(spec.get('run_id'), str) or
             not re.fullmatch(r'[a-zA-Z0-9_-]{1,128}', spec['run_id']) or
@@ -46,6 +50,7 @@ def validate_descriptor(*, spec, expected_run_sha256, source_inventory, receipt,
             allocation_receipt.get('execution_ready') is not False):
         raise ValueError('invalid collection descriptor or source identity')
     settings, tasks, model = spec['settings'], spec['selected_task_sha256'], spec['model_manifest']
+    runtime, environment = spec['runtime_manifest'], spec['environment_manifest']
     if (not isinstance(settings, dict) or settings != _SETTINGS or
             any(type(settings[key]) is not type(value) for key, value in _SETTINGS.items()) or
             not isinstance(tasks, dict) or len(tasks) != 100 or
@@ -57,6 +62,13 @@ def validate_descriptor(*, spec, expected_run_sha256, source_inventory, receipt,
             set(tasks) & set(allocation_receipt['comparison_task_sha256']) or
             any(not isinstance(k, str) or not re.fullmatch(r'[0-9a-f]{8}', k) or not _valid_hash(v)
                 for k, v in allocation_receipt['comparison_task_sha256'].items()) or
+            not isinstance(runtime, dict) or runtime.get('machine') != 'arm64' or
+            not isinstance(runtime.get('packages'), dict) or
+            runtime['packages'].get('mlx-lm') != _SETTINGS['mlx_lm_version'] or
+            runtime['packages'].get('mlx') != _SETTINGS['mlx_version'] or
+            not isinstance(runtime.get('interpreter_realpath'), str) or not runtime['interpreter_realpath'] or
+            not _valid_hash(runtime.get('interpreter_sha256')) or not isinstance(environment, dict) or
+            any(environment.get(key) != runtime.get(key) for key in ('interpreter_realpath', 'interpreter_sha256')) or
             not isinstance(model, dict) or model.get('model_id') != _MODEL or model.get('revision') != _REVISION or
             model.get('quantization') != {'bits': 4, 'group_size': 64} or
             not _valid_hash(model.get('chat_template_sha256')) or not isinstance(model.get('files_sha256'), dict) or
@@ -76,11 +88,15 @@ def run_registered_task(*, spec, expected_run_sha256, source_inventory, source_r
     if (importlib.metadata.version('mlx-lm') != settings['mlx_lm_version'] or
             importlib.metadata.version('mlx') != settings['mlx_version']):
         raise ValueError('runtime version differs')
+    verify_runtime_identity(sys.executable, spec['runtime_manifest'])
+    verify_environment(sys.executable, spec['environment_manifest'])
     verify_source_tree(source_root, source_inventory)
     row = execute_public_worker(export=export, receipt=receipt, task_id=task_id,
         expected_run_sha256=expected_run_sha256, source_code_sha256=spec['source_code_sha256'],
         adapter_state='off', backend_factory=lambda: backend_factory(model_path=model_path, model_manifest=model,
             adapter_state='off', seed=settings['seed'], max_tokens=settings['max_tokens'],
             temperature=settings['temperature']))
+    verify_runtime_identity(sys.executable, spec['runtime_manifest'])
+    verify_environment(sys.executable, spec['environment_manifest'])
     verify_source_tree(source_root, source_inventory)
     return {**row, 'run_id': spec['run_id']}
