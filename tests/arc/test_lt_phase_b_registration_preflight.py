@@ -25,5 +25,26 @@ class RegistrationPreflightTests(unittest.TestCase):
                     python_executable='/unused', model_path='/unused')
             model.assert_not_called(); runtime.assert_not_called()
 
+    def test_ephemeral_fixture_builds_draft_with_installed_identities(self):
+        from src.arc.lt_phase_b_registration_proposal import propose_collection_registration
+        from src.arc.lt_phase_b_registered_worker import _digest, validate_descriptor
+        from tests.arc.test_lt_phase_b_allocation_receipt import AllocationReceiptTests
+        root = Path(__file__).resolve().parents[2]
+        fixture = AllocationReceiptTests('test_eligible_fixture_selection_produces_bound_receipt')
+        fixture.setUp()
+        result = propose_collection_registration(source_root=root, challenge_bytes=fixture.challenges,
+            official_challenge_bytes=fixture.official, training_task_ids=fixture.fixture_pool(),
+            run_id='ephemeral-fixture-not-a-run', python_executable='/tmp/qwen-p3a-mlx-venv/bin/python',
+            model_path=Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4')
+        self.assertEqual(result['status'], 'collection_registration_proposed_unverified')
+        self.assertEqual(result['spec']['status'], 'draft')
+        self.assertFalse(result['execution_ready'])
+        self.assertEqual(len(result['export']['tasks']), 100)
+        self.assertTrue(all(set(pair) == {'input'} for task in result['export']['tasks'].values() for pair in task['test']))
+        self.assertEqual(result['spec_sha256'], _digest(result['spec']))
+        with self.assertRaises(ValueError):
+            validate_descriptor(spec=result['spec'], expected_run_sha256=result['spec_sha256'],
+                source_inventory=result['inventory'], receipt=result['receipt'], allocation_receipt=result['allocation'])
+
 
 if __name__ == '__main__': unittest.main()
