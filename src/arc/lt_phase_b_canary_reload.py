@@ -5,13 +5,12 @@ training and reload supervision, resource observations and process cleanup.
 The synthetic sample is not ARC evaluation or a Gen 1 promotion.
 """
 import hashlib
-import json
 import math
 import sys
 from pathlib import Path
 
 from src.arc.lt_direct_format import normalize_direct
-from src.arc.lt_live_backend import PROMPT
+from src.arc.lt_phase_b_canary_sample import SAMPLE_PROMPT
 from src.arc.lt_phase_b_adapter_artifact import inspect_adapter_artifact
 from src.arc.lt_phase_b_backend import PhaseBBackend
 from src.arc.lt_phase_b_canary_trainer import _private_file
@@ -21,8 +20,6 @@ from src.arc.lt_source import verify_source_tree
 from src.arc.rsi_environment_identity import verify_environment
 from src.arc.rsi_model_identity import _json_file, verify_model_manifest
 from src.arc.rsi_runtime_identity import verify_runtime_identity
-
-_SAMPLE_TASK = {'train': [{'input': [[0]], 'output': [[1]]}], 'test': [{'input': [[2]]}]}
 
 
 def run_canary_reload(*, canary_spec, expected_canary_sha256, collection_spec, expected_collection_sha256,
@@ -56,19 +53,19 @@ def run_canary_reload(*, canary_spec, expected_canary_sha256, collection_spec, e
     verify_environment(sys.executable, canary_spec['environment_manifest'])
     verify_model_manifest(model_path, model, model_key='14b')
     verify_source_tree(source_root, source_inventory)
+    reload_settings = canary_spec['reload_settings']
     backend = backend_factory(model_path=model_path, model_manifest=model, adapter_state='on',
-        adapter_path=adapter_path, adapter_sha256=artifact['adapter_sha256'], seed=20261111,
-        max_tokens=64, temperature=0.6)
+        adapter_path=adapter_path, adapter_sha256=artifact['adapter_sha256'], seed=reload_settings['seed'],
+        max_tokens=reload_settings['max_tokens'], temperature=reload_settings['temperature'])
     if (getattr(backend, 'adapter_state', None) != 'on' or
             getattr(backend, 'adapter_sha256', None) != artifact['adapter_sha256']):
         raise ValueError('loaded adapter identity differs')
-    payload = {'instruction': PROMPT, 'task': _SAMPLE_TASK}
-    prompt = json.dumps(payload, sort_keys=True, separators=(',', ':'))
+    prompt = SAMPLE_PROMPT
     backend.generate(prompt, kind='direct', candidate=0)
     raw, usage = getattr(backend, 'raw', None), getattr(backend, 'stats', None)
     if (not isinstance(raw, str) or not raw or len(raw.encode()) > 32768 or not isinstance(usage, dict) or
             type(usage.get('prompt_tokens')) is not int or usage['prompt_tokens'] < 0 or
-            type(usage.get('completion_tokens')) is not int or not 0 < usage['completion_tokens'] <= 64 or
+            type(usage.get('completion_tokens')) is not int or not 0 < usage['completion_tokens'] <= reload_settings['max_tokens'] or
             type(usage.get('peak_memory_gb')) not in (int, float) or not math.isfinite(usage['peak_memory_gb']) or
             not 0 <= usage['peak_memory_gb'] <= (48 * 1024**3 / 1e9) or
             usage.get('finish_reason') not in ('stop', 'length')):

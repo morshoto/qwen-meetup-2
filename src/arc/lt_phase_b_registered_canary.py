@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from src.arc.lt_phase_b_canary_config import build_canary_config
+from src.arc.lt_phase_b_canary_sample import RELOAD_SETTINGS
 from src.arc.lt_phase_b_canary_trainer import _private_file, _validate_dataset, run_instrumented_cli
 from src.arc.lt_phase_b_registered_worker import _digest, validate_descriptor
 from src.arc.lt_source import verify_source_tree
@@ -33,7 +34,7 @@ def validate_canary_identity(*, canary_spec, expected_canary_sha256, collection_
         source_inventory=source_inventory, receipt=receipt, allocation_receipt=allocation_receipt)
     keys = {'protocol', 'status', 'run_id', 'collection_sha256', 'source_code_sha256', 'runtime_manifest',
             'environment_manifest', 'model_manifest', 'config_sha256', 'dataset_sha256', 'thinking_mode',
-            'timeout_seconds', 'resource_limits'}
+            'timeout_seconds', 'resource_limits', 'reload_settings'}
     valid_hash = lambda x: isinstance(x, str) and bool(re.fullmatch(r'[0-9a-f]{64}', x))
     canonical = lambda x: json.dumps(x, sort_keys=True, separators=(',', ':'), allow_nan=False)
     if (not isinstance(canary_spec, dict) or set(canary_spec) != keys or
@@ -46,6 +47,7 @@ def validate_canary_identity(*, canary_spec, expected_canary_sha256, collection_
             canary_spec.get('thinking_mode') != 'off' or type(canary_spec.get('timeout_seconds')) is not int or
             canary_spec['timeout_seconds'] != settings['task_timeout_seconds'] or
             canonical(canary_spec.get('resource_limits')) != canonical(settings['resource_limits']) or
+            canonical(canary_spec.get('reload_settings')) != canonical(RELOAD_SETTINGS) or
             any(canonical(canary_spec.get(k)) != canonical(collection_spec[k])
                 for k in ('runtime_manifest', 'environment_manifest', 'model_manifest')) or
             not valid_hash(canary_spec.get('config_sha256')) or not valid_hash(canary_spec.get('dataset_sha256'))):

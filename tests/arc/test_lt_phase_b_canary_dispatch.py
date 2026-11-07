@@ -34,6 +34,7 @@ class CanaryDispatchTests(unittest.TestCase):
                        'runtime_manifest': self.spec['runtime_manifest'], 'environment_manifest': self.spec['environment_manifest'],
                        'model_manifest': self.spec['model_manifest'], 'config_sha256': hashlib.sha256(self.config.read_bytes()).hexdigest(),
                        'dataset_sha256': plan['dataset_sha256'], 'thinking_mode': 'off', 'timeout_seconds': 300,
+                       'reload_settings': dict(RELOAD_SETTINGS),
                        'resource_limits': self.spec['settings']['resource_limits']}
         self.canary_sha = fixtures.fixtures.sha(self.canary)
         (self.run / 'canary-spec.json').write_text(json.dumps(self.canary))
