@@ -3,6 +3,7 @@ import json
 import unittest
 from unittest.mock import patch
 
+from src.arc.lt_live_backend import PROMPT
 from src.arc.lt_public import build_public_export
 from src.arc.lt_phase_b_registered_worker import run_registered_task
 
@@ -29,6 +30,7 @@ class RegisteredWorkerTests(unittest.TestCase):
         self.inventory = {'code_sha256': 'a' * 64}
         self.spec = {'protocol': 'lt-phase-b-collection-v1', 'status': 'frozen', 'run_id': 'fixture',
                      'source_code_sha256': 'a' * 64, 'allocation_audit_sha256': 'b' * 64,
+                     'prompt_sha256': hashlib.sha256(PROMPT.encode()).hexdigest(),
                      'selected_task_sha256': self.hashes, 'model_manifest': {
                          'model_id': 'mlx-community/Qwen3-14B-4bit',
                          'revision': 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4',
@@ -78,6 +80,10 @@ class RegisteredWorkerTests(unittest.TestCase):
 
     def test_tampered_public_export_or_runtime_fails_before_model(self):
         with self.assertRaises(ValueError): self.run_task(expected_run_sha256='e' * 64)
+        receipt = {'comparison_sha256': sha(self.spec), 'selected_task_sha256': self.hashes}
+        export = build_public_export(self.challenges, receipt)
+        export['tasks']['00000000']['test'][0]['output'] = [[1]]
+        with self.assertRaises(ValueError): self.run_task(export=export)
         self.versions.stop()
         with patch('src.arc.lt_phase_b_registered_worker.importlib.metadata.version', return_value='wrong'):
             with self.assertRaises(ValueError): self.run_task()
