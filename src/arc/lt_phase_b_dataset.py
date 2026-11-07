@@ -56,6 +56,8 @@ def build_dataset(tasks, rows, verifier, *, source, comparison_tasks):
             source.get('model_revision') != _REVISION or
             not isinstance(source.get('source_code_sha256'), str) or
             not re.fullmatch(r'[0-9a-f]{64}', source['source_code_sha256']) or
+            not isinstance(source.get('run_sha256'), str) or
+            not re.fullmatch(r'[0-9a-f]{64}', source['run_sha256']) or
             not isinstance(source.get('run_id'), str) or not source['run_id']):
         raise ValueError('invalid source identity')
     indexed = {}
@@ -77,6 +79,12 @@ def build_dataset(tasks, rows, verifier, *, source, comparison_tasks):
         row = indexed[task_id]
         prompt = _json({'instruction': PROMPT, 'task': tasks[task_id].prompt_data()})
         prompt_sha = hashlib.sha256(prompt.encode()).hexdigest()
+        task_sha = hashlib.sha256(_json(tasks[task_id].prompt_data()).encode()).hexdigest()
+        if row['status'] == 'complete' and (row.get('run_sha256') != source['run_sha256'] or
+                row.get('source_code_sha256') != source['source_code_sha256'] or
+                row.get('public_task_sha256') != task_sha or row.get('prompt_sha256') != prompt_sha or
+                row.get('adapter_state') != 'off'):
+            raise ValueError('successful worker identity differs')
         if row['status'] != 'complete':
             failed += 1
             journal.append({'task_id': task_id, 'candidate_index': None, 'prediction': None,
@@ -101,7 +109,8 @@ def build_dataset(tasks, rows, verifier, *, source, comparison_tasks):
             journal.append({**record, 'source_model_id': _MODEL, 'source_model_revision': _REVISION,
                 'source_generation': 0, 'prompt_sha256': prompt_sha,
                 'source_split': 'phase_b_training_pool', 'source_code_sha256': source['source_code_sha256'],
-                'run_id': source['run_id'], 'usage': call.get('usage'), 'error': call.get('error')})
+                'run_id': source['run_id'], 'run_sha256': source['run_sha256'], 'public_task_sha256': task_sha,
+                'usage': call.get('usage'), 'error': call.get('error')})
             if record['verification_status'] == 'eligible':
                 eligible[task_id] = {'messages': [{'role': 'user', 'content': prompt},
                     {'role': 'assistant', 'content': _json(record['prediction'])}]}
