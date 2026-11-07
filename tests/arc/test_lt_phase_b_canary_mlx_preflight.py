@@ -70,6 +70,27 @@ class TinyCanaryIntegration(unittest.TestCase):
                 artifact = inspect_adapter_artifact(root / 'adapter', expected_tensors=final_tensors)
             self.assertEqual(artifact['matched_tensor_count'], len(shapes))
             self.assertFalse(artifact['reload_verified'])
+            from mlx_lm import stream_generate
+            from mlx_lm.sample_utils import make_sampler
+            from mlx_lm.tuner.utils import load_adapters
+            from src.arc.lt_phase_b_backend import PhaseBBackend
+            from src.arc.lt_phase_b_canary_sample import SAMPLE_PROMPT
+            def load_tiny(_path, *, adapter_path):
+                loaded = Model(args); loaded.load_weights(str(base_file), strict=True)
+                loaded = load_adapters(loaded, adapter_path); loaded.eval()
+                return loaded, tokenizer
+            from types import SimpleNamespace
+            bounded_mx = SimpleNamespace(eval=mx.eval, load=mx.load, random=mx.random, set_memory_limit=lambda _: None)
+            runtime = (bounded_mx, load_tiny, stream_generate, make_sampler, tree_flatten)
+            with patch('src.arc.lt_phase_b_backend.verify_model_manifest'), \
+                 patch('src.arc.lt_phase_b_backend._expected_shapes', return_value=shapes), \
+                 patch('src.arc.lt_phase_b_backend._runtime', return_value=runtime):
+                backend = PhaseBBackend(model_path, model_manifest={}, adapter_state='on',
+                                        adapter_path=root / 'adapter', adapter_sha256=artifact['adapter_sha256'],
+                                        max_tokens=4)
+                backend.generate(SAMPLE_PROMPT, kind='direct', candidate=0)
+                self.assertGreater(backend.stats['completion_tokens'], 0)
+                self.assertEqual(backend.adapter_sha256, artifact['adapter_sha256'])
             reload_script = """import json,sys
 import mlx.core as mx
 import numpy as np
