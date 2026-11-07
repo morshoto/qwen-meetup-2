@@ -12,8 +12,9 @@ def task(name):
 
 def row(name, candidates):
     return {'task_id': name, 'model': '14b', 'status': 'complete', 'candidates': candidates,
-            'calls': [{'usage': {'completion_tokens': 2}, 'error': None},
-                      {'usage': None, 'error': None}],
+            'calls': [{'candidate': i, 'raw': json.dumps(candidate),
+                       'usage': {'completion_tokens': 2}, 'error': None if candidate else 'invalid'}
+                      for i, candidate in enumerate(candidates)],
             'cleanup': {'leader_reaped': True, 'group_absent': True}}
 
 
@@ -37,6 +38,7 @@ class DatasetTests(unittest.TestCase):
         self.assertEqual(out['yield_status'], 'disjoint_split')
         self.assertEqual((len(out['train']), len(out['valid'])), (2, 1))
         self.assertEqual(out['eligible_task_count'], 3)
+        self.assertEqual(out['split_task_ids'], {'train': ['b', 'c'], 'valid': ['a']})
         self.assertEqual([x['verification_status'] for x in out['journal'][:2]],
                          ['eligible', 'duplicate_task'])
         self.assertEqual(len({r['solution_lineage_sha256'] for r in out['journal'] if r['verification_status'] == 'eligible'}), 3)
@@ -56,6 +58,14 @@ class DatasetTests(unittest.TestCase):
                            [row(x, [self.bad, None]) for x in ('b', 'c', 'd')])
         self.assertEqual(small['yield_status'], 'overfitting_only')
         self.assertEqual(small['valid'], [])
+
+    def test_success_must_match_recorded_raw_response(self):
+        bad = row('a', [self.good, self.bad])
+        bad['calls'][0]['raw'] = json.dumps(self.bad)
+        with self.assertRaises(ValueError): self.build([bad])
+        bad = row('a', [self.good, self.bad])
+        bad['calls'][0]['error'] = 'timeout'
+        with self.assertRaises(ValueError): self.build([bad])
 
     def test_incomplete_collection_never_declares_zero_yield(self):
         result = self.build([row('a', [self.bad, None])])
