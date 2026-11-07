@@ -124,3 +124,14 @@ test pair order differs; reject repeated content within either manifest as well
 as across them. This is not a semantic ancestry audit or proof that differently
 encoded but related tasks are independent, so the exposure ledger must retain
 that uncertainty.
+
+A local, preliminary check of the 100 proposed training tasks and 200 Phase A
+tasks found no exact visible-content duplicates within or across the groups
+when train and test example order is ignored. It read only training-challenge
+content, not test answers. SHA-256 inputs: challenge file
+`779eaba89790ebad9af02514a7efc0aefaf2cf8236f046a31bbf8b9ec48f20f5`,
+training-pool file `06412cefcf3714e410a8b5a35d7dd90c3bfd4e31ee3543f3d460252222604157`,
+and Phase A frozen config file
+`469bae58cf5771e21aea3d22ecf37dc945c3c5a74792dda6a8cbe1d4cbb70820`.
+This does not resolve the five scheduled-slot overlaps or prove semantic
+independence. Re-run on the actual frozen manifests before use.
