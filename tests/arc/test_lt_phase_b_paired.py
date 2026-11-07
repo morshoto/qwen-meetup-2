@@ -12,7 +12,8 @@ def digest(text):
 def registration(ids):
     return {'run_sha256': 'a' * 64, 'source_code_sha256': 'b' * 64,
             'adapter_sha256': 'c' * 64,
-            'selected_task_sha256': {task: digest(task) for task in ids}}
+            'selected_task_sha256': {task: digest(task) for task in ids},
+            'selected_prompt_sha256': {task: digest('prompt-' + task) for task in ids}}
 
 
 def row(task, state, candidates, status='complete'):
@@ -69,6 +70,9 @@ class PairedTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 score_paired(self.ids, [self.rows[0], dict(on, **{field: value})],
                              self.verifier, registration=registration(self.ids))
+        with self.assertRaises(ValueError):
+            score_paired(self.ids, [dict(self.rows[0], prompt_sha256='d' * 64)],
+                         self.verifier, registration=registration(self.ids))
         with self.assertRaises(ValueError):
             score_paired(self.ids, [dict(self.rows[0], adapter_sha256='c' * 64)],
                          self.verifier, registration=registration(self.ids))

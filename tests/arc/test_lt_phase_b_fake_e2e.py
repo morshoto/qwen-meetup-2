@@ -62,7 +62,8 @@ class FakeEndToEnd(unittest.TestCase):
             paired = [dict(r, adapter_state=s, adapter_sha256='d' * 64 if s == 'on' else None)
                       for r in rows for s in ('off', 'on')]
             registration = {'run_sha256': 'c' * 64, 'source_code_sha256': 'a' * 64,
-                            'adapter_sha256': 'd' * 64, 'selected_task_sha256': receipt['selected_task_sha256']}
+                            'adapter_sha256': 'd' * 64, 'selected_task_sha256': receipt['selected_task_sha256'],
+                            'selected_prompt_sha256': {x: digest({'instruction': PROMPT, 'task': tasks[x].prompt_data()}) for x in ids}}
             score = score_paired(ids, paired, verifier, registration=registration)
             self.assertEqual(score['paired']['pass_at_1']['unchanged_right'], 3)
             self.assertEqual(score['identical_candidates'], {'off': 3, 'on': 3})
