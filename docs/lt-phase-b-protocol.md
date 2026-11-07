@@ -183,3 +183,7 @@ Reconstruct the dataset directly from a fully replayed collection journal and th
 ### Private SFT preparation
 
 Use a separately frozen data descriptor binding the collection and training-solutions file identity to reconstruct the private eligibility journal from completed collection records. Verify selected training answers offline, then materialize only independently verified examples with the native tokenizer and masking audit. Persist the eligibility journal owner-only, retain all rejection reasons, and record zero yield without creating synthetic training examples. Existing or partial artifacts require reconciliation.
+
+### Real-training operator commands
+
+Expose the existing one-shot real-training and real-adapter reload dispatchers through command-line entry points with explicit registered hashes and local paths. Commands must pass the paths to the dispatchers without printing private data; dispatcher preflight, locks, resource checks and reconciliation behavior remain authoritative.
