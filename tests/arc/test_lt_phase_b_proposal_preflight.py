@@ -22,6 +22,7 @@ class ProposalTests(unittest.TestCase):
             official = archive.read('arc-agi_evaluation_challenges.json')
         result = build_proposal(ROOT, challenges, official)
         self.assertEqual(result, json.loads((ROOT / 'configs/lt.phase-b.comparison-proposal.json').read_bytes()))
+        self.assertIn('proposal_code', result['source_hashes'])
         with self.assertRaises(ValueError):
             build_proposal(ROOT, challenges, b'{}')
 
