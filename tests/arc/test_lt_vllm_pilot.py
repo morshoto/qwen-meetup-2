@@ -111,3 +111,29 @@ class PilotTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, 'C compiler'):
                     run(root / 'run')
                 self.assertFalse((root / 'run/single').exists())
+
+    def test_max_tasks_limits_pilot_and_rejects_invalid_values(self):
+        from src.cli.lt_vllm_pilot import run
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            seen = []
+            def worker(argv, timeout, on_start):
+                task = argv[argv.index('--task') + 1]
+                seen.append(task)
+                on_start(123)
+                Path(argv[argv.index('--output') + 1]).write_text(json.dumps({
+                    'task_id': task, 'model': 'single', 'status': 'complete', 'candidates': [None, None]}))
+                return {'status': 'complete', 'leader_reaped': True, 'group_absent': True, 'returncode': 0}
+            with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']), \
+                 patch('src.cli.lt_vllm_pilot.development_manifest_sha', return_value='a' * 64), \
+                 patch('src.cli.lt_vllm_pilot.check_h100'), \
+                 patch('src.cli.lt_vllm_pilot.verify_model', return_value=Path('/model')), \
+                 patch('src.cli.lt_vllm_pilot.importlib.metadata.version', return_value='0.33.0'), \
+                 patch('src.cli.lt_vllm_pilot.run_worker', side_effect=worker):
+                for invalid in (0, 4, True):
+                    with self.subTest(value=invalid), self.assertRaises(ValueError):
+                        run(root / 'run', max_tasks=invalid)
+                self.assertEqual(run(root / 'run', max_tasks=1), 1)
+            self.assertEqual(seen, ['dev'])
+            self.assertFalse((root / 'run/single/dev2.started.json').exists())
