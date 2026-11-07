@@ -59,7 +59,7 @@ class RegisteredTrainingTests(unittest.TestCase):
         self.assertEqual(result['training_sha256'], _digest(self.spec))
         self.assertFalse(result['training_verified'])
         self.assertFalse(result['promotion_allowed'])
-        self.mock['review_reload_attempt'].assert_called_once()
+        self.assertEqual(self.mock['review_reload_attempt'].call_count, 2)
         self.mock['run_real_instrumented_cli'].assert_called_once()
         for name in ('verify_runtime_identity', 'verify_environment', 'verify_model_manifest', 'verify_source_tree'):
             self.assertEqual(self.mock[name].call_count, 2)
