@@ -234,3 +234,16 @@ hashes for each complete pair. Failed rows may carry no candidates and remain
 unpaired; they cannot contribute a pass. These checks bind locally recorded
 claims to one another; verifying the registration and the loaded runtime is a
 separate prerequisite for real evaluation.
+
+### Registered collection worker plan
+
+Connect the public-only handoff to the real Phase B backend through a dedicated
+worker. Before loading a model, require a canonical frozen collection descriptor,
+its expected digest, exactly 100 selected public task hashes, matching receipt,
+fixed Phase A inference settings, a bound local source inventory and the pinned
+MLX runtime versions. Verify the source inventory again after generation and
+write results exclusively through the existing journal file creator. Model files
+are checked by the backend. The descriptor and source inventory are local
+consistency claims: the parent still must validate the full allocation, exposure
+ledger and preregistration before dispatch. No descriptor is frozen by this PR
+until the allocation conflict is resolved.
