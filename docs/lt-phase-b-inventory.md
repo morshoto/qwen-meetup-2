@@ -409,3 +409,12 @@ The canary descriptor must also bind the separate reload sample's exact prompt,
 seed, token ceiling, temperature and thinking-off setting before training.
 Local reload observations remain unverified until the parent rechecks the
 training evidence and its own monitored reload process.
+
+### Reload parent review plan
+
+Recompute the retained training observation, log, tensor snapshots and adapter
+artifact before dispatching a new, bounded reload process. Bind that process to
+the frozen synthetic sample settings and record a separate one-shot start, PID,
+resource observation and result. Recheck the adapter and local identities after
+reload. Never convert a local sample into verified ARC improvement; incomplete,
+failed or interrupted reloads remain non-promotable and require reconciliation.
