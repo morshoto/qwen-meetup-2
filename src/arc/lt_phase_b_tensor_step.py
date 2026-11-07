@@ -1,7 +1,7 @@
-"""Persist before/after tensor observations around a supplied canary callback.
+"""Persist before/after tensor observations around a trainer callback.
 
-The caller must enforce the one-step trainer configuration, supervision, and
-model provenance. These observations do not establish a live training result.
+The caller must enforce trainer configuration, supervision, and model provenance.
+These observations do not establish a live training result.
 """
 import os
 import stat
@@ -11,7 +11,7 @@ from src.arc.lt_batch_journal import _create
 from src.arc.lt_phase_b_tensor_evidence import capture_tensor_state, compare_tensor_states
 
 
-def observe_one_step(model, *, output_dir, run_step, flatten, evaluate):
+def observe_training(model, *, output_dir, run_step, flatten, evaluate):
     path = Path(output_dir)
     if path.is_symlink() or not callable(run_step):
         raise ValueError('invalid canary output or callback')
@@ -27,3 +27,8 @@ def observe_one_step(model, *, output_dir, run_step, flatten, evaluate):
     result = compare_tensor_states(before, after)
     _create(path / 'tensor-evidence.json', result)
     return result
+
+
+def observe_one_step(model, *, output_dir, run_step, flatten, evaluate):
+    """Capture a canary callback; the caller enforces its one-step limit."""
+    return observe_training(model, output_dir=output_dir, run_step=run_step, flatten=flatten, evaluate=evaluate)
