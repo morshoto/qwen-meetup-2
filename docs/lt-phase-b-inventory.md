@@ -135,3 +135,12 @@ and Phase A frozen config file
 `469bae58cf5771e21aea3d22ecf37dc945c3c5a74792dda6a8cbe1d4cbb70820`.
 This does not resolve the five scheduled-slot overlaps or prove semantic
 independence. Re-run on the actual frozen manifests before use.
+
+### Bounded canary stream test plan
+
+Observe an already-owned child with the existing process resource monitor and
+loss parser. Capture a bounded raw log while parsing it; stop on non-finite or
+malformed loss, missing samples, timeout, or log overflow. A finite loss or a
+zero exit is only an observation: adapter changes, base identity, independent
+reload, and owned-process cleanup remain separate checks. Synthetic subprocess
+tests must not be reported as a model canary or proof of escaped-child cleanup.
