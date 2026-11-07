@@ -15,12 +15,13 @@ def main():
     for name in ('comparison', 'training', 'canary', 'collection'):
         parser.add_argument('--expected-' + name + '-sha256', required=True)
     parser.add_argument('--limit', type=int, required=True)
+    parser.add_argument('--score-only', action='store_true', help='Score completed journals without launching workers')
     args = parser.parse_args()
     result = run_comparison(source_root=ROOT, run_dir=args.run_dir,
         expected_comparison_sha256=args.expected_comparison_sha256, expected_training_sha256=args.expected_training_sha256,
         expected_canary_sha256=args.expected_canary_sha256, expected_collection_sha256=args.expected_collection_sha256,
         challenge_path=args.challenges, solution_path=args.solutions, official_archive=args.official_archive,
-        python_executable=args.python, model_path=args.model_path, limit=args.limit)
+        python_executable=args.python, model_path=args.model_path, limit=args.limit, score_only=args.score_only)
     print(json.dumps(result, sort_keys=True, allow_nan=False))
 
 

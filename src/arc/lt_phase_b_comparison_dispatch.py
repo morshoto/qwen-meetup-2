@@ -12,10 +12,12 @@ import stat
 import zipfile
 from pathlib import Path
 
+from src.arc.data import Verifier, validate_grid
 from src.arc.lt_attestation import _object
 from src.arc.lt_batch_journal import BatchJournal, _create
 from src.arc.lt_live_backend import PROMPT
-from src.arc.lt_phase_b_comparison_journal import compare_batch
+from src.arc.lt_phase_b_comparison_journal import compare_batch, _replay, validate_comparison_journals
+from src.arc.lt_phase_b_comparison_score import score_completed_comparison
 from src.arc.lt_phase_b_dispatch import _private_run_directory, _read_object
 from src.arc.lt_phase_b_registered_canary import validate_canary_identity
 from src.arc.lt_phase_b_registered_worker import _digest
@@ -23,6 +25,7 @@ from src.arc.lt_phase_b_real_reload_dispatch import review_real_reload_attempt
 from src.arc.lt_phase_b_training_preflight import preflight_training_data
 from src.arc.lt_phase_b_worker_supervisor import run_monitored_worker
 from src.arc.lt_public import build_public_export, load_public_export
+from src.arc.rsi_model_identity import _hash_file
 
 _BOOTSTRAP = ('import sys; sys.path.insert(0, sys.argv.pop(1)); '
               'from src.cli.lt_phase_b_comparison_worker import main; main()')
@@ -30,9 +33,9 @@ _BOOTSTRAP = ('import sys; sys.path.insert(0, sys.argv.pop(1)); '
 
 def run_comparison(*, source_root, run_dir, expected_comparison_sha256, expected_training_sha256,
                    expected_canary_sha256, expected_collection_sha256, challenge_path, solution_path,
-                   official_archive, python_executable, model_path, limit):
+                   official_archive, python_executable, model_path, limit, score_only=False):
     root, directory = _private_run_directory(source_root, run_dir)
-    if type(limit) is not int or not 0 < limit <= 100:
+    if type(limit) is not int or not 0 < limit <= 100 or type(score_only) is not bool:
         raise ValueError('invalid comparison batch size')
     lockfd = os.open(directory / 'run.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     try:
@@ -104,12 +107,16 @@ def run_comparison(*, source_root, run_dir, expected_comparison_sha256, expected
                         'adapter_sha256': comparison['adapter_sha256'], 'selected_task_sha256': tasks,
                         'selected_prompt_sha256': prompts}
         for state in ('off', 'on'):
-            if (directory / ('comparison-' + state)).is_symlink():
+            journal_dir = directory / ('comparison-' + state)
+            if journal_dir.is_symlink():
                 raise ValueError('comparison journal may not be symlinked')
+            if score_only and (not journal_dir.is_dir() or not (journal_dir / 'identity.json').is_file()):
+                raise ValueError('comparison journal is missing')
         journals = {state: BatchJournal(directory / ('comparison-' + state), sorted(tasks),
                                        expected_comparison_sha256 + ':14b:' + state) for state in ('off', 'on')}
         batches = directory / 'comparison-batches'
         if batches.is_symlink(): raise ValueError('comparison batch directory is a symlink')
+        if score_only and not batches.is_dir(): raise ValueError('comparison batches missing')
         batches.mkdir(mode=0o700, exist_ok=True)
         info = batches.stat(follow_symlinks=False)
         if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
@@ -126,6 +133,33 @@ def run_comparison(*, source_root, run_dir, expected_comparison_sha256, expected
             if (not start.exists() or not complete.exists() or _read_object(start) != marker or
                     _read_object(complete).get('marker') != marker):
                 raise ValueError('comparison batch requires reconciliation')
+        if score_only:
+            output = directory / 'comparison-score.json'
+            if output.exists() or output.is_symlink() or not indices:
+                raise ValueError('score exists or comparison has no completed batches')
+            final_batch = _read_object(batches / (f'{indices[-1]:08d}.complete.json')).get('result')
+            if (not isinstance(final_batch, dict) or final_batch.get('state') != 'on' or
+                    final_batch.get('stop_reason') != 'complete'):
+                raise ValueError('comparison batch sequence is incomplete')
+            validate_comparison_journals(off_journal=journals['off'], on_journal=journals['on'],
+                                         registration=registration, resource_limits=settings['resource_limits'])
+            for state in ('off', 'on'):
+                if _replay(journals[state], state, registration, settings['resource_limits']) is not None or journals[state].pending(1):
+                    raise ValueError('comparison journals are incomplete')
+            all_solutions = _object(solutions)
+            selected = {}
+            for task, public_task in public.items():
+                values = all_solutions.get(task)
+                if not isinstance(values, list) or len(values) != len(public_task.test_inputs):
+                    raise ValueError('comparison solution count differs')
+                selected[task] = [validate_grid(grid) for grid in values]
+            report = score_completed_comparison(off_journal=journals['off'], on_journal=journals['on'],
+                registration=registration, resource_limits=settings['resource_limits'], verifier=Verifier(selected))
+            if read_data() != (challenge, solutions, official) or read_registrations() != inputs or preflight() != data or replay() != previous:
+                raise ValueError('comparison inputs changed during scoring')
+            _create(output, report)
+            return {'status': report['status'], 'evaluation_verified': False, 'report_sha256': _hash_file(output),
+                    'selected_tasks': len(tasks), 'report_path': str(output)}
         index = len(indices)
         if index >= 100000000: raise ValueError('comparison batch sequence exhausted')
         marker = {'comparison_sha256': expected_comparison_sha256, 'index': index}
