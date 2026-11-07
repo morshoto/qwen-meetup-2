@@ -1,4 +1,5 @@
 """Synthetic offline integration; no real model or ARC protected data."""
+import hashlib
 import json
 import tempfile
 import unittest
@@ -35,6 +36,11 @@ class FakeEndToEnd(unittest.TestCase):
             for task_id in journal.pending(10):
                 journal.start(task_id)
                 result = execute_task(tasks[task_id], backend, '14b')
+                def digest(value):
+                    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+                result.update(run_sha256='c' * 64, source_code_sha256='a' * 64, adapter_state='off',
+                              public_task_sha256=digest(tasks[task_id].prompt_data()),
+                              prompt_sha256=digest({'instruction': PROMPT, 'task': tasks[task_id].prompt_data()}))
                 result['cleanup'] = {'leader_reaped': True, 'group_absent': True}
                 journal.finish(task_id, result)
             resumed = BatchJournal(Path(tmp), ids, 'fixture-identity')
@@ -43,7 +49,7 @@ class FakeEndToEnd(unittest.TestCase):
             output = build_dataset(tasks, rows, verifier, comparison_tasks={'x': Task('x', (([[0]], [[1]]),), ([[0]],))}, source={
                 'model_id': 'mlx-community/Qwen3-14B-4bit',
                 'model_revision': 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4',
-                'source_code_sha256': 'a' * 64, 'run_id': 'fixture'})
+                'source_code_sha256': 'a' * 64, 'run_sha256': 'c' * 64, 'run_id': 'fixture'})
             self.assertEqual(output['yield_status'], 'disjoint_split')
             self.assertEqual(output['eligible_task_count'], 3)
             self.assertEqual(output['train'][-1]['messages'][0]['content'], backend.prompt)

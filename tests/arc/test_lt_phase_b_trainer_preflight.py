@@ -23,10 +23,19 @@ class TrainerPreflightTests(unittest.TestCase):
         rows = [{'task_id': x, 'model': '14b', 'status': 'complete',
                  'candidates': [[[[1]]], [[[1]]]], 'calls': calls,
                  'cleanup': {'leader_reaped': True, 'group_absent': True}} for x in ids]
+        from src.arc.lt_live_backend import PROMPT
+        import hashlib
+        def digest(value):
+            return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        for row in rows:
+            task = tasks[row['task_id']]
+            row.update(run_sha256='c' * 64, source_code_sha256='a' * 64, adapter_state='off',
+                       public_task_sha256=digest(task.prompt_data()),
+                       prompt_sha256=digest({'instruction': PROMPT, 'task': task.prompt_data()}))
         output = build_dataset(tasks, rows, Verifier({x: [[[1]]] for x in ids}),
             comparison_tasks={'x': Task('x', (([[0]], [[1]]),), ([[0]],))}, source={'model_id': 'mlx-community/Qwen3-14B-4bit',
             'model_revision': 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4',
-            'source_code_sha256': 'a' * 64, 'run_id': 'synthetic'})
+            'source_code_sha256': 'a' * 64, 'run_sha256': 'c' * 64, 'run_id': 'synthetic'})
         messages = output['train'][0]['messages']
         with tempfile.TemporaryDirectory() as tmp:
             Path(tmp, 'train.jsonl').write_text(json.dumps({'messages': messages}) + '\n')

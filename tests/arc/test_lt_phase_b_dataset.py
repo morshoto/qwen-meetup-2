@@ -1,3 +1,4 @@
+import hashlib
 import json
 import unittest
 
@@ -11,12 +12,20 @@ def task(name):
     return Task(name, (([[value]], [[1]]),), ([[value]],))
 
 
+def digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
 def row(name, candidates):
+    prompt = {'instruction': PROMPT, 'task': task(name).prompt_data()}
     return {'task_id': name, 'model': '14b', 'status': 'complete', 'candidates': candidates,
             'calls': [{'candidate': i, 'raw': json.dumps(candidate),
                        'usage': {'completion_tokens': 2}, 'error': None if candidate else 'invalid'}
                       for i, candidate in enumerate(candidates)],
-            'cleanup': {'leader_reaped': True, 'group_absent': True}}
+            'cleanup': {'leader_reaped': True, 'group_absent': True},
+            'run_sha256': 'c' * 64, 'source_code_sha256': 'a' * 64,
+            'prompt_sha256': digest(prompt), 'public_task_sha256': digest(task(name).prompt_data()),
+            'adapter_state': 'off'}
 
 
 class DatasetTests(unittest.TestCase):
@@ -25,7 +34,7 @@ class DatasetTests(unittest.TestCase):
         self.verifier = Verifier({x: [[[1]]] for x in self.tasks})
         self.source = {'model_id': 'mlx-community/Qwen3-14B-4bit',
                        'model_revision': 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4',
-                       'source_code_sha256': 'a' * 64, 'run_id': 'fixture-run'}
+                       'source_code_sha256': 'a' * 64, 'run_sha256': 'c' * 64, 'run_id': 'fixture-run'}
         self.good, self.bad = [[[1]]], [[[0]]]
 
     def build(self, rows, **kw):
@@ -59,6 +68,14 @@ class DatasetTests(unittest.TestCase):
                            [row(x, [self.bad, None]) for x in ('b', 'c', 'd')])
         self.assertEqual(small['yield_status'], 'overfitting_only')
         self.assertEqual(small['valid'], [])
+
+    def test_success_requires_bound_run_source_prompt_task_and_base(self):
+        original = row('a', [self.good, self.bad])
+        for field, value in (('run_sha256', 'd' * 64), ('source_code_sha256', 'd' * 64),
+                             ('prompt_sha256', 'd' * 64), ('public_task_sha256', 'd' * 64),
+                             ('adapter_state', 'on')):
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                self.build([dict(original, **{field: value})])
 
     def test_success_must_match_recorded_raw_response(self):
         bad = row('a', [self.good, self.bad])
