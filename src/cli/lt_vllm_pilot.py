@@ -27,8 +27,15 @@ def development_ids():
     return json.loads((ROOT / 'configs/lt.phase-a.development.json').read_bytes())['task_ids']
 
 
+def development_manifest_sha():
+    value = json.loads((ROOT / 'configs/lt.phase-a.development.json').read_bytes())
+    return sha(canonical(value))
+
+
 def _manifest(export, receipt, model, version):
     tasks = load_development_export(export, receipt)
+    if receipt['development_manifest_sha256'] != development_manifest_sha():
+        raise ValueError('development manifest differs')
     ids = development_ids()
     if set(tasks) != set(ids) or len(ids) != 3:
         raise ValueError('development task set differs')
