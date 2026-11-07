@@ -26,6 +26,77 @@ _BOOTSTRAP = ('import sys; sys.path.insert(0, sys.argv.pop(1)); '
               'from src.cli.lt_phase_b_real_reload_worker import main; main()')
 
 
+def review_real_reload_attempt(directory, *, training, canary, expected_training_sha256,
+                               expected_canary_sha256, expected_collection_sha256, require_summary=True):
+    """Replay local reload evidence without promoting or attesting the adapter."""
+    directory = Path(directory)
+    if (not isinstance(training, dict) or not isinstance(canary, dict) or
+            _digest(training) != expected_training_sha256 or _digest(canary) != expected_canary_sha256 or
+            training.get('collection_sha256') != expected_collection_sha256 or
+            training.get('canary_sha256') != expected_canary_sha256 or
+            canary.get('collection_sha256') != expected_collection_sha256):
+        raise ValueError('reload descriptors differ')
+    started, process = (_read_object(directory / name) for name in
+                        ('real-reload-started.json', 'real-reload-process.json'))
+    if (started != {'training_sha256': expected_training_sha256, 'canary_sha256': expected_canary_sha256,
+                    'collection_sha256': expected_collection_sha256} or
+            set(process) != {'pid', 'training_sha256'} or type(process.get('pid')) is not int or
+            process['pid'] <= 0 or process.get('training_sha256') != expected_training_sha256):
+        raise ValueError('reload start identity differs')
+    training_review = review_real_training_attempt(directory, training=training, expected_training_sha256=expected_training_sha256)
+    synthetic = review_reload_attempt(directory, canary=canary, expected_canary_sha256=expected_canary_sha256,
+                                       expected_collection_sha256=expected_collection_sha256)
+    if (_read_object(directory / 'training-summary.json') != training_review or
+            training_review.get('status') != 'real_training_observed_reload_pending' or
+            training_review.get('training_verified') is not False or training_review.get('promotion_allowed') is not False or
+            synthetic.get('status') != 'canary_reload_observed_unverified' or
+            synthetic.get('reload_verified') is not False or synthetic.get('promotion_allowed') is not False):
+        raise ValueError('prior evidence differs')
+    previous = (training_review, synthetic)
+    observed = _read_object(directory / 'real-reload-observation.json')
+    if observed.get('status') != 'complete':
+        raise ValueError('reload observation incomplete')
+    monitor = observed.get('observation')
+    if not isinstance(monitor, dict): raise ValueError('reload monitoring unavailable')
+    elapsed = monitor.get('elapsed_seconds')
+    if (observed.get('leader_reaped') is not True or observed.get('group_absent') is not True or
+            monitor.get('stop_reason') != 'process_exited' or type(monitor.get('exit_code')) is not int or
+            monitor['exit_code'] != 0 or monitor.get('stream_complete') is not True or
+            monitor.get('post_reap_group_absent') is not True or type(elapsed) not in (int, float) or
+            not math.isfinite(elapsed) or not 0 <= elapsed <= canary['timeout_seconds'] or
+            training_resource_decision(observed.get('baseline'), monitor.get('samples'), limits=canary['resource_limits']) is not None or
+            monitor['samples'][-1]['monotonic_seconds'] - observed['baseline']['monotonic_seconds'] > canary['timeout_seconds']):
+        raise ValueError('real reload resource evidence differs')
+    result = _read_object(directory / 'real-reload-result.json')
+    usage, raw, reload_settings = result.get('usage'), result.get('sample_raw'), canary['reload_settings']
+    if (result.get('status') != 'real_reload_observed_unverified' or result.get('reload_verified') is not False or
+            result.get('promotion_allowed') is not False or result.get('training_sha256') != expected_training_sha256 or
+            result.get('collection_sha256') != expected_collection_sha256 or result.get('canary_sha256') != expected_canary_sha256 or
+            result.get('adapter_sha256') != previous[0]['adapter']['adapter_sha256'] or
+            result.get('sample_prompt_sha256') != reload_settings['sample_prompt_sha256'] or
+            not isinstance(raw, str) or not raw or len(raw.encode()) > 32768 or not isinstance(usage, dict) or
+            type(usage.get('prompt_tokens')) is not int or usage['prompt_tokens'] < 0 or
+            type(usage.get('completion_tokens')) is not int or not 0 < usage['completion_tokens'] <= reload_settings['max_tokens'] or
+            type(usage.get('peak_memory_gb')) not in (int, float) or not math.isfinite(usage['peak_memory_gb']) or
+            not 0 <= usage['peak_memory_gb'] <= 48 * 1024**3 / 1e9 or usage.get('finish_reason') not in ('stop', 'length')):
+        raise ValueError('real reload result differs')
+    try:
+        normalize_direct(raw, 1); valid = True
+    except ValueError:
+        valid = False
+    if result.get('sample_format_valid') is not valid:
+        raise ValueError('real reload format differs')
+    summary = {'status': 'real_adapter_reload_observed_unverified', 'reload_verified': False,
+               'promotion_allowed': False, 'training_sha256': expected_training_sha256,
+               'collection_sha256': expected_collection_sha256, 'canary_sha256': expected_canary_sha256,
+               'training': previous[0], 'reload': result}
+    saved = directory / 'real-reload-summary.json'
+    if (type(require_summary) is not bool or saved.is_symlink() or (require_summary and not saved.exists()) or
+            (saved.exists() and _read_object(saved) != summary)):
+        raise ValueError('saved real reload summary differs')
+    return summary
+
+
 def run_real_reload_dispatch(*, source_root, run_dir, expected_training_sha256, expected_canary_sha256,
                              expected_collection_sha256, challenge_path, solution_path, official_archive,
                              python_executable, model_path):
@@ -107,43 +178,12 @@ def run_real_reload_dispatch(*, source_root, run_dir, expected_training_sha256, 
         if observed.get('status') != 'complete':
             return {'status': 'real_reload_failed', 'reload_verified': False, 'promotion_allowed': False,
                     'reason': observed.get('reason') or observed.get('observation', {}).get('stop_reason')}
-        monitor = observed.get('observation')
-        if not isinstance(monitor, dict): raise ValueError('reload monitoring unavailable')
-        elapsed = monitor.get('elapsed_seconds')
-        if (observed.get('leader_reaped') is not True or observed.get('group_absent') is not True or
-                monitor.get('stop_reason') != 'process_exited' or type(monitor.get('exit_code')) is not int or
-                monitor['exit_code'] != 0 or monitor.get('stream_complete') is not True or
-                monitor.get('post_reap_group_absent') is not True or type(elapsed) not in (int, float) or
-                not math.isfinite(elapsed) or not 0 <= elapsed <= canary['timeout_seconds'] or
-                training_resource_decision(observed.get('baseline'), monitor.get('samples'), limits=canary['resource_limits']) is not None or
-                monitor['samples'][-1]['monotonic_seconds'] - observed['baseline']['monotonic_seconds'] > canary['timeout_seconds']):
-            raise ValueError('real reload resource evidence differs')
-        result = _read_object(directory / 'real-reload-result.json')
-        usage, raw, reload_settings = result.get('usage'), result.get('sample_raw'), canary['reload_settings']
-        if (result.get('status') != 'real_reload_observed_unverified' or result.get('reload_verified') is not False or
-                result.get('promotion_allowed') is not False or result.get('training_sha256') != expected_training_sha256 or
-                result.get('collection_sha256') != expected_collection_sha256 or result.get('canary_sha256') != expected_canary_sha256 or
-                result.get('adapter_sha256') != previous[0]['adapter']['adapter_sha256'] or
-                result.get('sample_prompt_sha256') != reload_settings['sample_prompt_sha256'] or
-                not isinstance(raw, str) or not raw or len(raw.encode()) > 32768 or not isinstance(usage, dict) or
-                type(usage.get('prompt_tokens')) is not int or usage['prompt_tokens'] < 0 or
-                type(usage.get('completion_tokens')) is not int or not 0 < usage['completion_tokens'] <= reload_settings['max_tokens'] or
-                type(usage.get('peak_memory_gb')) not in (int, float) or not math.isfinite(usage['peak_memory_gb']) or
-                not 0 <= usage['peak_memory_gb'] <= 48 * 1024**3 / 1e9 or usage.get('finish_reason') not in ('stop', 'length')):
-            raise ValueError('real reload result differs')
-        try:
-            normalize_direct(raw, 1); valid = True
-        except ValueError:
-            valid = False
-        if result.get('sample_format_valid') is not valid:
-            raise ValueError('real reload format differs')
         if (read_inputs() != (challenge, solutions, official) or preflight() != data or review() != previous or
                 _private_file(config_path) != training['config_sha256']):
             raise ValueError('real reload inputs changed')
-        summary = {'status': 'real_adapter_reload_observed_unverified', 'reload_verified': False,
-                   'promotion_allowed': False, 'training_sha256': expected_training_sha256,
-                   'collection_sha256': expected_collection_sha256, 'canary_sha256': expected_canary_sha256,
-                   'training': previous[0], 'reload': result}
+        summary = review_real_reload_attempt(directory, training=training, canary=canary,
+            expected_training_sha256=expected_training_sha256, expected_canary_sha256=expected_canary_sha256,
+            expected_collection_sha256=expected_collection_sha256, require_summary=False)
         _create(directory / 'real-reload-summary.json', summary)
         return summary
     finally:
