@@ -29,6 +29,7 @@ class PublicWorkerTests(unittest.TestCase):
             return 'synthetic tokenized prompt'
         backend.tokenizer = SimpleNamespace(apply_chat_template=template)
         backend.model = object()
+        backend.adapter_state, backend.adapter_sha256 = 'off', None
         backend.mx = SimpleNamespace(random=SimpleNamespace(seed=lambda _: None))
         backend.seed, backend.max_tokens, backend.temperature = 20261111, 4096, .6
         backend.make_sampler = lambda **kwargs: kwargs
@@ -56,10 +57,22 @@ class PublicWorkerTests(unittest.TestCase):
         for prompt in self.prompts:
             self.assertEqual(set(json.loads(prompt)['task']['test'][0]), {'input'})
 
+    def test_mismatched_backend_state_fails_before_generation(self):
+        def mismatched():
+            backend = self.factory()
+            backend.adapter_state, backend.adapter_sha256 = 'on', 'd' * 64
+            return backend
+        with self.assertRaises(ValueError): self.execute(backend_factory=mismatched)
+        self.assertEqual(self.prompts, [])
+        with self.assertRaises(ValueError):
+            self.execute(adapter_state='on', expected_adapter_sha256='e' * 64, backend_factory=mismatched)
+        self.assertEqual(self.prompts, [])
+
     def test_invalid_handoff_fails_before_model_load(self):
         leaked = {'comparison_sha256': 'a' * 64, 'tasks': {'t': {**self.task, 'test': [{'input': [[2]], 'output': [[1]]}]}}}
         for kwargs in ({'export': leaked}, {'expected_run_sha256': 'c' * 64},
-                       {'task_id': 'absent'}, {'source_code_sha256': 'bad'}, {'adapter_state': 'other'}):
+                       {'task_id': 'absent'}, {'source_code_sha256': 'bad'}, {'adapter_state': 'other'},
+                       {'adapter_state': 'on'}, {'adapter_state': 'off', 'expected_adapter_sha256': 'd' * 64}):
             with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
                 self.execute(**kwargs)
         self.assertEqual(self.created, [])

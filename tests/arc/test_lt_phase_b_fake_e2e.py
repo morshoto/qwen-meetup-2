@@ -15,6 +15,8 @@ from src.arc.lt_public import build_public_export
 
 
 class FakeBackend:
+    adapter_state, adapter_sha256 = 'off', None
+
     def generate(self, prompt, *, kind, candidate):
         payload = json.loads(prompt)
         assert kind == 'direct'
