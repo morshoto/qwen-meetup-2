@@ -92,3 +92,15 @@ and a conservative two-sided 95% Hoeffding interval over paired per-task changes
 in [-1, 1]. The interval is conditional on independent task observations and
 is not evidence that the fixed, selected ARC tasks are a random population
 sample. Report no interval for an empty paired denominator.
+
+### Adapter backend test plan
+
+Keep Phase A's frozen backend unchanged and inherit its generation method for
+both adapter states. Before loading, require an exact local model manifest and,
+for adapter-on only, a caller-supplied digest and explicit rank-8, eight-layer
+adapter configuration. Check saved LoRA names, shapes, dtype, finite values,
+and equality to the loaded model tensors; recheck file identities after load.
+Missing or mismatched inputs, extra or missing tensors, and adapter arguments
+in the off state fail closed. Tests use synthetic loaders and tiny arrays only;
+real-model reload, inference, process teardown, and runtime attestation remain
+separate evidence that must be obtained later.
