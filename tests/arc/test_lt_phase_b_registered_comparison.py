@@ -86,6 +86,12 @@ class RegisteredComparisonTests(unittest.TestCase):
                 self.invoke(comparison_spec=spec, expected_comparison_sha256=_digest(spec))
         self.assertEqual(self.loads, [])
 
+    def test_changed_reload_after_generation_discards_result(self):
+        prior = self.mock['review_real_reload_attempt'].return_value
+        self.mock['review_real_reload_attempt'].side_effect = [prior, {**prior, 'reload_verified': True}]
+        with self.assertRaises(ValueError): self.invoke('on')
+        self.assertEqual(len(self.loads), 1)
+
     def test_reload_tampering_or_bad_state_never_loads(self):
         self.mock['review_real_reload_attempt'].side_effect = ValueError('changed')
         with self.assertRaises(ValueError): self.invoke('on')
