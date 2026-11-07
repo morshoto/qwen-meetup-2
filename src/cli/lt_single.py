@@ -80,8 +80,10 @@ def run(directory):
                 _create(journal.root / (task + '.process.json'),
                         {'task_id': task, 'identity': journal.identity, 'pid': pid})
             return run_worker(argv, timeout=manifest['task_timeout_seconds'], on_start=record_process)
+        options = {'stop_on_failure': True} if manifest.get('backend', {}).get('name') == 'vllm' else {}
         return supervised_batch(journal, 'single', manifest['batch_size'], worker,
-                                on_result=lambda task, status: print(json.dumps({'task_id': task, 'status': status}), flush=True))
+                                on_result=lambda task, status: print(json.dumps({'task_id': task, 'status': status}), flush=True),
+                                **options)
     finally:
         os.close(lockfd)
 
