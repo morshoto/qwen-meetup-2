@@ -28,7 +28,7 @@ class SFTPreflightTests(unittest.TestCase):
 
     def audit(self, dataset=None, tokenizer=None, dataset_factory=None):
         return audit_sft_dataset(dataset=self.dataset if dataset is None else dataset,
-            tasks=self.fixture.tasks, tokenizer=tokenizer or Tokenizer(), dataset_factory=dataset_factory or Dataset)
+            tasks=self.fixture.tasks, verifier=self.fixture.verifier, tokenizer=tokenizer or Tokenizer(), dataset_factory=dataset_factory or Dataset)
 
     def test_audits_exact_verified_examples_and_prefix(self):
         result = self.audit()
@@ -49,6 +49,14 @@ class SFTPreflightTests(unittest.TestCase):
         for factory in (TooLong, WrongMask, WrongPrefix):
             with self.subTest(factory=factory), self.assertRaises(ValueError):
                 self.audit(dataset_factory=factory)
+
+    def test_correctness_claim_is_rechecked_by_verifier(self):
+        changed = copy.deepcopy(self.dataset)
+        task_id = changed['split_task_ids']['train'][0]
+        record = next(x for x in changed['journal'] if x['task_id'] == task_id and x['verification_status'] == 'eligible')
+        record['prediction'] = [[[9]]]
+        changed['train'][0]['messages'][1]['content'] = '[[[9]]]'
+        with self.assertRaises(ValueError): self.audit(changed)
 
     def test_tampered_examples_splits_or_lineages_fail(self):
         changed = copy.deepcopy(self.dataset); changed['train'][0]['messages'][1]['content'] = '[[[9]]]'

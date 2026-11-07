@@ -106,7 +106,8 @@ class TrainerPreflightTests(unittest.TestCase):
         path = Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
         install_training_template_policy('off')
         tokenizer = load_tokenizer(path)
-        report = audit_sft_dataset(dataset=fixture.dataset, tasks=fixture.fixture.tasks, tokenizer=tokenizer,
+        report = audit_sft_dataset(dataset=fixture.dataset, tasks=fixture.fixture.tasks,
+            verifier=fixture.fixture.verifier, tokenizer=tokenizer,
             dataset_factory=lambda example, tok: ChatDataset([example], tok, mask_prompt=True))
         self.assertEqual((report['train_count'], report['valid_count']), (2, 1))
         self.assertGreater(report['maximum_tokens'], 0)
