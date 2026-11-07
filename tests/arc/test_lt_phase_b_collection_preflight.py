@@ -4,16 +4,16 @@ from unittest.mock import patch
 
 from src.arc.lt_public import build_public_export
 from src.arc.lt_phase_b_collection_preflight import preflight_collection
-from tests.arc.test_lt_phase_b_registered_worker import RegisteredWorkerTests, sha
+from tests.arc import test_lt_phase_b_registered_worker as fixture_module
 
 
 class CollectionPreflightTests(unittest.TestCase):
     def setUp(self):
-        self.fixture = RegisteredWorkerTests('test_frozen_public_worker_binds_identity_before_and_after')
+        self.fixture = fixture_module.RegisteredWorkerTests('test_frozen_public_worker_binds_identity_before_and_after')
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
         self.spec = self.fixture.spec
-        self.run_sha = sha(self.spec)
+        self.run_sha = fixture_module.sha(self.spec)
         self.receipt = {'comparison_sha256': self.run_sha, 'selected_task_sha256': self.fixture.hashes}
         self.export = build_public_export(self.fixture.challenges, self.receipt)
         self.challenges = json.dumps(self.fixture.challenges).encode()

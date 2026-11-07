@@ -30,8 +30,7 @@ def _valid_hash(value):
     return isinstance(value, str) and bool(re.fullmatch(r'[0-9a-f]{64}', value))
 
 
-def run_registered_task(*, spec, expected_run_sha256, source_inventory, source_root, model_path,
-                        export, receipt, allocation_receipt, task_id, backend_factory=PhaseBBackend):
+def validate_descriptor(*, spec, expected_run_sha256, source_inventory, receipt, allocation_receipt, task_id=None):
     keys = {'protocol', 'status', 'run_id', 'source_code_sha256', 'allocation_audit_sha256',
             'prompt_sha256', 'selected_task_sha256', 'model_manifest', 'settings'}
     if (not isinstance(spec, dict) or set(spec) != keys or spec.get('protocol') != 'lt-phase-b-collection-v1' or
@@ -44,15 +43,14 @@ def run_registered_task(*, spec, expected_run_sha256, source_inventory, source_r
             not isinstance(allocation_receipt, dict) or
             _digest(allocation_receipt) != spec['allocation_audit_sha256'] or
             allocation_receipt.get('status') != 'allocation_consistent_unverified' or
-            allocation_receipt.get('execution_ready') is not False or
-            not callable(backend_factory)):
+            allocation_receipt.get('execution_ready') is not False):
         raise ValueError('invalid collection descriptor or source identity')
     settings, tasks, model = spec['settings'], spec['selected_task_sha256'], spec['model_manifest']
     if (not isinstance(settings, dict) or settings != _SETTINGS or
             any(type(settings[key]) is not type(value) for key, value in _SETTINGS.items()) or
             not isinstance(tasks, dict) or len(tasks) != 100 or
             any(not isinstance(key, str) or not re.fullmatch(r'[0-9a-f]{8}', key) or not _valid_hash(value)
-                for key, value in tasks.items()) or task_id not in tasks or
+                for key, value in tasks.items()) or (task_id is not None and task_id not in tasks) or
             allocation_receipt.get('training_task_sha256') != tasks or
             not isinstance(allocation_receipt.get('comparison_task_sha256'), dict) or
             len(allocation_receipt['comparison_task_sha256']) != 50 or
@@ -66,6 +64,15 @@ def run_registered_task(*, spec, expected_run_sha256, source_inventory, source_r
                                             for k, v in model['files_sha256'].items()) or
             receipt != {'comparison_sha256': expected_run_sha256, 'selected_task_sha256': tasks}):
         raise ValueError('registered settings or tasks differ')
+    return settings, model
+
+
+def run_registered_task(*, spec, expected_run_sha256, source_inventory, source_root, model_path,
+                        export, receipt, allocation_receipt, task_id, backend_factory=PhaseBBackend):
+    settings, model = validate_descriptor(spec=spec, expected_run_sha256=expected_run_sha256,
+        source_inventory=source_inventory, receipt=receipt, allocation_receipt=allocation_receipt, task_id=task_id)
+    if not callable(backend_factory):
+        raise ValueError('backend factory required')
     if (importlib.metadata.version('mlx-lm') != settings['mlx_lm_version'] or
             importlib.metadata.version('mlx') != settings['mlx_version']):
         raise ValueError('runtime version differs')
