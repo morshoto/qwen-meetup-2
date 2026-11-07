@@ -127,3 +127,7 @@ Before using a completed canary reload as input to a later training gate, replay
 ### Supervised training completion
 
 The supervised worker must distinguish the synthetic one-step canary from the registered 20-step real-data configuration. Preserve the one-step default; for a real-data run, require an explicit 20-step expectation and accept completion only when its retained finite loss stream ends at step 20. Both modes keep the existing 300-second worker ceiling and resource stop rules until a different limit is separately implemented and preregistered. This monitor setting does not itself authorize a run or prove the trainer executed the claimed steps.
+
+### Registered real-training worker preparation
+
+Bind a proposed frozen real-training descriptor to the collection, source inventory, canary descriptor and replayed canary reload, private SFT manifest, exact trainer configuration, selected training task IDs, and existing resource settings. The worker must verify runtime, environment, source and 14B model identity on both sides of the instrumented trainer callback. This descriptor-level consistency check is not authorization: the supervising dispatcher must independently replay the complete collection and offline eligibility evidence, enforce resource and time limits, and preserve one-shot failure records before launching the worker.
