@@ -342,3 +342,12 @@ private directory and restore the trainer hook even on failure. The parent must
 still register and verify the model, runtime, source, resource limits, saved
 adapter and independent reload before treating a canary as completed. Tests use
 synthetic model arrays and a fake trainer; they do not execute the 14B model.
+
+### Tiny trainer integration plan
+
+Exercise the instrumented CLI with the installed MLX-LM trainer and a freshly
+constructed small Qwen3-shaped model, synthetic chat data, and the local
+pinned tokenizer. Patch only the model loader and fixture tensor shapes; do not
+load the 14B weights. Confirm one finite reported step, unchanged base hashes,
+changed adapter tensors, saved adapter files, and restored hooks. This is an
+integration fixture, not the required 14B canary or evidence of ARC performance.
