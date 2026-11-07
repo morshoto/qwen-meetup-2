@@ -114,3 +114,13 @@ with any worker failures is `collection_failed`, not a zero-yield result; a
 partially attempted collection remains incomplete. Neither status produces
 training or validation examples. Do not retry an interrupted journal entry
 without the existing recovery/reconciliation checks.
+
+### Visible-content split check
+
+Before dataset creation, compare both task IDs and canonical visible task
+content across the full training and comparison manifests, including tasks that
+produced no eligible candidate. Detect exact repeated examples even if train or
+test pair order differs; reject repeated content within either manifest as well
+as across them. This is not a semantic ancestry audit or proof that differently
+encoded but related tasks are independent, so the exposure ledger must retain
+that uncertainty.
