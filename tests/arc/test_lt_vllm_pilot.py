@@ -18,7 +18,8 @@ class PilotTests(unittest.TestCase):
         export = {'development_manifest_sha256': identity, 'tasks': tasks}
         model = {'model_id': 'Qwen/Qwen3.8-27B', 'revision': 'b' * 40,
                  'files_sha256': {'file': 'c' * 64}, 'chat_template_sha256': 'd' * 64}
-        with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']):
+        with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']), \
+             patch('src.cli.lt_vllm_pilot.development_manifest_sha', return_value='a' * 64):
             prepare(root / 'run', export, receipt, model, '0.33.0')
         return model
 
@@ -36,10 +37,21 @@ class PilotTests(unittest.TestCase):
             self.assertEqual(set(export['tasks']), {'dev', 'dev2', 'dev3'})
             self.assertNotIn('output', export['tasks']['dev']['test'][0])
             receipt = json.loads((root / 'run/receipt.json').read_text())
-            with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['other']):
+            with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['other']), \
+                 patch('src.cli.lt_vllm_pilot.development_manifest_sha', return_value='a' * 64):
                 with self.assertRaises(ValueError):
                     prepare(root / 'other', {'development_manifest_sha256': receipt['comparison_sha256'], 'tasks': export['tasks']},
                             {'development_manifest_sha256': receipt['comparison_sha256'], 'selected_task_sha256': receipt['selected_task_sha256'], 'purpose':'development_only', 'execution_ready':False}, model, '0.33.0')
+
+    def test_rejects_wrong_development_manifest_identity(self):
+        from src.cli.lt_vllm_pilot import run
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']), \
+                 patch('src.cli.lt_vllm_pilot.development_manifest_sha', return_value='e' * 64):
+                with self.assertRaisesRegex(ValueError, 'development manifest'):
+                    run(root / 'run')
 
     def test_supervised_failure_stops_before_next_task_and_keeps_evidence(self):
         from src.cli.lt_vllm_pilot import run
@@ -51,6 +63,7 @@ class PilotTests(unittest.TestCase):
                 return {'status': 'error', 'leader_reaped': True, 'group_absent': True,
                         'elapsed_seconds': 2, 'returncode': 1, 'stderr': 'failed'}
             with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']), \
+                 patch('src.cli.lt_vllm_pilot.development_manifest_sha', return_value='a' * 64), \
                  patch('src.cli.lt_vllm_pilot.verify_model', return_value=Path('/model')), \
                  patch('src.cli.lt_vllm_pilot.importlib.metadata.version', return_value='0.33.0'), \
                  patch('src.cli.lt_vllm_pilot.run_worker', side_effect=worker):
