@@ -113,6 +113,17 @@ class TrainingDispatchTests(unittest.TestCase):
         self.mock['worker'].assert_not_called()
         self.assertFalse((self.fixture.run / 'training-started.json').exists())
 
+    def test_missing_intermediate_loss_cannot_be_accepted(self):
+        self.invoke()
+        path = self.fixture.run / 'training-observation.json'
+        data = json.loads(path.read_text())
+        log = data['observation']['log'].replace('Iter 10: Train loss 0.125, x\n', '')
+        data['observation']['log'] = log
+        data['observation']['log_sha256'] = hashlib.sha256(log.encode()).hexdigest()
+        path.write_text(json.dumps(data))
+        with self.assertRaises(ValueError):
+            review_real_training_attempt(self.fixture.run, training=self.spec, expected_training_sha256=self.training_sha)
+
     def test_log_tampering_rejected(self):
         self.invoke()
         path = self.fixture.run / 'training-observation.json'

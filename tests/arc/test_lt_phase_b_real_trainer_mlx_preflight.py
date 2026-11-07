@@ -24,7 +24,7 @@ class TinyRealTrainerIntegration(unittest.TestCase):
         from src.arc.lt_phase_b_training_config import build_training_config
         from src.arc.lt_phase_b_training_trainer import run_real_instrumented_cli
         from src.arc.mlx_chat_template import install_training_template_policy
-        from src.arc.rsi_loss_watch import TrainingLossWatch
+        from src.arc.rsi_loss_watch import TrainingLossWatch, _REPORT
         from tests.arc import test_lt_phase_b_sft_preflight as fixtures
 
         mx.set_memory_limit(2 * 1024**3)
@@ -60,6 +60,8 @@ class TinyRealTrainerIntegration(unittest.TestCase):
             watch = TrainingLossWatch(); watch.feed(output.getvalue().encode()); watch.finish()
             self.assertEqual(watch.snapshot()['status'], 'ok')
             self.assertEqual(watch.snapshot()['last_step'], 20)
+            reports = [int(match.group(1)) for line in output.getvalue().splitlines() if (match := _REPORT.match(line))]
+            self.assertEqual(reports, list(range(1, 21)))
             self.assertGreater(result['changed_adapter_tensor_count'], 0)
             self.assertFalse(result['training_verified'])
             self.assertTrue((run / 'gen1-adapter/adapters.safetensors').exists())
