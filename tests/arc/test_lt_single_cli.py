@@ -116,3 +116,23 @@ class SingleRunnerTests(unittest.TestCase):
                 prepare(dest, config)
                 self.assertEqual(run(dest), 1)
                 self.assertFalse((dest / 'single/b.started.json').exists())
+
+    def test_vllm_version_is_checked_before_journal_creation(self):
+        task = {'train': [{'input': [[1]], 'output': [[1]]}], 'test': [{'input': [[2]]}]}
+        manifest = {'task_ids': ['a'], 'sha256': 'a' * 64, 'batch_size': 10,
+                    'task_timeout_seconds': 5, 'model': {'model_id': 'example/model'},
+                    'backend': {'name': 'vllm', 'version': '0.33.0'}}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'data/raw').mkdir(parents=True)
+            (root / 'data/raw/arc-agi_training_challenges.json').write_text(json.dumps({'a': task}))
+            config = root / 'config.json'
+            config.write_text('{}')
+            dest = root / 'run'
+            with patch('src.cli.lt_single.ROOT', root), patch('src.cli.lt_single.build', return_value=manifest), \
+                 patch('src.cli.lt_single.verify'), patch('src.cli.lt_single.verify_model', return_value=Path('/model')), \
+                 patch('src.cli.lt_single.importlib.metadata.version', return_value='0.32.0'):
+                prepare(dest, config)
+                with self.assertRaisesRegex(ValueError, 'runtime version'):
+                    run(dest)
+                self.assertFalse((dest / 'single').exists())
