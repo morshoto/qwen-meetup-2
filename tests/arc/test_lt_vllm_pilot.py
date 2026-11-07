@@ -11,14 +11,14 @@ from src.arc.lt_public import build_public_export
 class PilotTests(unittest.TestCase):
     def fixture(self, root):
         from src.cli.lt_vllm_pilot import prepare
-        tasks = {'dev': {'train': [{'input': [[1]], 'output': [[1]]}], 'test': [{'input': [[2]]}]}}
+        tasks = {name: {'train': [{'input': [[1]], 'output': [[1]]}], 'test': [{'input': [[2]]}]} for name in ('dev', 'dev2', 'dev3')}
         identity = 'a' * 64
-        receipt = {'development_manifest_sha256': identity, 'selected_task_sha256': {'dev': sha(canonical(tasks['dev']))},
+        receipt = {'development_manifest_sha256': identity, 'selected_task_sha256': {name: sha(canonical(task)) for name, task in tasks.items()},
                    'purpose': 'development_only', 'execution_ready': False}
         export = {'development_manifest_sha256': identity, 'tasks': tasks}
         model = {'model_id': 'Qwen/Qwen3.8-27B', 'revision': 'b' * 40,
                  'files_sha256': {'file': 'c' * 64}, 'chat_template_sha256': 'd' * 64}
-        with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev']):
+        with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']):
             prepare(root / 'run', export, receipt, model, '0.33.0')
         return model
 
@@ -28,12 +28,12 @@ class PilotTests(unittest.TestCase):
             root = Path(tmp)
             model = self.fixture(root)
             manifest = json.loads((root / 'run/manifest.json').read_text())
-            self.assertEqual(manifest['task_ids'], ['dev'])
+            self.assertEqual(manifest['task_ids'], ['dev', 'dev2', 'dev3'])
             self.assertEqual(manifest['purpose'], 'development_only')
             self.assertEqual(manifest['model'], model)
             self.assertEqual(manifest['backend_version'], '0.33.0')
             export = json.loads((root / 'run/export.json').read_text())
-            self.assertEqual(set(export['tasks']), {'dev'})
+            self.assertEqual(set(export['tasks']), {'dev', 'dev2', 'dev3'})
             self.assertNotIn('output', export['tasks']['dev']['test'][0])
             receipt = json.loads((root / 'run/receipt.json').read_text())
             with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['other']):
@@ -50,7 +50,7 @@ class PilotTests(unittest.TestCase):
                 on_start(123)
                 return {'status': 'error', 'leader_reaped': True, 'group_absent': True,
                         'elapsed_seconds': 2, 'returncode': 1, 'stderr': 'failed'}
-            with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev']), \
+            with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']), \
                  patch('src.cli.lt_vllm_pilot.verify_model', return_value=Path('/model')), \
                  patch('src.cli.lt_vllm_pilot.importlib.metadata.version', return_value='0.33.0'), \
                  patch('src.cli.lt_vllm_pilot.run_worker', side_effect=worker):
