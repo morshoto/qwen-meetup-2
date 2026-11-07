@@ -151,3 +151,7 @@ A separate supervised worker must replay the retained real-training and syntheti
 ### Real-adapter reload supervision
 
 Replay the registered data, synthetic canary and completed training evidence before starting one isolated reload child. Record its PID, resource samples, owned-process termination and output in private files. Verify the sample identity, adapter hash, token and memory bounds, recheck the inputs and previous evidence, and retain a non-promoting local reload summary. Reject altered or interrupted attempts and require reconciliation rather than automatic retries.
+
+### Comparison reload evidence handoff
+
+Before a matched comparison uses a real adapter, replay the saved real-reload start and process markers, monitored output and sample, prior training and canary evidence, and the saved summary. Reject missing or altered records. This handoff only reports local consistency; it does not promote the adapter or establish independent cleanup or evaluation validity.
