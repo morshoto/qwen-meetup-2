@@ -147,3 +147,7 @@ Under the private run lock, replay the registered collection and dataset, valida
 ### Real-data adapter reload worker
 
 A separate supervised worker must replay the retained real-training and synthetic-canary evidence, bind the registered model and adapter hashes, load the real-data adapter into the same 14B backend, and perform the fixed synthetic unscored reload sample. Recheck source, model, adapter and training evidence after the sample. Record local reload observations without treating them as ARC evaluation, independent attestation, or permission to promote Gen 1.
+
+### Real-adapter reload supervision
+
+Replay the registered data, synthetic canary and completed training evidence before starting one isolated reload child. Record its PID, resource samples, owned-process termination and output in private files. Verify the sample identity, adapter hash, token and memory bounds, recheck the inputs and previous evidence, and retain a non-promoting local reload summary. Reject altered or interrupted attempts and require reconciliation rather than automatic retries.
