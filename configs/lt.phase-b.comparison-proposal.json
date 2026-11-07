@@ -26,7 +26,7 @@
   ],
   "selection_rule": "first 50 by sha256(lt-phase-b-comparison-20261112 NUL task_id)",
   "source_hashes": {
-    "content_check_code": "c21a786355a43d0c94f028694353791beda8031a308f42f2c62d8fd082090598",
+    "content_check_code": "037eb44183adda8fd46e2a55a3555d16b751778a4b16e4c4ac606b5774dfd42d",
     "development": "495b4b3c8ea5d60772d747fed93835f29e8d2d2edc91a604606f842429338c58",
     "official_evaluation_challenges": "e7c62a4bd211867c6b538f66b8013b81f299663c82ca062f49a52bf439d6e4e8",
     "phase_a": "469bae58cf5771e21aea3d22ecf37dc945c3c5a74792dda6a8cbe1d4cbb70820",

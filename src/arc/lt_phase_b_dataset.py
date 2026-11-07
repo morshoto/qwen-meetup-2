@@ -83,7 +83,8 @@ def build_dataset(tasks, rows, verifier, *, source, comparison_tasks):
         if row['status'] == 'complete' and (row.get('run_sha256') != source['run_sha256'] or
                 row.get('source_code_sha256') != source['source_code_sha256'] or
                 row.get('public_task_sha256') != task_sha or row.get('prompt_sha256') != prompt_sha or
-                row.get('adapter_state') != 'off'):
+                row.get('adapter_state') != 'off' or 'adapter_sha256' not in row or
+                row['adapter_sha256'] is not None):
             raise ValueError('successful worker identity differs')
         if row['status'] != 'complete':
             failed += 1

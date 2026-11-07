@@ -25,7 +25,7 @@ def row(name, candidates):
             'cleanup': {'leader_reaped': True, 'group_absent': True},
             'run_sha256': 'c' * 64, 'source_code_sha256': 'a' * 64,
             'prompt_sha256': digest(prompt), 'public_task_sha256': digest(task(name).prompt_data()),
-            'adapter_state': 'off'}
+            'adapter_state': 'off', 'adapter_sha256': None}
 
 
 class DatasetTests(unittest.TestCase):

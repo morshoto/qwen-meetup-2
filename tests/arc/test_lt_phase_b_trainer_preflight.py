@@ -29,7 +29,7 @@ class TrainerPreflightTests(unittest.TestCase):
             return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
         for row in rows:
             task = tasks[row['task_id']]
-            row.update(run_sha256='c' * 64, source_code_sha256='a' * 64, adapter_state='off',
+            row.update(run_sha256='c' * 64, source_code_sha256='a' * 64, adapter_state='off', adapter_sha256=None,
                        public_task_sha256=digest(task.prompt_data()),
                        prompt_sha256=digest({'instruction': PROMPT, 'task': task.prompt_data()}))
         output = build_dataset(tasks, rows, Verifier({x: [[[1]]] for x in ids}),
