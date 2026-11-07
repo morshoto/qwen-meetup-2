@@ -143,3 +143,7 @@ The frozen real-training descriptor must bind the exact ARC training-solutions f
 ### One-shot real-data dispatch
 
 Under the private run lock, replay the registered collection and dataset, validate the canary identity and reload evidence, and launch the registered trainer in a fresh isolated Python child with a 20-step monitored expectation. Persist start, PID, resource/loss observation and worker output without overwriting. Recompute the finite loss stream, tensor delta and saved adapter identity before recording an unverified, reload-pending summary. Preserve failed or interrupted attempts for reconciliation; never retry or promote automatically. Recheck the collection/data preflight after the child exits. This dispatcher does not by itself establish independent runtime attestation or escaped-descendant cleanup.
+
+### Real-data adapter reload worker
+
+A separate supervised worker must replay the retained real-training and synthetic-canary evidence, bind the registered model and adapter hashes, load the real-data adapter into the same 14B backend, and perform the fixed synthetic unscored reload sample. Recheck source, model, adapter and training evidence after the sample. Record local reload observations without treating them as ARC evaluation, independent attestation, or permission to promote Gen 1.
