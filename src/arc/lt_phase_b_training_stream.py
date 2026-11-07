@@ -3,6 +3,8 @@
 This wrapper does not launch a process, establish isolation, attest samples or
 prove a model update. It preserves the original RSI monitor and loss parser.
 """
+import base64
+import hashlib
 import io
 import os
 import select
@@ -69,8 +71,10 @@ def watch_phase_b_training(process, *, baseline, sampler, timeout_seconds, inter
     try:
         text = bytes(log).decode('utf-8')
     except UnicodeDecodeError:
-        text = bytes(log).decode('utf-8', 'replace')
+        text = None
         complete.clear()
-    result.update({'loss': watch.snapshot(), 'log': text, 'stream_complete': complete.is_set(),
+    result.update({'loss': watch.snapshot(), 'log': text,
+                   'log_base64': base64.b64encode(log).decode('ascii') if text is None else None,
+                   'log_sha256': hashlib.sha256(log).hexdigest(), 'stream_complete': complete.is_set(),
                    'training_verified': False})
     return result
