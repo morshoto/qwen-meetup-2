@@ -29,8 +29,8 @@ class CanaryTrainerTests(unittest.TestCase):
         self.config_sha = hashlib.sha256(self.config.read_bytes()).hexdigest()
         self.model = Model(); self.steps = 0; self.modes = []
         self.train_args = SimpleNamespace(iters=1, batch_size=1, max_seq_length=512,
-            steps_per_report=1, steps_per_save=1, grad_accumulation_steps=1,
-            adapter_file=self.adapter / 'adapters.safetensors')
+            steps_per_report=1, steps_per_save=1, grad_accumulation_steps=1, val_batches=0,
+            adapter_file=self.adapter.resolve() / 'adapters.safetensors')
         self.trainer = SimpleNamespace()
         def train(**kwargs):
             self.steps += 1
