@@ -367,3 +367,12 @@ after the instrumented CLI, with the MLX memory cap installed before model
 load. The parent must monitor loss and resources and retain cleanup and reload
 evidence. A caller-supplied descriptor marked frozen is a local consistency
 claim, not independent proof of preregistration or permission to run.
+
+### Canary supervision test plan
+
+Use the same owned-worker supervisor with the loss-aware bounded log reader for
+canary training. Require one finite reported training step as well as clean
+process exit, complete logs and an absent post-reap process group. Missing,
+malformed or non-finite loss must stop or reject the run. Synthetic child tests
+exercise this behavior; a successful monitor result does not by itself prove
+base immutability, adapter reload, escaped-descendant cleanup or improvement.
