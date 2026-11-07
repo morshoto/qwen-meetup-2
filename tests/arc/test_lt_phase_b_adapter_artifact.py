@@ -36,6 +36,11 @@ class AdapterArtifactTests(unittest.TestCase):
         self.assertFalse(result['reload_verified'])
         self.assertFalse(result['promotion_allowed'])
 
+    def test_rejects_nonfinite_adapter_values(self):
+        raw = self.weights.read_bytes()
+        self.weights.write_bytes(raw[:-4] + struct.pack('<f', float('nan')))
+        with self.assertRaises(ValueError): inspect_adapter_artifact(self.root)
+
     def test_rejects_missing_malformed_and_symlink_files(self):
         self.weights.write_bytes(b'bad')
         with self.assertRaises(ValueError): inspect_adapter_artifact(self.root)
