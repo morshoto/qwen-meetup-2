@@ -94,3 +94,25 @@ class SingleRunnerTests(unittest.TestCase):
             manifest = {'model': {'chat_template_sha256': hashlib.sha256(b'template').hexdigest()}}
             with patch('src.cli.lt_single.verify_phase_a_model', return_value=root):
                 self.assertEqual(verify_model(manifest), root)
+
+    def test_vllm_batch_stops_after_worker_error(self):
+        task = {'train': [{'input': [[1]], 'output': [[1]]}], 'test': [{'input': [[2]]}]}
+        manifest = {'task_ids': ['a', 'b'], 'sha256': 'a' * 64, 'batch_size': 10,
+                    'task_timeout_seconds': 5, 'model': {'model_id': 'example/model'},
+                    'backend': {'name': 'vllm', 'version': '0.33.0'}}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'data/raw').mkdir(parents=True)
+            (root / 'data/raw/arc-agi_training_challenges.json').write_text(json.dumps({'a': task, 'b': task}))
+            config = root / 'config.json'
+            config.write_text('{}')
+            dest = root / 'run'
+            def worker(argv, timeout, on_start):
+                on_start(123)
+                return {'leader_reaped': True, 'group_absent': True, 'status': 'error'}
+            with patch('src.cli.lt_single.ROOT', root), patch('src.cli.lt_single.build', return_value=manifest), \
+                 patch('src.cli.lt_single.verify'), patch('src.cli.lt_single.verify_model', return_value=Path('/model')), \
+                 patch('src.cli.lt_single.run_worker', side_effect=worker):
+                prepare(dest, config)
+                self.assertEqual(run(dest), 1)
+                self.assertFalse((dest / 'single/b.started.json').exists())
