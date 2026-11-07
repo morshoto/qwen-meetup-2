@@ -89,3 +89,10 @@ The current code and local evidence are summarized in the
 and model artifacts stay in private local `artifacts/lt-phase-b-<run-id>/`;
 the tracked report must disclose the actual outcome and any not-run reasons
 without publishing protected answers.
+
+Before any real-data trainer invocation, independently audit every emitted
+example against its verified journal entry, task ID and solution lineage. The
+native trainer's tokenized prompt offset must equal the thinking-off inference
+prefix, and every full example must fit the registered sequence ceiling. Hash
+the exact private JSONL bytes; a missing validation split, mismatched lineage,
+prefix, or truncated example must stop the run rather than be silently dropped.
