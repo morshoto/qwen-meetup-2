@@ -123,3 +123,7 @@ Before a supervised real-data attempt, bind the private SFT manifest and file ha
 ### Canary reload handoff
 
 Before using a completed canary reload as input to a later training gate, replay its retained start and process markers, supervised observation, sample output, training tensor evidence and saved adapter identity. Reject any changed or missing evidence, including a mismatched saved summary. This replay remains a local consistency check and does not establish independent attestation or escaped-process cleanup.
+
+### Supervised training completion
+
+The supervised worker must distinguish the synthetic one-step canary from the registered 20-step real-data configuration. Preserve the one-step default; for a real-data run, require an explicit 20-step expectation and accept completion only when its retained finite loss stream ends at step 20. Both modes keep the existing 300-second worker ceiling and resource stop rules until a different limit is separately implemented and preregistered. This monitor setting does not itself authorize a run or prove the trainer executed the claimed steps.
