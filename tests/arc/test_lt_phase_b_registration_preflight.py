@@ -19,7 +19,7 @@ class RegistrationPreflightTests(unittest.TestCase):
         pool = json.loads((root / 'configs/lt.phase-b.training-pool.json').read_text())
         with patch('src.arc.lt_phase_b_registration_proposal.snapshot_model_manifest') as model, \
              patch('src.arc.lt_phase_b_registration_proposal.snapshot_runtime_identity') as runtime:
-            with self.assertRaises(ValueError):
+            with self.assertRaisesRegex(ValueError, 'training task intersects exclusion'):
                 propose_collection_registration(source_root=root, challenge_bytes=challenge,
                     official_challenge_bytes=official, training_task_ids=pool, run_id='unfrozen-check',
                     python_executable='/unused', model_path='/unused')
