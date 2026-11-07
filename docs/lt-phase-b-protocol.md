@@ -175,3 +175,7 @@ Before exposing comparison answers to the offline scorer, verify that both state
 ### Offline scoring entry point
 
 Under the same private run lock, revalidate the frozen comparison inputs, prior training and reload evidence, and every completed batch marker. Require both journals to be complete and replay their records before selecting comparison answers from the registered solutions file. Write the paired per-task score and cost report once inside the private run directory; do not dispatch workers from the scoring path or include correct answers. Recheck inputs and evidence before persisting the report.
+
+### Collection-to-SFT preparation handoff
+
+Reconstruct the dataset directly from a fully replayed collection journal and the selected-task verifier before private SFT materialization. Keep reconstructed records and predictions private, preserve the zero-yield status without making synthetic substitutions, and require the existing tokenizer and independent-verification audit before creating training JSONL. The source, allocation and answer-file identities remain separate preflight requirements.
