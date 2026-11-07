@@ -30,8 +30,9 @@ def audit_sft_dataset(*, dataset, tasks, verifier, source, tokenizer, dataset_fa
             not isinstance(source.get('run_id'), str) or not source['run_id'] or
             not callable(getattr(tokenizer, 'apply_chat_template', None)) or not callable(dataset_factory) or
             dataset.get('yield_status') not in ('disjoint_split', 'overfitting_only') or
-            dataset.get('selected_task_count') != len(tasks) or dataset.get('attempted_task_count') != len(tasks) or
-            dataset.get('failed_task_count') != 0 or not isinstance(dataset.get('journal'), list)):
+            type(dataset.get('selected_task_count')) is not int or dataset['selected_task_count'] != len(tasks) or
+            type(dataset.get('attempted_task_count')) is not int or dataset['attempted_task_count'] != len(tasks) or
+            type(dataset.get('failed_task_count')) is not int or dataset['failed_task_count'] != 0 or not isinstance(dataset.get('journal'), list)):
         raise ValueError('dataset collection is incomplete or invalid')
     eligible = {}
     for record in dataset['journal']:
@@ -44,6 +45,8 @@ def audit_sft_dataset(*, dataset, tasks, verifier, source, tokenizer, dataset_fa
                 record.get('task_exact_match') is not True or type(record.get('candidate_index')) is not int or
                 record['candidate_index'] not in (0, 1) or not isinstance(lineage, str) or
                 not re.fullmatch(r'[0-9a-f]{64}', lineage) or lineage != _sha(_json({'task_id': task_id})) or
+                type(record.get('source_generation')) is not int or record['source_generation'] != 0 or
+                record.get('source_split') != 'phase_b_training_pool' or
                 record.get('source_model_id') != source['model_id'] or
                 record.get('source_model_revision') != source['model_revision'] or
                 record.get('source_code_sha256') != source['source_code_sha256'] or
@@ -53,7 +56,7 @@ def audit_sft_dataset(*, dataset, tasks, verifier, source, tokenizer, dataset_fa
             raise ValueError('invalid eligible task lineage')
         eligible[task_id] = record
     ids = sorted(eligible)
-    if dataset.get('eligible_task_count') != len(ids) or not ids:
+    if type(dataset.get('eligible_task_count')) is not int or dataset['eligible_task_count'] != len(ids) or not ids:
         raise ValueError('eligible task count differs')
     if len(ids) < 3:
         if dataset['yield_status'] != 'overfitting_only':
