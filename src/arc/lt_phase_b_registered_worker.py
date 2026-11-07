@@ -31,7 +31,7 @@ def _valid_hash(value):
 
 
 def run_registered_task(*, spec, expected_run_sha256, source_inventory, source_root, model_path,
-                        export, receipt, task_id, backend_factory=PhaseBBackend):
+                        export, receipt, allocation_receipt, task_id, backend_factory=PhaseBBackend):
     keys = {'protocol', 'status', 'run_id', 'source_code_sha256', 'allocation_audit_sha256',
             'prompt_sha256', 'selected_task_sha256', 'model_manifest', 'settings'}
     if (not isinstance(spec, dict) or set(spec) != keys or spec.get('protocol') != 'lt-phase-b-collection-v1' or
@@ -41,6 +41,10 @@ def run_registered_task(*, spec, expected_run_sha256, source_inventory, source_r
             not _valid_hash(spec.get('source_code_sha256')) or not _valid_hash(spec.get('allocation_audit_sha256')) or
             spec.get('prompt_sha256') != hashlib.sha256(PROMPT.encode()).hexdigest() or
             not isinstance(source_inventory, dict) or source_inventory.get('code_sha256') != spec['source_code_sha256'] or
+            not isinstance(allocation_receipt, dict) or
+            _digest(allocation_receipt) != spec['allocation_audit_sha256'] or
+            allocation_receipt.get('status') != 'allocation_consistent_unverified' or
+            allocation_receipt.get('execution_ready') is not False or
             not callable(backend_factory)):
         raise ValueError('invalid collection descriptor or source identity')
     settings, tasks, model = spec['settings'], spec['selected_task_sha256'], spec['model_manifest']
@@ -49,6 +53,12 @@ def run_registered_task(*, spec, expected_run_sha256, source_inventory, source_r
             not isinstance(tasks, dict) or len(tasks) != 100 or
             any(not isinstance(key, str) or not re.fullmatch(r'[0-9a-f]{8}', key) or not _valid_hash(value)
                 for key, value in tasks.items()) or task_id not in tasks or
+            allocation_receipt.get('training_task_sha256') != tasks or
+            not isinstance(allocation_receipt.get('comparison_task_sha256'), dict) or
+            len(allocation_receipt['comparison_task_sha256']) != 50 or
+            set(tasks) & set(allocation_receipt['comparison_task_sha256']) or
+            any(not isinstance(k, str) or not re.fullmatch(r'[0-9a-f]{8}', k) or not _valid_hash(v)
+                for k, v in allocation_receipt['comparison_task_sha256'].items()) or
             not isinstance(model, dict) or model.get('model_id') != _MODEL or model.get('revision') != _REVISION or
             model.get('quantization') != {'bits': 4, 'group_size': 64} or
             not _valid_hash(model.get('chat_template_sha256')) or not isinstance(model.get('files_sha256'), dict) or

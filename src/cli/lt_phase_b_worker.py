@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ('spec', 'inventory', 'export', 'receipt', 'output', 'model-path'):
+    for name in ('spec', 'inventory', 'export', 'receipt', 'allocation', 'output', 'model-path'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--task', required=True)
     parser.add_argument('--expected-run-sha256', required=True)
@@ -19,7 +19,8 @@ def main():
     result = run_registered_task(spec=_json_object(args.spec.read_bytes()),
         expected_run_sha256=args.expected_run_sha256, source_inventory=_json_object(args.inventory.read_bytes()),
         source_root=ROOT, model_path=args.model_path, export=_json_object(args.export.read_bytes()),
-        receipt=_json_object(args.receipt.read_bytes()), task_id=args.task)
+        receipt=_json_object(args.receipt.read_bytes()), allocation_receipt=_json_object(args.allocation.read_bytes()),
+        task_id=args.task)
     _create(args.output, result)
 
 
