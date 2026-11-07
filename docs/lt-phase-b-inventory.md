@@ -351,3 +351,19 @@ pinned tokenizer. Patch only the model loader and fixture tensor shapes; do not
 load the 14B weights. Confirm one finite reported step, unchanged base hashes,
 changed adapter tensors, saved adapter files, and restored hooks. This is an
 integration fixture, not the required 14B canary or evidence of ARC performance.
+
+A fresh-process fixture reloaded the tiny adapter into the same tiny model,
+compared every saved and loaded LoRA tensor, and produced finite sample logits.
+The base model in that test was synthetic. The required 14B canary still has
+not run, and its adapter must be reloaded and sampled in a separate supervised
+process if the full experiment is registered.
+
+### Registered canary worker plan
+
+Bind the synthetic canary descriptor to the frozen collection descriptor,
+allocation receipt, source tree, local runtime/environment, pinned model and
+exact canary config and dataset hashes. Revalidate those identities before and
+after the instrumented CLI, with the MLX memory cap installed before model
+load. The parent must monitor loss and resources and retain cleanup and reload
+evidence. A caller-supplied descriptor marked frozen is a local consistency
+claim, not independent proof of preregistration or permission to run.
