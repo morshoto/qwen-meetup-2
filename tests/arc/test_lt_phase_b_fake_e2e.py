@@ -10,7 +10,8 @@ from src.arc.lt_batch_journal import BatchJournal
 from src.arc.lt_live_backend import PROMPT
 from src.arc.lt_phase_b_dataset import build_dataset
 from src.arc.lt_phase_b_paired import score_paired
-from src.arc.lt_worker import execute_task
+from src.arc.lt_phase_b_public_worker import execute_public_worker
+from src.arc.lt_public import build_public_export
 
 
 class FakeBackend:
@@ -31,16 +32,19 @@ class FakeEndToEnd(unittest.TestCase):
         tasks = {x: Task(x, (([[ord(x) % 10]], [[1]]),), ([[ord(x) % 10]],)) for x in ids}
         verifier = Verifier({x: [[[1]]] for x in ids})
         backend = FakeBackend()
+        def digest(value):
+            return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        challenges = {task_id: task.prompt_data() for task_id, task in tasks.items()}
+        receipt = {'comparison_sha256': 'c' * 64,
+                   'selected_task_sha256': {task_id: digest(value) for task_id, value in challenges.items()}}
+        export = build_public_export(challenges, receipt)
         with tempfile.TemporaryDirectory() as tmp:
             journal = BatchJournal(Path(tmp), ids, 'fixture-identity')
             for task_id in journal.pending(10):
                 journal.start(task_id)
-                result = execute_task(tasks[task_id], backend, '14b')
-                def digest(value):
-                    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
-                result.update(run_sha256='c' * 64, source_code_sha256='a' * 64, adapter_state='off',
-                              public_task_sha256=digest(tasks[task_id].prompt_data()),
-                              prompt_sha256=digest({'instruction': PROMPT, 'task': tasks[task_id].prompt_data()}))
+                result = execute_public_worker(export=export, receipt=receipt, task_id=task_id,
+                    expected_run_sha256='c' * 64, source_code_sha256='a' * 64,
+                    adapter_state='off', backend_factory=lambda: backend)
                 result['cleanup'] = {'leader_reaped': True, 'group_absent': True}
                 journal.finish(task_id, result)
             resumed = BatchJournal(Path(tmp), ids, 'fixture-identity')
