@@ -159,3 +159,7 @@ Before a matched comparison uses a real adapter, replay the saved real-reload st
 ### Matched public comparison worker
 
 A frozen comparison descriptor must bind the distinct 50 public task identities, the existing direct-grid prompt and generation settings, source/runtime/model manifests, the real training and canary identities, and the saved real adapter hash. For each task, use the same descriptor and backend settings for adapter-off and adapter-on, changing only adapter state and its hash. The worker receives no evaluation answers. Its local checks and output are not independent attestation or scored evidence; a supervised journal and offline paired scorer remain necessary.
+
+### Matched comparison journal
+
+Keep separate private journals for adapter-off and adapter-on under one comparison identity. Finish all registered off-state tasks before starting on-state tasks, with one supervised worker at a time. Validate the public task, prompt, source, run and adapter identities before committing each completed row; retain timeouts and errors and stop rather than retry. Before resuming, replay existing start, process, resource, worker and result records and reject incomplete or changed evidence. The journal contains predictions but no held-out answers; scoring remains offline after collection.
