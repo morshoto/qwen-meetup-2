@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from src.arc.lt_batch_journal import _create
 from src.arc.lt_phase_b_canary_config import build_canary_config
+from src.arc.lt_phase_b_canary_sample import RELOAD_SETTINGS
 from src.arc.lt_phase_b_canary_dispatch import run_canary
 from src.arc.lt_phase_b_tensor_step import observe_one_step
 from tests.arc import test_lt_phase_b_dispatch as fixtures

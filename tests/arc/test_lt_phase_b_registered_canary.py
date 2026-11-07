@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.arc.lt_phase_b_canary_config import build_canary_config
+from src.arc.lt_phase_b_canary_sample import RELOAD_SETTINGS
 from src.arc.lt_phase_b_registered_canary import run_registered_canary
 from tests.arc import test_lt_phase_b_registered_worker as fixtures
 
@@ -32,7 +33,7 @@ class RegisteredCanaryTests(unittest.TestCase):
                        'model_manifest': self.collection['model_manifest'],
                        'config_sha256': hashlib.sha256(self.config.read_bytes()).hexdigest(),
                        'dataset_sha256': self.plan['dataset_sha256'], 'thinking_mode': 'off',
-                       'timeout_seconds': 300, 'resource_limits': self.collection['settings']['resource_limits']}
+                       'timeout_seconds': 300, 'reload_settings': dict(RELOAD_SETTINGS), 'resource_limits': self.collection['settings']['resource_limits']}
         for name in ('verify_source_tree', 'verify_runtime_identity', 'verify_environment', 'verify_model_manifest'):
             p = patch('src.arc.lt_phase_b_registered_canary.' + name)
             p.start(); self.addCleanup(p.stop)
