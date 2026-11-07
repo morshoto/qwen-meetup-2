@@ -28,6 +28,7 @@ class RegisteredTrainingTests(unittest.TestCase):
             'run_id': self.source['run_id'], 'collection_sha256': self.collection_sha,
             'canary_sha256': self.canary_sha, 'source_code_sha256': self.source['source_code_sha256'],
             'dataset_manifest_sha256': self.plan['dataset_manifest_sha256'], 'config_sha256': self.config_sha,
+            'solution_sha256': 'b' * 64,
             'yield_status': 'disjoint_split', 'checkpoint_policy': 'final_step_only',
             'timeout_seconds': 300, 'resource_limits': self.settings['resource_limits']}
         self.evidence = self.run / 'training-evidence'; self.evidence.mkdir(mode=0o700)
@@ -67,7 +68,7 @@ class RegisteredTrainingTests(unittest.TestCase):
     def test_invalid_descriptor_and_canary_fail_before_runtime(self):
         for changes in ({'status': 'draft'}, {'dataset_manifest_sha256': 'f' * 64},
                         {'config_sha256': 'f' * 64}, {'yield_status': 'overfitting_only'},
-                        {'timeout_seconds': 301}, {'canary_sha256': 'f' * 64}):
+                        {'timeout_seconds': 301}, {'solution_sha256': 'invalid'}, {'canary_sha256': 'f' * 64}):
             spec = {**self.spec, **changes}
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 self.invoke(training_spec=spec, expected_training_sha256=_digest(spec))
