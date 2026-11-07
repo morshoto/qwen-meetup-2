@@ -163,3 +163,7 @@ A frozen comparison descriptor must bind the distinct 50 public task identities,
 ### Matched comparison journal
 
 Keep separate private journals for adapter-off and adapter-on under one comparison identity. Finish all registered off-state tasks before starting on-state tasks, with one supervised worker at a time. Validate the public task, prompt, source, run and adapter identities before committing each completed row; retain timeouts and errors and stop rather than retry. Before resuming, replay existing start, process, resource, worker and result records and reject incomplete or changed evidence. The journal contains predictions but no held-out answers; scoring remains offline after collection.
+
+### Matched comparison dispatch
+
+Under the private run lock, verify the registered collection, training-data replay, canary, real-adapter reload and comparison descriptor. Reconstruct the comparison public export from the fixed challenge inventory and derive the per-task prompt hashes. Run at most the requested number of sequential, resource-monitored isolated children through the two comparison journals, with no solution data in their arguments. Recheck inputs and evidence after the batch; failed or interrupted work remains recorded for reconciliation. This dispatcher does not score results or establish independent attestation.
