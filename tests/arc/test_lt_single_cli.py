@@ -63,3 +63,15 @@ class SingleRunnerTests(unittest.TestCase):
                 self.assertEqual(run(dest), 1)
                 self.assertEqual(run(dest), 0)
                 self.assertEqual(json.loads((dest / 'single/a.result.json').read_text())['model'], 'single')
+
+    def test_model_verification_rejects_chat_template_mismatch(self):
+        import hashlib
+        from src.cli.lt_single import verify_model
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'tokenizer_config.json').write_text(json.dumps({'chat_template': 'template'}))
+            manifest = {'model': {'chat_template_sha256': hashlib.sha256(b'template').hexdigest()}}
+            with patch('src.cli.lt_single.verify_phase_a_model', return_value=root):
+                self.assertEqual(verify_model(manifest), root)
+                manifest['model']['chat_template_sha256'] = '0' * 64
+                with self.assertRaises(ValueError): verify_model(manifest)
