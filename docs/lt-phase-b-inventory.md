@@ -63,3 +63,14 @@ trainer settings and model template; report any unavoidable masking difference.
 5. Run relevant unit and fake end-to-end tests, document coverage and omissions,
    and deliver the result and an appropriately scoped PR. Official evaluation
    answers remain reserved for Phase C.
+
+### Paired scoring test plan
+
+Use the unchanged Phase A task scorer on recorded base and adapter rows, with
+one explicit adapter state per row. Reject unknown states, duplicate rows and
+unselected IDs. Report complete pairs separately for the first candidate and the
+two recorded attempts, including improvement, regression, both-right and
+both-wrong counts. Missing or failed rows are not ties. Preserve each state's
+candidate validity, usage and latency accounting from the existing scorer and
+report identical candidate pairs without inferring independent sampling. These
+checks do not establish that actual inference settings or adapter provenance match.
