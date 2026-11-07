@@ -80,6 +80,22 @@ class RealReloadDispatchTests(unittest.TestCase):
         self.assertTrue((self.fixture.fixture.run / 'real-reload-observation.json').exists())
         with self.assertRaises(ValueError): self.invoke()
 
+    def test_changed_configuration_fails_before_start(self):
+        self.fixture.config.write_text('{}')
+        with self.assertRaises(ValueError): self.invoke()
+        self.worker.assert_not_called()
+
+    def test_changed_inputs_after_reload_block_summary(self):
+        original = self.worker.side_effect
+        def change(*args, **kwargs):
+            result = original(*args, **kwargs)
+            self.fixture.solution.write_text('{"changed": true}')
+            return result
+        self.worker.side_effect = change
+        with self.assertRaises(ValueError): self.invoke()
+        self.assertFalse((self.fixture.fixture.run / 'real-reload-summary.json').exists())
+        with self.assertRaises(ValueError): self.invoke()
+
     def test_result_adapter_mismatch_rejected(self):
         original = self.worker.side_effect
         def change(*args, **kwargs):
