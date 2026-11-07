@@ -73,7 +73,7 @@ class DatasetTests(unittest.TestCase):
         original = row('a', [self.good, self.bad])
         for field, value in (('run_sha256', 'd' * 64), ('source_code_sha256', 'd' * 64),
                              ('prompt_sha256', 'd' * 64), ('public_task_sha256', 'd' * 64),
-                             ('adapter_state', 'on')):
+                             ('adapter_state', 'on'), ('adapter_sha256', 'e' * 64)):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 self.build([dict(original, **{field: value})])
 
