@@ -4,6 +4,8 @@ import unittest
 from unittest.mock import patch
 
 from src.arc.lt_phase_b_training_preflight import preflight_training_data
+from src.arc.lt_phase_b_collection_replay import reconstruct_collection_dataset
+from src.arc.lt_batch_journal import _create
 from src.arc.lt_phase_b_registered_worker import _digest
 from src.arc.lt_public import build_public_export
 from tests.arc import test_lt_phase_b_collection_replay as fixtures
@@ -41,6 +43,12 @@ class TrainingPreflightTests(unittest.TestCase):
             'collection_sha256': self.collection_sha, 'source_code_sha256': self.collection['source_code_sha256'],
             'solution_sha256': self.training['solution_sha256']}
         path = f.fixture.run / 'data-spec.json'; path.write_text(json.dumps(data_spec)); path.chmod(0o600)
+        dataset = reconstruct_collection_dataset(journal_dir=f.root, tasks=f.f.tasks,
+            comparison_tasks={'x': examples.task('x')}, verifier=f.f.verifier,
+            source=f.source, resource_limits=f.limits)
+        self.eligibility = f.fixture.run / 'eligibility.json'
+        _create(self.eligibility, {'data_sha256': _digest(data_spec),
+            'collection_sha256': self.collection_sha, 'records': dataset['journal']})
         patcher = patch('src.arc.lt_phase_b_training_preflight.require_preparation_receipt',
                         return_value={'status': 'private_sft_prepared_unverified'})
         self.preparation_receipt = patcher.start(); self.addCleanup(patcher.stop)
@@ -62,6 +70,19 @@ class TrainingPreflightTests(unittest.TestCase):
         self.assertFalse(result['training_allowed'])
         self.assertNotIn('answers', result)
         self.collection_preflight.assert_called_once()
+
+    def test_rejects_changed_retained_eligibility_even_with_receipt(self):
+        original = json.loads(self.eligibility.read_text())
+        for change in ('records', 'data_sha256', 'collection_sha256'):
+            altered = json.loads(json.dumps(original))
+            if change == 'records':
+                altered['records'][0]['verification_status'] = 'changed'
+            else:
+                altered[change] = 'f' * 64
+            self.eligibility.write_text(json.dumps(altered))
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.invoke()
+        self.eligibility.write_text(json.dumps(original))
 
     def test_changed_solution_or_descriptor_fails(self):
         with self.assertRaises(ValueError): self.invoke(solution_bytes=b'{}')

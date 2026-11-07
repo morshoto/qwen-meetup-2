@@ -1,6 +1,8 @@
 import json
+import hashlib
 import unittest
 
+from src.arc.lt_phase_b_sft_preflight import _json
 from src.arc.lt_batch_journal import BatchJournal, _create
 from src.arc.lt_phase_b_collection import collect_batch
 from src.arc.lt_phase_b_collection_replay import replay_collection_dataset, reconstruct_collection_dataset
@@ -46,6 +48,10 @@ class CollectionReplayTests(unittest.TestCase):
         self.assertEqual(result['eligible_tasks'], 3)
         self.assertFalse(result['training_allowed'])
         self.assertNotIn('journal', result)
+        dataset = reconstruct_collection_dataset(journal_dir=self.root, tasks=self.f.tasks,
+            comparison_tasks={'x': examples.task('x')}, verifier=self.f.verifier,
+            source=self.source, resource_limits=self.limits)
+        self.assertEqual(result['eligibility_sha256'], hashlib.sha256(_json(dataset['journal']).encode()).hexdigest())
 
     def test_reconstructs_private_dataset_before_materialization(self):
         result = reconstruct_collection_dataset(journal_dir=self.root, tasks=self.f.tasks,
