@@ -5,9 +5,10 @@ This checks identity disjointness, not semantic equivalence or historical exposu
 
 
 def audit_allocation(*, training, universe, phase_a, development, protected,
-                     exposed, official, expected_count=100):
+                     exposed, official, scheduled, expected_count=100):
     groups = {'phase_a': phase_a, 'development': development,
-              'protected': protected, 'exposed': exposed, 'official': official}
+              'protected': protected, 'exposed': exposed, 'official': official,
+              'scheduled': scheduled}
     if (type(expected_count) is not int or expected_count <= 0 or
             not isinstance(training, list) or len(training) != expected_count or
             any(not isinstance(x, str) or not x for x in training) or
