@@ -1,0 +1,146 @@
+{
+  "canary": {
+    "adapted_layers": 8,
+    "batch_size": 1,
+    "learning_rate": 0.0001,
+    "mask_prompt": true,
+    "max_sequence_length": 512,
+    "must_record": [
+      "finite_loss",
+      "base_unchanged",
+      "adapter_tensor_change",
+      "saved_adapter_hash",
+      "new_process_reload_and_inference",
+      "resource_observations",
+      "owned_process_cleanup"
+    ],
+    "optimizer_steps": 1,
+    "outcome": "not_run",
+    "promotion_allowed": false,
+    "purpose": "synthetic_technical_only",
+    "rank": 8,
+    "seed": 20261111,
+    "thinking": "off"
+  },
+  "data": {
+    "challenge_sha256": "779eaba89790ebad9af02514a7efc0aefaf2cf8236f046a31bbf8b9ec48f20f5",
+    "eligibility": "14B-generated direct-grid candidate, full task exact match by offline verifier, one task lineage",
+    "excluded": "Phase A, comparison, development, strict RSI reserved and scheduled IDs, known exposures, official evaluation IDs",
+    "exposure_limit": "Exact ID and visible-content checks only; historical exposure, pretraining exposure, and semantic ancestry remain unknown.",
+    "observed_eligible_task_count": null,
+    "private_artifacts": "training and validation JSONL, predictions, worker logs and answers remain local and are not uploaded",
+    "solution_sha256": "9f07a38bd25af5e83aa5bf85c5cb1a1fefdb30f6a755256fa65429e697ca97f9",
+    "training_pool_count": 100,
+    "training_pool_file": "configs/lt.phase-b.training-pool.json",
+    "training_pool_status": "conflict_unresolved"
+  },
+  "evaluation": {
+    "comparison_count": 50,
+    "comparison_proposal_file": "configs/lt.phase-b.comparison-proposal.json",
+    "comparison_status": "proposal_not_frozen",
+    "metrics": [
+      "pass_at_1",
+      "two_recorded_attempts",
+      "format_validity",
+      "paired_improvements_regressions_ties",
+      "tokens",
+      "latency",
+      "raw_counts",
+      "uncertainty"
+    ],
+    "official_public_evaluation": "reserved_for_phase_c",
+    "paired_policy": "same base, public tasks, prompt, parser, tokenizer, seed policy, budget and scorer; only adapter state differs",
+    "phase_a_200_if_reused": "exploratory_reused_holdout",
+    "status": "not_run",
+    "uncertainty": "95% Hoeffding interval conditional on independent paired task observations; fixed task selection is not a random population sample"
+  },
+  "execution_ready": false,
+  "inference": {
+    "agent": "Phase A direct-grid",
+    "candidate_count": 2,
+    "max_tokens_per_candidate": 4096,
+    "mlx_memory_limit_bytes": 51539607552,
+    "prompt_sha256": "cbd16f62f4a91f77d2b1343d225c22711fbf91b52da1e0aeea0ff9d33cd76165",
+    "seed_base": 20261111,
+    "seed_support": "unverified",
+    "task_timeout_seconds_proposed": 300,
+    "temperature": 0.6,
+    "thinking": "off"
+  },
+  "model": {
+    "chat_template_sha256": "87a2728cb8dc9fe424d624542f6060ec05a1d285ebbec578bb078900e33396b5",
+    "files_sha256": {
+      ".gitattributes": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930",
+      "README.md": "175eb7f573a18b441830c4791bb93b7789efaa2d44b4e214c015ed5ec02892bc",
+      "added_tokens.json": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680",
+      "config.json": "a54ec18ffe24f3c909e9556471dc156ed9b3b61b872008831c7cba9d4768b4a5",
+      "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "model-00001-of-00002.safetensors": "5795efcfc7c96fd273e600562e8b111bfcc427415de9001d0a07e70cd99cff19",
+      "model-00002-of-00002.safetensors": "2814562d654fe2d541fd4682804a0ccaa400e79701872c8e9f5998cf9481fdf8",
+      "model.safetensors.index.json": "eb522fa2269e4a958bf625765bccde4a0677895a09eed23cdd8d1760dfc0259c",
+      "special_tokens_map.json": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd",
+      "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "tokenizer_config.json": "253153d0738ceb4c668d2eff957714dd2bea0b56de772a9fdccd96cbf517e6a0",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    },
+    "model_id": "mlx-community/Qwen3-14B-4bit",
+    "quantization": {
+      "bits": 4,
+      "group_size": 64
+    },
+    "revision": "a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4"
+  },
+  "open_gates": [
+    "scheduled_generation_slot_overlap",
+    "freeze_training_and_comparison_manifests",
+    "source_runtime_and_model_reverification",
+    "complete_protocol_and_resource_registration",
+    "real_14b_canary_and_separate_reload"
+  ],
+  "protocol": "lt-phase-b-exploratory",
+  "registration": {
+    "actual_evaluation_manifest": "not_frozen",
+    "actual_training_settings": "not_frozen",
+    "allocation": "pending_conflict_resolution_and_receipt",
+    "model_files": "expected hashes inherited from Phase A; verify local files before freeze",
+    "protocol_hash": "pending",
+    "runtime_and_environment": "pending_reverification",
+    "source_closure": "pending"
+  },
+  "results": "No Phase B model collection, 14B canary, real adapter training or Gen0/Gen1 comparison has run.",
+  "separation": "Separate exploratory real-task self-training; strict issue #2 gates and historical seals are unchanged.",
+  "status": "draft_not_frozen",
+  "training": {
+    "adapted_layers": 8,
+    "batch_size": 1,
+    "implementation_status": "real_training_runner_and_full_preflight_not_complete",
+    "learning_rate": 0.0001,
+    "mask_prompt": true,
+    "max_sequence_length": 512,
+    "maximum_optimizer_steps": 20,
+    "maximum_wall_seconds": 14400,
+    "optimizer": "adam",
+    "rank": 8,
+    "scale": 2.0,
+    "seed": 20261111,
+    "selection": "Final step only; no validation-score checkpoint cherry-picking.",
+    "status": "not_run",
+    "stop_conditions": [
+      "failed_canary",
+      "unverified_or_insufficient_yield",
+      "sequence_truncation",
+      "nonfinite_loss",
+      "resource_limit",
+      "runtime_identity_drift",
+      "cleanup_unverified"
+    ],
+    "thinking": "off",
+    "validation_split": "For >=3 eligible tasks, reserve first max(1, floor(n/5)) sorted task IDs; no task or lineage overlap.",
+    "yield_policy": {
+      "one_or_two": "overfitting_only",
+      "three_or_more": "task_disjoint_train_validation",
+      "zero": "insufficient_verified_self_solutions"
+    }
+  },
+  "training_authorized": false
+}
