@@ -52,10 +52,14 @@ def run_collection(*, source_root, run_dir, expected_run_sha256, challenge_path,
                 raise ValueError('official challenge inventory too large')
             official = archive.read(info)
         challenges = Path(challenge_path).read_bytes()
-        preflight_collection(source_root=root, spec=spec, expected_run_sha256=expected_run_sha256,
+        preflight = preflight_collection(source_root=root, spec=spec, expected_run_sha256=expected_run_sha256,
             source_inventory=inputs['inventory'], allocation_receipt=inputs['allocation'],
             export=inputs['export'], receipt=inputs['receipt'], challenge_bytes=challenges,
             official_challenge_bytes=official, python_executable=python_executable, model_path=model_path)
+        if preflight != {'status': 'preflight_consistent_unverified', 'execution_ready': False,
+                         'run_sha256': expected_run_sha256, 'selected_tasks': 100,
+                         'evidence_type': 'local_files_and_caller_supplied_registration'}:
+            raise ValueError('collection preflight result differs')
         settings = spec['settings']
         journal = BatchJournal(directory / 'collection', sorted(spec['selected_task_sha256']),
                                expected_run_sha256 + ':14b:collection')
