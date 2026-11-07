@@ -1,5 +1,6 @@
 import os
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -36,6 +37,14 @@ class WorkerSupervisorTests(unittest.TestCase):
             self.assertFalse(_post_reap_group_absent(1234))
         with patch('src.arc.lt_phase_b_worker_supervisor.os.killpg', side_effect=ProcessLookupError):
             self.assertTrue(_post_reap_group_absent(1234))
+
+    def test_worker_uses_requested_source_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = run_monitored_worker([sys.executable, '-u', '-c', 'import os; print(os.getcwd())'],
+                root=tmp, cwd=tmp, timeout=3, baseline_sampler=lambda _: state(),
+                process_sampler=lambda _root, _pid: state(), interval_seconds=.05,
+                sample_timeout_seconds=.2, terminate_grace_seconds=.1)
+            self.assertEqual(os.path.realpath(result['observation']['output'].strip()), os.path.realpath(tmp))
 
     def test_live_resource_failure_terminates_child(self):
         result = self.run_worker('import time; time.sleep(5)', sampler=lambda _root, _pid: state(free=10))
