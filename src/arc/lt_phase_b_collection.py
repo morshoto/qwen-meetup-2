@@ -54,9 +54,8 @@ def collect_batch(journal, *, limit, worker, resource_limits=None):
                 if (type(elapsed) not in (int, float) or not math.isfinite(elapsed) or not 0 <= elapsed <= timeout or
                         observation.get('stop_reason') != 'process_exited' or observation.get('exit_code') != 0 or
                         observation.get('stream_complete') is not True or
-                        observation.get('group_signals_confirmed') is not True or
                         not isinstance(observation.get('cleanup_observation'), dict) or
-                        observation['cleanup_observation'].get('group_cleanup_verified') is not True or
+                        observation.get('post_reap_group_absent') is not True or
                         training_resource_decision(baseline, observation.get('samples'), limits=resource_limits) is not None):
                     raise ValueError('worker resource evidence invalid')
             return value

@@ -5,12 +5,24 @@ escaped descendants or system-owned Metal services have terminated. This helper
 is not a frozen protocol or model identity attestation.
 """
 import math
+import os
 import subprocess
 
 from src.arc.rsi_process_monitor import _stop_group
 from src.arc.rsi_process_sampling import sample_baseline, sample_process
 from src.arc.rsi_reload_stream import watch_reload_stream
 from src.arc.rsi_training_resources import training_resource_decision, valid_resource_limits
+
+
+def _post_reap_group_absent(pgid):
+    # Signal zero does not affect a process; this is only a momentary group observation.
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return True
+    except OSError:
+        return None
+    return False
 
 
 def run_monitored_worker(argv, *, root, timeout, on_start=None, resource_limits=None,
@@ -49,9 +61,9 @@ def run_monitored_worker(argv, *, root, timeout, on_start=None, resource_limits=
                 _stop_group(process, terminate_grace_seconds)
         finally:
             process.stdout.close()
-    cleanup = observation.get('cleanup_observation', {})
-    group_absent = (observation.get('group_signals_confirmed') is True and
-                    isinstance(cleanup, dict) and cleanup.get('group_cleanup_verified') is True)
+    post_reap = _post_reap_group_absent(process.pid) if process.returncode is not None else None
+    observation['post_reap_group_absent'] = post_reap
+    group_absent = post_reap is True
     finished = (observation.get('stop_reason') == 'process_exited' and observation.get('exit_code') == 0 and
                 observation.get('stream_complete') is True and group_absent)
     status = 'complete' if finished else ('timeout' if observation.get('stop_reason') == 'wall_clock_limit' else 'error')

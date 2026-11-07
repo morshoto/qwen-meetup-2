@@ -24,7 +24,7 @@ class CollectionTests(unittest.TestCase):
         return {'status': 'complete', 'leader_reaped': True, 'group_absent': True,
                 'returncode': 0, 'elapsed_seconds': 1., 'stdout': '', 'stderr': None,
                 'baseline': state(), 'observation': {'stop_reason': 'process_exited', 'exit_code': 0,
-                'group_signals_confirmed': True, 'stream_complete': True,
+                'group_signals_confirmed': False, 'stream_complete': True,
                 'cleanup_observation': {'group_cleanup_verified': False}, 'post_reap_group_absent': True,
                 'samples': [state()], 'escaped_processes_excluded': False}}
 
