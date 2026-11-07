@@ -195,8 +195,10 @@ Each `run` processes at most ten pending tasks and can be repeated. An
 interrupted task stops the run; inspect its process evidence and use
 `python -m src.cli.lt_single reconcile --directory artifacts/my-single-run --task TASK_ID`
 to recover or allow a retry only after the owned process group is absent.
-The runner currently uses `/opt/homebrew/bin/python3.12`, offline `uv`,
+The MLX runner uses `/opt/homebrew/bin/python3.12`, offline `uv`,
 `mlx-lm==0.30.7` and `mlx==0.32.4`, matching Phase A. The report records the
 configured identity, task and source registration and actual denominators;
 missing work remains incomplete. Requested seeds do not establish independent
 samples. These results are exploratory and are not official evaluation scores.
+
+For the experimental Linux H100/vLLM backend, see [the setup and run guide](docs/lt-vllm-h100.md). Hardware validation remains outstanding.

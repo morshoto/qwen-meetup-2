@@ -4,12 +4,21 @@ import re
 from pathlib import Path
 
 from src.arc.lt_benchmark_manifest import build as build_phase_a, canonical, sha
+from src.arc.lt_vllm_backend import VLLM_SETTINGS
 
 SOURCE_FILES = ('src/arc/lt_single_manifest.py', 'src/arc/lt_single_score.py', 'src/arc/lt_single_supervision.py',
                 'src/cli/lt_single.py', 'src/cli/lt_single_worker.py')
 
 
 def build(root: Path, model: dict) -> dict:
+    backend = None
+    if isinstance(model, dict) and set(model) == {'model', 'backend'}:
+        backend = model['backend']
+        model = model['model']
+        if (not isinstance(backend, dict) or set(backend) != {'name', 'version'} or
+                backend['name'] != 'vllm' or not isinstance(backend['version'], str) or
+                not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', backend['version'])):
+            raise ValueError('invalid backend configuration')
     if not isinstance(model, dict) or set(model) != {
         'model_id', 'revision', 'files_sha256', 'chat_template_sha256'
     }:
@@ -32,12 +41,19 @@ def build(root: Path, model: dict) -> dict:
     value.update(protocol='lt-single-model-exploratory', phase_a_sha256=phase_a['sha256'],
                  model=copy.deepcopy(model),
                  single_source_sha256={name: sha((root / name).read_bytes()) for name in SOURCE_FILES})
+    if backend is not None:
+        for key in ('mlx_memory_limit_bytes', 'mlx_lm_version', 'mlx_version'):
+            value.pop(key, None)
+        value['backend_settings'] = copy.deepcopy(VLLM_SETTINGS)
+        value['single_source_sha256']['src/arc/lt_vllm_backend.py'] = sha((root / 'src/arc/lt_vllm_backend.py').read_bytes())
+        value['backend'] = copy.deepcopy(backend)
     return {**value, 'sha256': sha(canonical(value))}
 
 
 def verify(root: Path, manifest: dict) -> None:
     try:
-        if manifest != build(root, manifest['model']):
+        if manifest != build(root, {'model': manifest['model'], 'backend': manifest['backend']}
+                             if 'backend' in manifest else manifest['model']):
             raise ValueError('single-model registration differs')
     except (KeyError, TypeError) as exc:
         raise ValueError('invalid single-model registration') from exc

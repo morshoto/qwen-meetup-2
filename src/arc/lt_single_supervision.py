@@ -2,7 +2,7 @@
 import json
 
 
-def supervised_batch(journal, model, limit, worker, on_result=None):
+def supervised_batch(journal, model, limit, worker, on_result=None, *, stop_on_failure=False):
     if model != 'single': raise ValueError('invalid model')
     completed = 0
     for task_id in journal.pending(limit):
@@ -26,10 +26,13 @@ def supervised_batch(journal, model, limit, worker, on_result=None):
                    'peak_swap_bytes':None, 'calls':[]}
         else: raise ValueError('unknown worker status')
         row['worker_diagnostics'] = {'stdout':observation.get('stdout'), 'stderr':observation.get('stderr')}
-        row['cleanup'] = {'leader_reaped':True, 'group_absent':True, 'returncode':observation.get('returncode')}
+        row['cleanup'] = {'leader_reaped':True, 'group_absent':True, 'returncode':observation.get('returncode'),
+                          'worker_wall_seconds':observation.get('elapsed_seconds')}
         journal.finish(task_id, row)
         if on_result is not None: on_result(task_id, row['status'])
         completed += 1
+        if stop_on_failure and status != 'complete':
+            break
     return completed
 
 
