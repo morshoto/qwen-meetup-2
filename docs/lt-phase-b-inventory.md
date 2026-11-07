@@ -177,3 +177,13 @@ preflight refusal, invalid evidence, or unverified group cleanup. An interrupted
 or partially recorded task remains marked started and requires reconciliation;
 never automatically rerun it. This orchestration is not a substitute for
 verifying the frozen manifest, model/runtime and public-export identities.
+
+A synthetic worker on this macOS host showed the existing pre-reap observer
+returning the zombie leader with `group_cleanup_verified: false`; the attempted
+group signals were also not confirmed. A separate signal-zero lookup immediately
+after the leader was reaped observed that the original group ID was absent.
+The new supervisor records that snapshot without changing the earlier observer's
+fields. It is not independent proof against PID reuse, escaped descendants, or
+system-owned services. A run with an extant or inaccessible post-reap group is
+refused. Any actual canary or collection report must preserve both observations
+and their limitations.
