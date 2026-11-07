@@ -21,12 +21,15 @@ class AdapterArtifactTests(unittest.TestCase):
         raw = json.dumps(header).encode()
         self.weights = self.root / 'adapters.safetensors'
         self.weights.write_bytes(struct.pack('<Q', len(raw)) + raw + struct.pack('<ff', 1, 2))
+        self.expected = {name: {'shape': [1, 1], 'dtype': 'float32',
+                                  'sha256': hashlib.sha256(struct.pack('<f', value)).hexdigest()}
+                         for name, value in (('layer.lora_a', 1), ('layer.lora_b', 2))}
         self.shapes = patch('src.arc.lt_phase_b_adapter_artifact._expected_shapes',
                             return_value={'layer.lora_a': [1, 1], 'layer.lora_b': [1, 1]})
         self.shapes.start(); self.addCleanup(self.shapes.stop)
 
     def test_hashes_exact_files_and_records_nonpromotion(self):
-        result = inspect_adapter_artifact(self.root)
+        result = inspect_adapter_artifact(self.root, expected_tensors=self.expected)
         self.assertEqual(result['weights_sha256'], hashlib.sha256(self.weights.read_bytes()).hexdigest())
         self.assertEqual(result['config_sha256'], hashlib.sha256(self.config.read_bytes()).hexdigest())
         combined = hashlib.sha256()
@@ -36,18 +39,24 @@ class AdapterArtifactTests(unittest.TestCase):
         self.assertFalse(result['reload_verified'])
         self.assertFalse(result['promotion_allowed'])
 
+    def test_saved_tensors_must_match_final_model_snapshot(self):
+        raw = self.weights.read_bytes()
+        self.weights.write_bytes(raw[:-4] + struct.pack('<f', 3))
+        with self.assertRaises(ValueError):
+            inspect_adapter_artifact(self.root, expected_tensors=self.expected)
+
     def test_rejects_nonfinite_adapter_values(self):
         raw = self.weights.read_bytes()
         self.weights.write_bytes(raw[:-4] + struct.pack('<f', float('nan')))
-        with self.assertRaises(ValueError): inspect_adapter_artifact(self.root)
+        with self.assertRaises(ValueError): inspect_adapter_artifact(self.root, expected_tensors=self.expected)
 
     def test_rejects_missing_malformed_and_symlink_files(self):
         self.weights.write_bytes(b'bad')
-        with self.assertRaises(ValueError): inspect_adapter_artifact(self.root)
+        with self.assertRaises(ValueError): inspect_adapter_artifact(self.root, expected_tensors=self.expected)
         self.weights.unlink()
-        with self.assertRaises(ValueError): inspect_adapter_artifact(self.root)
+        with self.assertRaises(ValueError): inspect_adapter_artifact(self.root, expected_tensors=self.expected)
         self.weights.symlink_to(self.config)
-        with self.assertRaises(ValueError): inspect_adapter_artifact(self.root)
+        with self.assertRaises(ValueError): inspect_adapter_artifact(self.root, expected_tensors=self.expected)
 
 
 if __name__ == '__main__': unittest.main()
