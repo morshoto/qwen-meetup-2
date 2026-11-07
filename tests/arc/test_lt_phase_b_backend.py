@@ -71,6 +71,24 @@ class BackendTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             PhaseBBackend('model', model_manifest={}, adapter_state='on', adapter_path=self.root, adapter_sha256=digest(self.root))
 
+    def test_off_rejects_unexpected_adapter_tensors(self):
+        mx, _, stream, sampler, flatten = self.runtime
+        def loader(*args, **kwargs):
+            return SimpleNamespace(parameters=lambda: self.loaded), object()
+        with patch('src.arc.lt_phase_b_backend._runtime', return_value=(mx, loader, stream, sampler, flatten)):
+            with self.assertRaises(ValueError):
+                PhaseBBackend('model', model_manifest={}, adapter_state='off')
+
+    def test_changed_adapter_during_load_is_rejected(self):
+        mx, loader, stream, sampler, flatten = self.runtime
+        def changed(*args, **kwargs):
+            result = loader(*args, **kwargs)
+            (self.root / 'adapters.safetensors').write_bytes(b'changed')
+            return result
+        with patch('src.arc.lt_phase_b_backend._runtime', return_value=(mx, changed, stream, sampler, flatten)):
+            with self.assertRaises(ValueError):
+                PhaseBBackend('model', model_manifest={}, adapter_state='on', adapter_path=self.root, adapter_sha256=self.hash)
+
     def test_reject_nonfinite_extra_and_wrong_shapes(self):
         for replacement in ({**self.saved, 'extra': np.ones((1, 1), dtype=np.float32)},
                             {**self.saved, 'layer.lora_a': np.array([[float('nan')]], dtype=np.float32)},
