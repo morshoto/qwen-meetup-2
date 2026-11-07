@@ -22,12 +22,18 @@ class CollectionPreflightTests(unittest.TestCase):
         self.derive = self.audit.start(); self.addCleanup(self.audit.stop)
         self.sources = patch('src.arc.lt_phase_b_collection_preflight.verify_source_tree')
         self.verify = self.sources.start(); self.addCleanup(self.sources.stop)
+        self.runtime = patch('src.arc.lt_phase_b_collection_preflight.verify_runtime_identity')
+        self.environment = patch('src.arc.lt_phase_b_collection_preflight.verify_environment')
+        self.model = patch('src.arc.lt_phase_b_collection_preflight.verify_model_manifest')
+        self.runtime_check = self.runtime.start(); self.addCleanup(self.runtime.stop)
+        self.environment_check = self.environment.start(); self.addCleanup(self.environment.stop)
+        self.model_check = self.model.start(); self.addCleanup(self.model.stop)
 
     def call(self, **kwargs):
         args = {'source_root': '.', 'spec': self.spec, 'expected_run_sha256': self.run_sha,
                 'source_inventory': self.fixture.inventory, 'allocation_receipt': self.fixture.allocation,
                 'export': self.export, 'receipt': self.receipt, 'challenge_bytes': self.challenges,
-                'official_challenge_bytes': b'{}'}
+                'official_challenge_bytes': b'{}', 'python_executable': '/fixture/python', 'model_path': '/fixture/model'}
         args.update(kwargs)
         return preflight_collection(**args)
 
@@ -38,12 +44,18 @@ class CollectionPreflightTests(unittest.TestCase):
         self.assertEqual(result['selected_tasks'], 100)
         self.assertEqual(self.derive.call_count, 1)
         self.assertEqual(self.verify.call_count, 2)
+        self.runtime_check.assert_called_once()
+        self.environment_check.assert_called_once()
+        self.model_check.assert_called_once()
 
     def test_refuses_changed_allocation_export_or_run(self):
         for changed in ({'expected_run_sha256': 'f' * 64}, {'export': {'bad': True}},
                         {'allocation_receipt': {**self.fixture.allocation, 'execution_ready': True}}):
             with self.subTest(changed=changed), self.assertRaises(ValueError): self.call(**changed)
         self.derive.return_value = {**self.fixture.allocation, 'different': True}
+        with self.assertRaises(ValueError): self.call()
+        self.derive.return_value = self.fixture.allocation
+        self.model_check.side_effect = ValueError('model differs')
         with self.assertRaises(ValueError): self.call()
 
 

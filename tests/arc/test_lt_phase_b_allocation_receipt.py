@@ -76,7 +76,9 @@ class AllocationReceiptTests(unittest.TestCase):
         export = build_public_export(json.loads(self.challenges), receipt)
         result = preflight_collection(source_root=ROOT, spec=spec, expected_run_sha256=_digest(spec),
             source_inventory=inventory, allocation_receipt=allocation, export=export, receipt=receipt,
-            challenge_bytes=self.challenges, official_challenge_bytes=self.official)
+            challenge_bytes=self.challenges, official_challenge_bytes=self.official,
+            python_executable='/tmp/qwen-p3a-mlx-venv/bin/python',
+            model_path=Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4')
         self.assertEqual(result['selected_tasks'], 100)
         self.assertFalse(result['execution_ready'])
         self.assertTrue(all(set(pair) == {'input'} for item in export['tasks'].values() for pair in item['test']))
