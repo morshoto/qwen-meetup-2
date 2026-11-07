@@ -74,3 +74,15 @@ both-wrong counts. Missing or failed rows are not ties. Preserve each state's
 candidate validity, usage and latency accounting from the existing scorer and
 report identical candidate pairs without inferring independent sampling. These
 checks do not establish that actual inference settings or adapter provenance match.
+
+### Verified dataset test plan
+
+Build trainer chat messages only from recorded 14B candidate predictions after
+full-task verification, never from the verifier's answers. Use the Phase A
+public-task payload and direct-grid instruction as the user message. Reject
+unknown or repeated task rows, comparison-task overlap, malformed provenance,
+and non-14B or unclean worker results. Journal both candidates and rejection
+reasons; select at most one correct candidate per task lineage. Zero yield skips
+training, one or two tasks are labeled overfitting-only, and at least three use
+a deterministic task-disjoint split with one or more validation tasks. Schema
+and mask behavior still require a real installed-trainer preflight before use.
