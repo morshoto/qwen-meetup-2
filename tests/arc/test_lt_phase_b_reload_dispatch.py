@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from src.arc.lt_batch_journal import _create
 from src.arc.lt_phase_b_canary_sample import RELOAD_SETTINGS
-from src.arc.lt_phase_b_reload_dispatch import run_reload
+from src.arc.lt_phase_b_reload_dispatch import run_reload, review_reload_attempt
 from tests.arc import test_lt_phase_b_canary_dispatch as fixtures
 from tests.arc.test_rsi_process_monitor import state
 
@@ -22,7 +22,7 @@ class ReloadDispatchTests(unittest.TestCase):
         self.preflight.start(); self.addCleanup(self.preflight.stop)
         self.inspect = patch('src.arc.lt_phase_b_reload_dispatch.inspect_adapter_artifact',
                              return_value=self.training_summary['adapter'])
-        self.inspect.start(); self.addCleanup(self.inspect.stop)
+        self.inspect_mock = self.inspect.start(); self.addCleanup(self.inspect.stop)
         for name in ('verify_source_tree', 'verify_runtime_identity', 'verify_environment', 'verify_model_manifest'):
             p = patch('src.arc.lt_phase_b_reload_dispatch.' + name)
             p.start(); self.addCleanup(p.stop)
@@ -60,6 +60,33 @@ class ReloadDispatchTests(unittest.TestCase):
         self.assertTrue((self.fixture.run / 'canary-reload-summary.json').exists())
         with self.assertRaises(ValueError): self.invoke()
         self.assertEqual(len(self.calls), 1)
+
+    def test_reload_replay_rechecks_persisted_evidence(self):
+        expected = self.invoke()
+        f = self.fixture
+        def replay():
+            return review_reload_attempt(f.run, canary=f.canary, expected_canary_sha256=f.canary_sha,
+                expected_collection_sha256=f.collection_sha)
+        self.assertEqual(replay(), expected)
+        for name, field, value in (('canary-reload-started.json', 'canary_sha256', '0' * 64),
+                                   ('canary-reload-process.json', 'pid', 0),
+                                   ('canary-reload-observation.json', 'group_absent', False),
+                                   ('canary-reload-result.json', 'sample_format_valid', False),
+                                   ('canary-reload-summary.json', 'reload_verified', True)):
+            path = f.run / name
+            original = path.read_text()
+            changed = json.loads(original); changed[field] = value
+            path.write_text(json.dumps(changed))
+            with self.subTest(name=name), self.assertRaises(ValueError): replay()
+            path.write_text(original)
+
+    def test_reload_replay_rejects_changed_training_and_adapter(self):
+        self.invoke()
+        f = self.fixture
+        self.inspect_mock.return_value = dict(self.training_summary['adapter'], adapter_sha256='0' * 64)
+        with self.assertRaises(ValueError):
+            review_reload_attempt(f.run, canary=f.canary, expected_canary_sha256=f.canary_sha,
+                                  expected_collection_sha256=f.collection_sha)
 
     def test_tampered_training_summary_prevents_reload(self):
         path = self.fixture.run / 'canary-training-summary.json'
