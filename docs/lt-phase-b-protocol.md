@@ -167,3 +167,7 @@ Keep separate private journals for adapter-off and adapter-on under one comparis
 ### Matched comparison dispatch
 
 Under the private run lock, verify the registered collection, training-data replay, canary, real-adapter reload and comparison descriptor. Reconstruct the comparison public export from the fixed challenge inventory and derive the per-task prompt hashes. Run at most the requested number of sequential, resource-monitored isolated children through the two comparison journals, with no solution data in their arguments. Recheck inputs and evidence after the batch; failed or interrupted work remains recorded for reconciliation. This dispatcher does not score results or establish independent attestation.
+
+### Offline paired scoring handoff
+
+Before exposing comparison answers to the offline scorer, verify that both state journals are complete and replay every retained worker, identity and resource record against the fixed comparison registration. Only then pass the recorded predictions and selected held-out answers to the existing paired scorer. Missing, failed, interrupted or changed work must not be scored as a complete comparison; no answers are written into the report or sent to generation workers. Local replay does not establish independent attestation.
