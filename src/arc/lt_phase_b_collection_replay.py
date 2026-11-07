@@ -100,4 +100,5 @@ def replay_collection_dataset(*, journal_dir, tasks, comparison_tasks, verifier,
         raise ValueError('materialized dataset differs from collection')
     return {'status': 'collection_dataset_consistent_unverified', 'training_allowed': False,
             'attempted_tasks': len(ids), 'eligible_tasks': len(eligible), 'yield_status': dataset['yield_status'],
+            'eligibility_sha256': hashlib.sha256(_json(dataset['journal']).encode()).hexdigest(),
             'train_jsonl_sha256': hashes['train'], 'valid_jsonl_sha256': hashes['valid'] if dataset['valid'] else None}

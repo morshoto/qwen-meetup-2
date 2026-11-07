@@ -12,6 +12,7 @@ from src.arc.lt_phase_b_collection_preflight import preflight_collection
 from src.arc.lt_phase_b_protocol_gate import require_protocol_solutions
 from src.arc.lt_phase_b_prepare_dispatch import require_preparation_receipt
 from src.arc.lt_phase_b_collection_replay import replay_collection_dataset
+from src.arc.lt_phase_b_sft_preflight import _json
 from src.arc.lt_phase_b_dispatch import _private_run_directory
 from src.arc.lt_phase_b_registered_worker import _digest
 from src.arc.lt_phase_b_training_config import _private_file
@@ -77,6 +78,13 @@ def preflight_training_data(*, training_spec, expected_training_sha256, collecti
     result = replay_collection_dataset(journal_dir=directory / 'collection', tasks=tasks, comparison_tasks=comparison,
         verifier=Verifier(selected), source=source, manifest=manifest,
         resource_limits=collection_spec['settings']['resource_limits'])
+    eligibility_path = directory / 'eligibility.json'
+    eligibility = _json_file(eligibility_path, _private_file(eligibility_path))
+    if (not isinstance(eligibility, dict) or eligibility.get('data_sha256') != _digest(data_spec) or
+            eligibility.get('collection_sha256') != expected_collection_sha256 or
+            not isinstance(eligibility.get('records'), list) or
+            hashlib.sha256(_json(eligibility['records']).encode()).hexdigest() != result['eligibility_sha256']):
+        raise ValueError('retained eligibility differs from collection replay')
     return {'status': 'training_data_consistent_unverified', 'training_allowed': False,
             'training_sha256': expected_training_sha256, 'solution_sha256': training_spec['solution_sha256'],
             'dataset_manifest_sha256': digest, 'attempted_tasks': result['attempted_tasks'],
