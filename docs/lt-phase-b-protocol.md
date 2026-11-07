@@ -119,3 +119,7 @@ model or source provenance, or authorize a training launch.
 ### Real-data trainer instrumentation preparation
 
 Before a supervised real-data attempt, bind the private SFT manifest and file hashes to the exact proposed trainer configuration. Instrument the installed trainer once, require the planned step count, batch size, masking-compatible dataset lengths and final adapter path, and capture base and adapter tensor hashes immediately before and after the trainer callback. Recheck private input and configuration hashes after training. A partial or failed callback retains evidence and cannot be automatically retried or promoted. This local wrapper does not register a run, supervise resources, establish independent provenance, verify reload, or authorize execution.
+
+### Canary reload handoff
+
+Before using a completed canary reload as input to a later training gate, replay its retained start and process markers, supervised observation, sample output, training tensor evidence and saved adapter identity. Reject any changed or missing evidence, including a mismatched saved summary. This replay remains a local consistency check and does not establish independent attestation or escaped-process cleanup.
