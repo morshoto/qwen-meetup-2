@@ -94,3 +94,40 @@ recovery. This may be expensive on rented hardware; measure a small authorized
 development pilot, including loading, before budgeting the full run. The
 30-minute task timeout includes startup. A timeout or error is a terminal result,
 not a successful candidate. Requested seeds do not establish independent samples.
+
+## Development-only compatibility pilot
+
+The pilot is separate from the 200-task single-model runner. On the local
+machine, construct the development handoff from the training challenges and
+bounded exposure registry; only the resulting public export and receipt need to
+be transferred. The export contains the three development tasks, including
+public training pairs, but no held-out test answers. Do not transfer the
+solutions file for this pilot.
+
+```sh
+mkdir -p artifacts/h100-pilot-input
+python -m src.arc.lt_development_export --challenges data/raw/arc-agi_training_challenges.json --exposure research/rsi/bounded-exposure-proposal.json --manifest configs/lt.phase-a.development.json --part export > artifacts/h100-pilot-input/export.json
+python -m src.arc.lt_development_export --challenges data/raw/arc-agi_training_challenges.json --exposure research/rsi/bounded-exposure-proposal.json --manifest configs/lt.phase-a.development.json --part receipt > artifacts/h100-pilot-input/receipt.json
+```
+
+On the H100 host, check out the exact reviewed commit, install the runtime and
+prepare the pinned snapshot inventory as above. Copy the development export and
+receipt into `artifacts/h100-pilot-input/`, and save the `model` object from
+`artifacts/qwen38-vllm.json` as `artifacts/h100-pilot-input/model.json`. Then:
+
+```sh
+python -m src.cli.lt_vllm_pilot prepare --export artifacts/h100-pilot-input/export.json --receipt artifacts/h100-pilot-input/receipt.json --model artifacts/h100-pilot-input/model.json --vllm-version 0.33.0 --directory artifacts/h100-pilot
+python -m src.cli.lt_vllm_pilot run --directory artifacts/h100-pilot
+```
+
+The pilot registers its development-manifest identity, model inventory, vLLM
+version, settings and source hashes. It runs up to three tasks, each with two
+candidates, and stops after the first error or timeout. Per-task journal rows
+record inference time, worker wall time including startup, raw calls, and owned
+process-group observations. Calculate startup/teardown overhead from worker wall
+time minus inference time; this is not a precise standalone model-load timer.
+An interrupted task requires manual inspection; the pilot does not automatically
+retry it. Preserve the entire pilot directory and system/runtime evidence before
+terminating the instance. This harness does not enforce a spending cap: monitor
+cost and time externally, allow enough budget for evidence transfer and cleanup,
+and destroy the instance and any billed storage at the deadline.
