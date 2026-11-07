@@ -211,3 +211,7 @@ Given a valid registered collection descriptor and an explicit private synthetic
 ### Real-training registration proposal
 
 After a complete collection and observed canary reload, construct a draft real-training descriptor from the verified private dataset, the predeclared fixed trainer configuration, registered answer-file hash and resource settings. Replay collection eligibility and canary evidence before returning it, and recheck both afterward. Keep the proposal non-authorizing; it must not start training or choose a checkpoint based on validation or held-out scores.
+
+### Matched comparison registration proposal
+
+After real training and its separately observed reload, build a draft comparison descriptor from the already allocated public comparison tasks, the unchanged collection generation settings and the exact reloaded adapter hash. Recheck the collection/data preflight and saved reload evidence before and after building the public-only export. The proposal does not examine comparison answers or scores, freeze evaluation, or authorize inference.
