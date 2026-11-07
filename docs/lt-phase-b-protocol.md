@@ -187,3 +187,7 @@ Use a separately frozen data descriptor binding the collection and training-solu
 ### Real-training operator commands
 
 Expose the existing one-shot real-training and real-adapter reload dispatchers through command-line entry points with explicit registered hashes and local paths. Commands must pass the paths to the dispatchers without printing private data; dispatcher preflight, locks, resource checks and reconciliation behavior remain authoritative.
+
+### SFT preparation entry point
+
+Read the registered data and collection descriptors from the private run directory and the explicitly named local challenge, solution and official challenge inventory files. Verify that the preparing Python is the registered interpreter and run collection preflight before loading the pinned tokenizer. Use the installed MLX-LM chat dataset and thinking-off policy to prepare private eligibility and SFT artifacts; print only the count/status summary. This entry point does not load model weights or authorize training.
