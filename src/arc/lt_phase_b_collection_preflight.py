@@ -8,13 +8,19 @@ from src.arc.lt_phase_b_allocation_receipt import derive_allocation
 from src.arc.lt_phase_b_registered_worker import validate_descriptor
 from src.arc.lt_public import build_public_export, load_public_export
 from src.arc.lt_source import verify_source_tree
+from src.arc.rsi_environment_identity import verify_environment
+from src.arc.rsi_model_identity import verify_model_manifest
+from src.arc.rsi_runtime_identity import verify_runtime_identity
 
 
 def preflight_collection(*, source_root, spec, expected_run_sha256, source_inventory, allocation_receipt,
-                         export, receipt, challenge_bytes, official_challenge_bytes):
+                         export, receipt, challenge_bytes, official_challenge_bytes, python_executable, model_path):
     validate_descriptor(spec=spec, expected_run_sha256=expected_run_sha256, source_inventory=source_inventory,
                         receipt=receipt, allocation_receipt=allocation_receipt)
     verify_source_tree(source_root, source_inventory)
+    verify_runtime_identity(python_executable, spec['runtime_manifest'])
+    verify_environment(python_executable, spec['environment_manifest'])
+    verify_model_manifest(model_path, spec['model_manifest'], model_key='14b')
     checked = derive_allocation(source_root, challenge_bytes, official_challenge_bytes,
                                 sorted(spec['selected_task_sha256']))
     if checked != allocation_receipt:
