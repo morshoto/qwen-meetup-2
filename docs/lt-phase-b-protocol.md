@@ -203,3 +203,7 @@ A local, opt-in integration check may assemble a draft descriptor using an ephem
 ### Draft registration operator handoff
 
 An operator command may save the draft proposal once in a private `lt-phase-b-<run-id>` artifact directory, using an explicitly supplied pool file and public challenge inventories. It must refuse existing output, print only status, counts and hashes, and leave the proposed descriptor marked draft. The command must not choose replacement IDs, freeze a run, expose answers, or launch a model.
+
+### Synthetic canary registration proposal
+
+Given a valid registered collection descriptor and an explicit private synthetic-data location, construct a draft canary descriptor and fixed trainer configuration using the existing one-step contract. Bind the collection, source, model, runtime, exact synthetic JSONL and config bytes. Verify that any existing synthetic-data file is exactly the fixed example, and refuse an existing adapter. The proposal is not frozen, starts no trainer, and cannot by itself authorize the canary.
