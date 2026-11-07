@@ -2,6 +2,7 @@ import hashlib
 import json
 import sys
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -23,7 +24,7 @@ class RealTrainerTests(unittest.TestCase):
         self.model = Model(); self.calls = 0; self.modes = []
         self.args = SimpleNamespace(iters=20, batch_size=1, max_seq_length=512, steps_per_report=1,
             steps_per_save=20, grad_accumulation_steps=1, val_batches=-1,
-            adapter_file=self.run / 'gen1-adapter/adapters.safetensors')
+            adapter_file=Path(self.plan['trainer_config']['adapter_path']) / 'adapters.safetensors')
         self.trainer = SimpleNamespace()
         def train(**kwargs):
             self.calls += 1
