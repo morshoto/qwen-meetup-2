@@ -387,3 +387,9 @@ snapshots and hash and validate the adapter files. Report the resulting state as
 reload pending, not as a complete canary or Gen 1. A later new-process reload and
 inference must independently check the adapter and capture its own resource and
 cleanup evidence.
+
+The tiny trainer fixture also exposed that installed MLX-LM writes
+`__metadata__: null` in its safetensors output. The adapter validator now
+accepts that form and compares every saved tensor hash against the final
+in-memory snapshot; the fixture passed the check. This remains a synthetic model
+result, not a 14B canary or independent runtime attestation.
