@@ -19,9 +19,13 @@ def run_monitored_worker(argv, *, root, timeout, on_start=None, resource_limits=
     if (not isinstance(argv, list) or not argv or
             any(not isinstance(x, str) or not x or '\x00' in x for x in argv) or
             type(timeout) not in (int, float) or not math.isfinite(timeout) or not 0 < timeout <= 300 or
+            any(type(x) not in (int, float) or not math.isfinite(x) or not 0 < x <= 5
+                for x in (interval_seconds, sample_timeout_seconds, terminate_grace_seconds)) or
             (on_start is not None and not callable(on_start)) or not callable(baseline_sampler) or
             not callable(process_sampler) or (resource_limits is not None and
-                (not valid_resource_limits(resource_limits) or timeout > resource_limits['timeout_seconds']))):
+                (not valid_resource_limits(resource_limits) or timeout > resource_limits['timeout_seconds'] or
+                 interval_seconds > resource_limits['sample_interval_seconds'] or
+                 sample_timeout_seconds > resource_limits['sample_interval_seconds']))):
         raise ValueError('invalid monitored worker settings')
     try:
         baseline = baseline_sampler(root)
