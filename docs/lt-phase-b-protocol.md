@@ -207,3 +207,7 @@ An operator command may save the draft proposal once in a private `lt-phase-b-<r
 ### Synthetic canary registration proposal
 
 Given a valid registered collection descriptor and an explicit private synthetic-data location, construct a draft canary descriptor and fixed trainer configuration using the existing one-step contract. Bind the collection, source, model, runtime, exact synthetic JSONL and config bytes. Verify that any existing synthetic-data file is exactly the fixed example, and refuse an existing adapter. The proposal is not frozen, starts no trainer, and cannot by itself authorize the canary.
+
+### Real-training registration proposal
+
+After a complete collection and observed canary reload, construct a draft real-training descriptor from the verified private dataset, the predeclared fixed trainer configuration, registered answer-file hash and resource settings. Replay collection eligibility and canary evidence before returning it, and recheck both afterward. Keep the proposal non-authorizing; it must not start training or choose a checkpoint based on validation or held-out scores.
