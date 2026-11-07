@@ -124,7 +124,7 @@ def run_canary(*, source_root, run_dir, expected_collection_sha256, expected_can
                       'collection_sha256': expected_collection_sha256, 'canary_run_id': canary['run_id'],
                       'promotion_allowed': False}:
             raise ValueError('canary worker result differs')
-        adapter = inspect_adapter_artifact(directory / 'canary-adapter')
+        adapter = inspect_adapter_artifact(directory / 'canary-adapter', expected_tensors=after['adapter'])
         summary = {'status': 'training_observed_reload_pending', 'training_verified': False, 'promotion_allowed': False,
                    'canary_sha256': expected_canary_sha256, 'collection_sha256': expected_collection_sha256,
                    'loss': loss, 'tensor_evidence': checked, 'adapter': adapter}
