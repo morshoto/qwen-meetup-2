@@ -12,6 +12,7 @@ from src.arc.data import Verifier, validate_grid
 from src.arc.lt_attestation import _object
 from src.arc.lt_batch_journal import _create
 from src.arc.lt_phase_b_collection_preflight import preflight_collection
+from src.arc.lt_phase_b_protocol_gate import require_protocol_solutions
 from src.arc.lt_phase_b_collection_replay import reconstruct_collection_dataset
 from src.arc.lt_phase_b_dispatch import _private_run_directory
 from src.arc.lt_phase_b_registered_worker import _digest
@@ -48,6 +49,7 @@ def prepare_sft(*, data_spec, expected_data_sha256, collection_spec, expected_co
                        'run_sha256': expected_collection_sha256, 'selected_tasks': len(collection_spec['selected_task_sha256']),
                        'evidence_type': 'local_files_and_caller_supplied_registration'}:
             raise ValueError('collection preflight differs')
+        require_protocol_solutions(source_root, source_inventory, solution_bytes)
         tasks = load_public_export(export, receipt)
         comparison_receipt = {'comparison_sha256': expected_collection_sha256,
                               'selected_task_sha256': allocation_receipt['comparison_task_sha256']}

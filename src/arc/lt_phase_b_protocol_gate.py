@@ -10,6 +10,7 @@ from pathlib import Path
 
 from src.arc.lt_attestation import _object
 from src.arc.lt_phase_b_registered_worker import _digest
+from src.arc.rsi_model_identity import _hash_file, _json_file
 
 
 def validate_frozen_protocol(*, source_root, spec, source_inventory, allocation_receipt, challenge_bytes):
@@ -86,3 +87,21 @@ def validate_frozen_protocol(*, source_root, spec, source_inventory, allocation_
             set(pool) & set(comparison)):
         raise ValueError('frozen task manifests differ from allocation')
     return {'status': 'frozen_protocol_consistent_unverified', 'execution_ready': False}
+
+
+def require_protocol_solutions(source_root, source_inventory, solution_bytes):
+    """Check answer bytes against the exact source-inventoried frozen protocol."""
+    name = 'configs/lt.phase-b.protocol.json'
+    files = source_inventory.get('files') if isinstance(source_inventory, dict) else None
+    digest = files.get(name) if isinstance(files, dict) else None
+    if (not isinstance(solution_bytes, bytes) or not isinstance(digest, str) or
+            not re.fullmatch(r'[0-9a-f]{64}', digest)):
+        raise ValueError('protocol solution binding unavailable')
+    path = Path(source_root) / name
+    if _hash_file(path) != digest:
+        raise ValueError('protocol differs from source inventory')
+    protocol = _json_file(path, digest)
+    data = protocol.get('data')
+    if (protocol.get('protocol') != 'lt-phase-b-exploratory' or protocol.get('status') != 'frozen' or
+            not isinstance(data, dict) or data.get('solution_sha256') != hashlib.sha256(solution_bytes).hexdigest()):
+        raise ValueError('solutions differ from frozen protocol')
