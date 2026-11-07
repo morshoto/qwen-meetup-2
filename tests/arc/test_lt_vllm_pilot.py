@@ -72,3 +72,28 @@ class PilotTests(unittest.TestCase):
             self.assertEqual(row['status'], 'error')
             self.assertEqual(row['worker_diagnostics']['stderr'], 'failed')
             self.assertTrue(row['cleanup']['group_absent'])
+
+    def test_pilot_journals_two_candidates_and_resumes(self):
+        from src.cli.lt_vllm_pilot import run
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            seen = []
+            def worker(argv, timeout, on_start):
+                task = argv[argv.index('--task') + 1]
+                self.assertEqual(argv[argv.index('--backend') + 1], 'vllm')
+                seen.append(task)
+                on_start(123 + len(seen))
+                Path(argv[argv.index('--output') + 1]).write_text(json.dumps({
+                    'task_id': task, 'model': 'single', 'status': 'complete', 'candidates': [[[[2]]], [[[2]]]],
+                    'tokens': 10, 'runtime_seconds': 1, 'peak_memory_bytes': None, 'peak_swap_bytes': None}))
+                return {'status': 'complete', 'leader_reaped': True, 'group_absent': True, 'returncode': 0}
+            with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']), \
+                 patch('src.cli.lt_vllm_pilot.development_manifest_sha', return_value='a' * 64), \
+                 patch('src.cli.lt_vllm_pilot.verify_model', return_value=Path('/model')), \
+                 patch('src.cli.lt_vllm_pilot.importlib.metadata.version', return_value='0.33.0'), \
+                 patch('src.cli.lt_vllm_pilot.run_worker', side_effect=worker):
+                self.assertEqual(run(root / 'run'), 3)
+                self.assertEqual(run(root / 'run'), 0)
+            self.assertEqual(seen, ['dev', 'dev2', 'dev3'])
+            self.assertEqual(len(json.loads((root / 'run/single/dev.result.json').read_text())['candidates']), 2)
