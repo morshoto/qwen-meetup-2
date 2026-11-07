@@ -37,6 +37,8 @@ class TrainingPreflightTests(unittest.TestCase):
         self.collection_preflight = patcher.start(); self.addCleanup(patcher.stop)
         patcher = patch('src.arc.lt_phase_b_training_preflight.require_protocol_solutions')
         self.protocol_solutions = patcher.start(); self.addCleanup(patcher.stop)
+        patcher = patch('src.arc.lt_phase_b_training_preflight.require_preparation_receipt')
+        self.preparation_receipt = patcher.start(); self.addCleanup(patcher.stop)
 
     def invoke(self, **kwargs):
         args = {'training_spec': self.training, 'expected_training_sha256': _digest(self.training),
@@ -84,6 +86,12 @@ class TrainingPreflightTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.invoke(solution_bytes=alternate, training_spec=training, expected_training_sha256=_digest(training),
                             source_inventory=inventory)
+            replay.assert_not_called()
+
+    def test_incomplete_preparation_never_reaches_collection_replay(self):
+        self.preparation_receipt.side_effect = ValueError('preparation incomplete')
+        with patch('src.arc.lt_phase_b_training_preflight.replay_collection_dataset') as replay:
+            with self.assertRaises(ValueError): self.invoke()
             replay.assert_not_called()
 
     def test_wrong_training_answers_or_comparison_content_fail(self):
