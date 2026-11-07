@@ -376,3 +376,14 @@ process exit, complete logs and an absent post-reap process group. Missing,
 malformed or non-finite loss must stop or reject the run. Synthetic child tests
 exercise this behavior; a successful monitor result does not by itself prove
 base immutability, adapter reload, escaped-descendant cleanup or improvement.
+
+### Canary parent and adapter artifact plan
+
+Before starting the one-shot canary worker, hold the same run lock as collection
+and recompute the collection and canary preflights. Persist a start marker,
+worker PID and bounded loss/resource observation; an interrupted attempt cannot
+be silently restarted. After a completed step, compare the saved tensor
+snapshots and hash and validate the adapter files. Report the resulting state as
+reload pending, not as a complete canary or Gen 1. A later new-process reload and
+inference must independently check the adapter and capture its own resource and
+cleanup evidence.
