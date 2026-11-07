@@ -69,5 +69,31 @@ class TrainerPreflightTests(unittest.TestCase):
         self.assertIn('4', tokenizer.decode(tokens[offset:]))
         self.assertLess(len(tokens), 512)
 
+    def test_synthetic_canary_config_and_dataset_load_with_native_trainer(self):
+        from mlx_lm.lora import CONFIG_DEFAULTS
+        from mlx_lm.tuner.datasets import load_local_dataset
+        from mlx_lm.utils import load_tokenizer
+        from src.arc.lt_phase_b_canary_config import build_canary_config
+        from src.arc.mlx_chat_template import install_training_template_policy
+        install_training_template_policy('off')
+        model = Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
+        tokenizer = load_tokenizer(model)
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / 'data'; data.mkdir(mode=0o700)
+            config = build_canary_config(model_dir=model, data_dir=data, adapter_dir=Path(tmp) / 'adapter')
+            trainer = config['trainer_config']
+            self.assertTrue(set(trainer) <= set(CONFIG_DEFAULTS))
+            (data / 'train.jsonl').write_text(config['dataset_jsonl'])
+            train, valid, test = load_local_dataset(data, tokenizer, types.SimpleNamespace(**trainer))
+            self.assertEqual((len(train), len(valid), len(test)), (1, 0, 0))
+            tokens, offset = train.process(train[0])
+            messages = json.loads(config['dataset_jsonl'])['messages']
+            prefix = tokenizer.apply_chat_template(messages[:1], add_generation_prompt=True,
+                                                   enable_thinking=False, return_dict=False)
+            self.assertEqual(tokens[:len(prefix)], prefix)
+            self.assertEqual(offset, len(prefix))
+            self.assertGreater(len(tokens), offset)
+            self.assertLessEqual(len(tokens), trainer['max_seq_length'])
+
 
 if __name__ == '__main__': unittest.main()
