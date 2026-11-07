@@ -1,3 +1,4 @@
+import base64
 import os
 import subprocess
 import sys
@@ -39,6 +40,13 @@ class TrainingStreamTests(unittest.TestCase):
                 self.assertEqual(result['stop_reason'], reason)
                 self.assertIsNotNone(result['exit_code'])
                 self.assertIn(value, result['log'])
+
+    def test_invalid_utf8_remains_available_as_bounded_bytes(self):
+        result = self.watch('import os,time; os.write(1, bytes([255, 10])); time.sleep(0.2)')
+        self.assertIsNone(result['log'])
+        self.assertEqual(base64.b64decode(result['log_base64']), bytes([255, 10]))
+        self.assertFalse(result['stream_complete'])
+        self.assertFalse(result['training_verified'])
 
     def test_overflow_and_resource_pressure_stop_worker(self):
         result = self.watch('import time; print("x" * 512, flush=True); time.sleep(5)', max_log_bytes=128)
