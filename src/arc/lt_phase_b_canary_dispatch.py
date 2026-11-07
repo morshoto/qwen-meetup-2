@@ -4,6 +4,7 @@ A locally observed step is not an independently attested canary, adapter reload,
 Gen 1, or RSI improvement. Interrupted attempts require reconciliation.
 """
 import fcntl
+import hashlib
 import math
 import os
 import zipfile
@@ -90,10 +91,11 @@ def run_canary(*, source_root, run_dir, expected_collection_sha256, expected_can
             raise ValueError('canary monitoring unavailable')
         elapsed, loss = monitor.get('elapsed_seconds'), monitor.get('loss')
         if (observation.get('leader_reaped') is not True or observation.get('group_absent') is not True or
-                monitor.get('stop_reason') != 'process_exited' or monitor.get('exit_code') != 0 or
+                monitor.get('stop_reason') != 'process_exited' or type(monitor.get('exit_code')) is not int or monitor['exit_code'] != 0 or
                 monitor.get('stream_complete') is not True or monitor.get('post_reap_group_absent') is not True or
                 type(elapsed) not in (int, float) or not math.isfinite(elapsed) or not 0 <= elapsed <= canary['timeout_seconds'] or
-                not isinstance(loss, dict) or loss.get('status') != 'ok' or loss.get('last_step') != 1 or
+                not isinstance(loss, dict) or loss.get('status') != 'ok' or
+                type(loss.get('last_step')) is not int or loss['last_step'] != 1 or
                 type(loss.get('last_loss')) not in (int, float) or not math.isfinite(loss['last_loss']) or
                 training_resource_decision(observation.get('baseline'), monitor.get('samples'),
                                            limits=canary['resource_limits']) is not None):
@@ -101,8 +103,12 @@ def run_canary(*, source_root, run_dir, expected_collection_sha256, expected_can
         text = monitor.get('log')
         if not isinstance(text, str):
             raise ValueError('canary training log unavailable')
-        watch = TrainingLossWatch()
         log_bytes = text.encode()
+        if len(log_bytes) > 4 * 1024**2 or hashlib.sha256(log_bytes).hexdigest() != monitor.get('log_sha256'):
+            raise ValueError('canary training log identity differs')
+        if monitor['samples'][-1]['monotonic_seconds'] - observation['baseline']['monotonic_seconds'] > canary['timeout_seconds']:
+            raise ValueError('canary sample window exceeded')
+        watch = TrainingLossWatch()
         for offset in range(0, len(log_bytes), 8192):
             watch.feed(log_bytes[offset:offset + 8192])
         watch.finish()
