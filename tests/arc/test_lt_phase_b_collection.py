@@ -1,4 +1,5 @@
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -38,6 +39,24 @@ class CollectionTests(unittest.TestCase):
         self.assertEqual(json.loads((self.root / 'a.process.json').read_text())['pid'], 1234)
         self.assertEqual(self.journal.pending(2), ['c'])
         self.assertEqual(collect_batch(self.journal, limit=2, worker=self.worker)['stop_reason'], 'complete')
+
+    def test_owned_fixture_worker_flows_through_real_monitor_and_journal(self):
+        from src.arc.lt_phase_b_worker_supervisor import run_monitored_worker
+        code = ("import json,sys; from src.arc.lt_batch_journal import _create; "
+                "from pathlib import Path; _create(Path(sys.argv[1]), "
+                "{'task_id':sys.argv[2], 'model':'14b', 'status':'complete', "
+                "'candidates':[[[[1]]],[[[1]]]], 'calls':[]})")
+        def worker(task, output, on_start):
+            return run_monitored_worker([sys.executable, '-u', '-c', code, str(output), task],
+                root='.', timeout=3, on_start=on_start, baseline_sampler=lambda _: state(),
+                process_sampler=lambda _root, _pid: state(), interval_seconds=.05,
+                sample_timeout_seconds=.2, terminate_grace_seconds=.1)
+        result = collect_batch(self.journal, limit=1, worker=worker)
+        self.assertEqual(result, {'completed': 1, 'stop_reason': 'batch_limit'})
+        resources = json.loads((self.root / 'a.resources.json').read_text())
+        self.assertTrue(resources['observation']['post_reap_group_absent'])
+        self.assertFalse(resources['observation']['escaped_processes_excluded'])
+        self.assertTrue((self.root / 'a.result.json').exists())
 
     def test_failure_is_journaled_and_stops_subsequent_dispatch(self):
         def worker(task, output, on_start):
