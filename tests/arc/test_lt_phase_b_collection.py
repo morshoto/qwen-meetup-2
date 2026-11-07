@@ -47,6 +47,9 @@ class CollectionTests(unittest.TestCase):
         self.assertEqual(json.loads((self.root / 'a.result.json').read_text())['status'], 'timeout')
         self.assertEqual(self.journal.pending(3), ['b', 'c'])
         self.assertFalse((self.root / 'b.started.json').exists())
+        self.assertEqual(collect_batch(self.journal, limit=3, worker=self.worker),
+                         {'completed': 0, 'stop_reason': 'worker_timeout'})
+        self.assertEqual(self.calls, [])
 
     def test_unverified_cleanup_never_commits_and_requires_reconciliation(self):
         def worker(task, output, on_start):
