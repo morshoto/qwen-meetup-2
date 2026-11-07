@@ -64,6 +64,12 @@ class TinyCanaryIntegration(unittest.TestCase):
             self.assertFalse(result['training_verified'])
             self.assertTrue((root / 'adapter/adapters.safetensors').is_file())
             self.assertTrue((root / 'adapter/adapter_config.json').is_file())
+            from src.arc.lt_phase_b_adapter_artifact import inspect_adapter_artifact
+            final_tensors = json.loads((evidence / 'tensor-after.json').read_text())['adapter']
+            with patch('src.arc.lt_phase_b_adapter_artifact._expected_shapes', return_value=shapes):
+                artifact = inspect_adapter_artifact(root / 'adapter', expected_tensors=final_tensors)
+            self.assertEqual(artifact['matched_tensor_count'], len(shapes))
+            self.assertFalse(artifact['reload_verified'])
             reload_script = """import json,sys
 import mlx.core as mx
 import numpy as np
