@@ -98,4 +98,15 @@ class BackendTests(unittest.TestCase):
                 PhaseBBackend('model', model_manifest={}, adapter_state='on', adapter_path=self.root, adapter_sha256=self.hash)
 
 
+class ShapeTests(unittest.TestCase):
+    def test_expected_factors_cover_last_eight_layers(self):
+        from src.arc.lt_phase_b_backend import _expected_shapes
+        shapes = _expected_shapes()
+        self.assertEqual(len(shapes), 112)
+        for layer in range(32, 40):
+            self.assertEqual(shapes[f'model.layers.{layer}.self_attn.q_proj.lora_a'], [5120, 8])
+            self.assertEqual(shapes[f'model.layers.{layer}.mlp.down_proj.lora_b'], [8, 5120])
+        self.assertNotIn('model.layers.31.self_attn.q_proj.lora_a', shapes)
+
+
 if __name__ == '__main__': unittest.main()
