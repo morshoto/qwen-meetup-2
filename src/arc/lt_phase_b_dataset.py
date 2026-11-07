@@ -9,6 +9,7 @@ import re
 
 from src.arc.data import Task
 from src.arc.lt_live_backend import PROMPT
+from src.arc.lt_direct_format import normalize_direct
 from src.arc.lt_phase_b_eligibility import assess_candidates
 
 _MODEL = 'mlx-community/Qwen3-14B-4bit'
@@ -48,6 +49,15 @@ def build_dataset(tasks, rows, verifier, *, source, comparison_ids):
         prompt_sha = hashlib.sha256(prompt.encode()).hexdigest()
         for record in assess_candidates(row, verifier):
             call = row['calls'][record['candidate_index']]
+            if call.get('candidate') != record['candidate_index']:
+                raise ValueError('call index differs')
+            if record['verification_status'] in ('eligible', 'duplicate_task', 'incorrect'):
+                try:
+                    raw_prediction = normalize_direct(call['raw'], len(tasks[task_id].test_inputs))
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise ValueError('invalid recorded response') from exc
+                if call.get('error') is not None or raw_prediction != record['prediction']:
+                    raise ValueError('prediction differs from successful response')
             journal.append({**record, 'source_model_id': _MODEL, 'source_model_revision': _REVISION,
                 'source_generation': 0, 'prompt_sha256': prompt_sha,
                 'source_split': 'phase_b_training_pool', 'source_code_sha256': source['source_code_sha256'],
@@ -65,5 +75,11 @@ def build_dataset(tasks, rows, verifier, *, source, comparison_ids):
     else:
         nvalid = max(1, len(ids) // 5)
         status, train, valid = 'disjoint_split', [eligible[x] for x in ids[nvalid:]], [eligible[x] for x in ids[:nvalid]]
+    split_ids = {'train': [], 'valid': []}
+    if status == 'overfitting_only':
+        split_ids['train'] = ids
+    elif status == 'disjoint_split':
+        split_ids = {'train': ids[nvalid:], 'valid': ids[:nvalid]}
     return {'yield_status': status, 'selected_task_count': len(tasks), 'attempted_task_count': len(indexed),
-            'eligible_task_count': len(ids), 'train': train, 'valid': valid, 'journal': journal}
+            'eligible_task_count': len(ids), 'split_task_ids': split_ids,
+            'train': train, 'valid': valid, 'journal': journal}
