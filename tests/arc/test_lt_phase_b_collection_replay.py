@@ -3,7 +3,7 @@ import unittest
 
 from src.arc.lt_batch_journal import BatchJournal, _create
 from src.arc.lt_phase_b_collection import collect_batch
-from src.arc.lt_phase_b_collection_replay import replay_collection_dataset
+from src.arc.lt_phase_b_collection_replay import replay_collection_dataset, reconstruct_collection_dataset
 from tests.arc import test_lt_phase_b_sft_materialize as fixtures
 from tests.arc import test_lt_phase_b_dataset as examples
 from tests.arc.test_rsi_process_monitor import state
@@ -46,6 +46,23 @@ class CollectionReplayTests(unittest.TestCase):
         self.assertEqual(result['eligible_tasks'], 3)
         self.assertFalse(result['training_allowed'])
         self.assertNotIn('journal', result)
+
+    def test_reconstructs_private_dataset_before_materialization(self):
+        result = reconstruct_collection_dataset(journal_dir=self.root, tasks=self.f.tasks,
+            comparison_tasks={'x': examples.task('x')}, verifier=self.f.verifier,
+            source=self.source, resource_limits=self.limits)
+        self.assertEqual(result['yield_status'], 'disjoint_split')
+        self.assertEqual(result['eligible_task_count'], 3)
+        self.assertEqual(result['split_task_ids'], self.manifest['split_task_ids'])
+
+    def test_zero_self_solutions_remains_insufficient(self):
+        from src.arc.data import Verifier
+        result = reconstruct_collection_dataset(journal_dir=self.root, tasks=self.f.tasks,
+            comparison_tasks={'x': examples.task('x')}, verifier=Verifier({k: [[[9]]] for k in self.f.tasks}),
+            source=self.source, resource_limits=self.limits)
+        self.assertEqual(result['yield_status'], 'insufficient_verified_self_solutions')
+        self.assertEqual(result['eligible_task_count'], 0)
+        self.assertEqual(result['train'], [])
 
     def test_missing_and_modified_evidence_fail(self):
         for name, change in (('a.process.json', {'pid': 0}), ('b.result.json', {'candidates': []}),
