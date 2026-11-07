@@ -320,3 +320,14 @@ fixture showed that direct NumPy conversion of MLX BF16 fails; the tensor
 snapshot code now hashes a lossless U16 bit view and preserves the logical BF16
 dtype. A synthetic MLX-array test detects both an adapter change and a base
 change. No 14B model was loaded for this check.
+
+### Synthetic canary configuration plan
+
+Define a fixed non-ARC chat example and an explicit MLX-LM 0.30.7 CLI
+configuration for exactly one optimizer step, rank 8, eight layers, batch size
+1, 512 tokens, learning rate 1e-4, seed 20261111, thinking off and prompt
+masking. Bind the paths and configuration before launching, keep dataset, model
+and new adapter output disjoint, and never reuse the canary as Gen 1. The
+configuration builder and tokenizer checks are preparation only; a real canary
+still needs registered source/runtime identities, a monitored owned process,
+base and adapter tensor observations, and a new-process reload/inference.
