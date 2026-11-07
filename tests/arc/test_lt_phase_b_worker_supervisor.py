@@ -32,6 +32,15 @@ class WorkerSupervisorTests(unittest.TestCase):
         self.assertTrue(result['leader_reaped'])
         self.assertTrue(result['observation']['samples'])
 
+    def test_invalid_monitor_settings_are_rejected_before_spawning(self):
+        with patch('src.arc.lt_phase_b_worker_supervisor.subprocess.Popen') as popen:
+            for settings in ({'interval_seconds': 0}, {'sample_timeout_seconds': float('nan')},
+                             {'terminate_grace_seconds': -1}, {'interval_seconds': 6}):
+                with self.subTest(settings=settings), self.assertRaises(ValueError):
+                    run_monitored_worker([sys.executable, '-c', 'pass'], root='.', timeout=3,
+                                         baseline_sampler=lambda _: state(), **settings)
+        popen.assert_not_called()
+
     def test_unsafe_baseline_refuses_to_spawn(self):
         with patch('src.arc.lt_phase_b_worker_supervisor.subprocess.Popen') as popen:
             result = run_monitored_worker([sys.executable, '-c', 'pass'], root='.', timeout=3,
