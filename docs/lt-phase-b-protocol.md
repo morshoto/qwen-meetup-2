@@ -215,3 +215,7 @@ After a complete collection and observed canary reload, construct a draft real-t
 ### Matched comparison registration proposal
 
 After real training and its separately observed reload, build a draft comparison descriptor from the already allocated public comparison tasks, the unchanged collection generation settings and the exact reloaded adapter hash. Recheck the collection/data preflight and saved reload evidence before and after building the public-only export. The proposal does not examine comparison answers or scores, freeze evaluation, or authorize inference.
+
+### Training-data registration proposal
+
+Build a draft data descriptor from a validated collection registration and the challenge and solutions hashes recorded in the protocol. Hash the solutions bytes without selecting or printing answers, and recheck the collection preflight and protocol source before returning. The draft is non-authorizing; preparation still requires a separately frozen descriptor and the allocation decision.
