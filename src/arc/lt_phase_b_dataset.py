@@ -111,7 +111,7 @@ def build_dataset(tasks, rows, verifier, *, source, comparison_tasks):
                 'source_generation': 0, 'prompt_sha256': prompt_sha,
                 'source_split': 'phase_b_training_pool', 'source_code_sha256': source['source_code_sha256'],
                 'run_id': source['run_id'], 'run_sha256': source['run_sha256'], 'public_task_sha256': task_sha,
-                'usage': call.get('usage'), 'error': call.get('error')})
+                'adapter_state': 'off', 'adapter_sha256': None, 'usage': call.get('usage'), 'error': call.get('error')})
             if record['verification_status'] == 'eligible':
                 eligible[task_id] = {'messages': [{'role': 'user', 'content': prompt},
                     {'role': 'assistant', 'content': _json(record['prediction'])}]}

@@ -9,6 +9,7 @@ import re
 
 from src.arc.data import Task, Verifier, validate_grid
 from src.arc.lt_live_backend import PROMPT
+from src.arc.lt_phase_b_dataset import _MODEL, _REVISION
 
 
 def _json(value):
@@ -19,10 +20,14 @@ def _sha(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-def audit_sft_dataset(*, dataset, tasks, verifier, tokenizer, dataset_factory):
+def audit_sft_dataset(*, dataset, tasks, verifier, source, tokenizer, dataset_factory):
     if (not isinstance(dataset, dict) or not isinstance(tasks, dict) or not tasks or
             any(not isinstance(k, str) or not isinstance(v, Task) or v.id != k for k, v in tasks.items()) or
-            not isinstance(verifier, Verifier) or
+            not isinstance(verifier, Verifier) or not isinstance(source, dict) or
+            source.get('model_id') != _MODEL or source.get('model_revision') != _REVISION or
+            any(not isinstance(source.get(k), str) or not re.fullmatch(r'[0-9a-f]{64}', source[k])
+                for k in ('run_sha256', 'source_code_sha256')) or
+            not isinstance(source.get('run_id'), str) or not source['run_id'] or
             not callable(getattr(tokenizer, 'apply_chat_template', None)) or not callable(dataset_factory) or
             dataset.get('yield_status') not in ('disjoint_split', 'overfitting_only') or
             dataset.get('selected_task_count') != len(tasks) or dataset.get('attempted_task_count') != len(tasks) or
@@ -38,7 +43,13 @@ def audit_sft_dataset(*, dataset, tasks, verifier, tokenizer, dataset_factory):
         if (not isinstance(task_id, str) or task_id not in tasks or task_id in eligible or
                 record.get('task_exact_match') is not True or type(record.get('candidate_index')) is not int or
                 record['candidate_index'] not in (0, 1) or not isinstance(lineage, str) or
-                not re.fullmatch(r'[0-9a-f]{64}', lineage) or lineage != _sha(_json({'task_id': task_id}))):
+                not re.fullmatch(r'[0-9a-f]{64}', lineage) or lineage != _sha(_json({'task_id': task_id})) or
+                record.get('source_model_id') != source['model_id'] or
+                record.get('source_model_revision') != source['model_revision'] or
+                record.get('source_code_sha256') != source['source_code_sha256'] or
+                record.get('run_sha256') != source['run_sha256'] or record.get('run_id') != source['run_id'] or
+                record.get('adapter_state') != 'off' or 'adapter_sha256' not in record or
+                record['adapter_sha256'] is not None):
             raise ValueError('invalid eligible task lineage')
         eligible[task_id] = record
     ids = sorted(eligible)
@@ -75,7 +86,8 @@ def audit_sft_dataset(*, dataset, tasks, verifier, tokenizer, dataset_factory):
             prompt = _json({'instruction': PROMPT, 'task': tasks[task_id].prompt_data()})
             expected = {'messages': [{'role': 'user', 'content': prompt},
                                      {'role': 'assistant', 'content': _json(prediction)}]}
-            if example != expected or record.get('prompt_sha256') != _sha(prompt):
+            if (example != expected or record.get('prompt_sha256') != _sha(prompt) or
+                    record.get('public_task_sha256') != _sha(_json(tasks[task_id].prompt_data()))):
                 raise ValueError('example differs from verified record')
             messages = example['messages']
             native = dataset_factory(example, tokenizer)
