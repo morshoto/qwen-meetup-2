@@ -52,7 +52,8 @@ class SFTPreflightTests(unittest.TestCase):
 
     def test_eligible_record_must_match_registered_source(self):
         for field, value in (('source_model_revision', 'wrong'), ('source_code_sha256', 'd' * 64),
-                             ('run_sha256', 'd' * 64), ('run_id', 'other'), ('adapter_state', 'on')):
+                             ('run_sha256', 'd' * 64), ('run_id', 'other'), ('adapter_state', 'on'),
+                             ('source_generation', 1), ('source_split', 'other')):
             changed = copy.deepcopy(self.dataset)
             record = next(x for x in changed['journal'] if x['verification_status'] == 'eligible')
             record[field] = value
