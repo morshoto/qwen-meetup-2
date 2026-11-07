@@ -16,6 +16,7 @@ class PrepareSFTTests(unittest.TestCase):
         self.fixture.setUp(); self.addCleanup(self.fixture.doCleanups)
         f = self.fixture; self.run = f.fixture.fixture.run
         shutil.rmtree(self.run / 'sft-data')
+        (self.run / 'eligibility.json').unlink()
         self.spec = {'protocol': 'lt-phase-b-data-v1', 'status': 'frozen', 'run_id': f.collection['run_id'],
                      'collection_sha256': f.collection_sha, 'source_code_sha256': f.collection['source_code_sha256'],
                      'solution_sha256': hashlib.sha256(f.solutions).hexdigest()}
