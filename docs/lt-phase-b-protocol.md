@@ -191,3 +191,7 @@ Expose the existing one-shot real-training and real-adapter reload dispatchers t
 ### SFT preparation entry point
 
 Read the registered data and collection descriptors from the private run directory and the explicitly named local challenge, solution and official challenge inventory files. Verify that the preparing Python is the registered interpreter and run collection preflight before loading the pinned tokenizer. Use the installed MLX-LM chat dataset and thinking-off policy to prepare private eligibility and SFT artifacts; print only the count/status summary. This entry point does not load model weights or authorize training.
+
+### Collection registration proposal
+
+Build a draft collection descriptor only after recomputing the 100-task allocation against public inventories, then capture local source, 14B model, interpreter and environment identities and construct the public-only task export. Validate the assembled shape against the existing collection contract. The builder writes no run artifacts and returns a draft, non-authorizing proposal; it neither resolves the current allocation conflict nor freezes or starts an experiment. Recompute the full preflight when a future run is actually registered.
