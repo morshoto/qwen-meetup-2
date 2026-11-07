@@ -7,7 +7,7 @@ import hashlib
 import json
 import re
 
-from src.arc.data import Task, validate_grid
+from src.arc.data import Task, Verifier, validate_grid
 from src.arc.lt_live_backend import PROMPT
 
 
@@ -19,9 +19,10 @@ def _sha(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-def audit_sft_dataset(*, dataset, tasks, tokenizer, dataset_factory):
+def audit_sft_dataset(*, dataset, tasks, verifier, tokenizer, dataset_factory):
     if (not isinstance(dataset, dict) or not isinstance(tasks, dict) or not tasks or
             any(not isinstance(k, str) or not isinstance(v, Task) or v.id != k for k, v in tasks.items()) or
+            not isinstance(verifier, Verifier) or
             not callable(getattr(tokenizer, 'apply_chat_template', None)) or not callable(dataset_factory) or
             dataset.get('yield_status') not in ('disjoint_split', 'overfitting_only') or
             dataset.get('selected_task_count') != len(tasks) or dataset.get('attempted_task_count') != len(tasks) or
@@ -69,6 +70,8 @@ def audit_sft_dataset(*, dataset, tasks, tokenizer, dataset_factory):
                 raise ValueError('prediction count differs')
             for grid in prediction:
                 validate_grid(grid)
+            if not verifier.matches(task_id, prediction):
+                raise ValueError('prediction fails independent verification')
             prompt = _json({'instruction': PROMPT, 'task': tasks[task_id].prompt_data()})
             expected = {'messages': [{'role': 'user', 'content': prompt},
                                      {'role': 'assistant', 'content': _json(prediction)}]}
