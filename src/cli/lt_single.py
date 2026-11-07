@@ -114,7 +114,7 @@ def score_directory(directory):
     report = score_single(manifest['task_ids'], rows, verifier)
     report['evidence'] = {'comparison_sha256': manifest['sha256'], 'results_sha256': hashes,
                           'solutions_sha256': manifest['solutions_sha256'], 'protocol': manifest['protocol'],
-                          'model': manifest['model'], 'backend': manifest.get('backend', {'name': 'mlx', 'version': manifest['mlx_lm_version']}),
+                          'model': manifest['model'], 'backend': (manifest['backend'] if 'backend' in manifest else {'name': 'mlx', 'version': manifest['mlx_lm_version']}),
                           'task_settings': {key: manifest[key] for key in ('task_ids', 'candidate_count', 'temperature', 'seed_base', 'max_tokens', 'thinking')},
                           'started_without_result': interrupted}
     return report
