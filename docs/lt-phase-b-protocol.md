@@ -96,3 +96,10 @@ native trainer's tokenized prompt offset must equal the thinking-off inference
 prefix, and every full example must fit the registered sequence ceiling. Hash
 the exact private JSONL bytes; a missing validation split when required, mismatched lineage,
 prefix, or truncated example must stop the run rather than be silently dropped.
+
+Materialization must recheck full-task correctness with the offline verifier,
+then create new owner-only files under the private run directory. Preserve the
+exact JSONL hashes and task/lineage split in a non-answer manifest. For the
+one- or two-task overfitting case, omit `valid.jsonl`: the installed trainer
+cannot load an existing empty JSONL file as a validation dataset. Failed or
+incomplete collections must not create training files.
