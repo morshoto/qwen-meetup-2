@@ -331,3 +331,14 @@ and new adapter output disjoint, and never reuse the canary as Gen 1. The
 configuration builder and tokenizer checks are preparation only; a real canary
 still needs registered source/runtime identities, a monitored owned process,
 base and adapter tensor observations, and a new-process reload/inference.
+
+### Instrumented trainer plan
+
+Wrap the installed MLX-LM trainer's one-step call in the tensor observer after
+its own LoRA setup. Require the fixed synthetic dataset, exact CLI config,
+thinking-off template policy, a single call with one optimizer step, and no
+validation dataset. Persist before/after tensor evidence exclusively in a
+private directory and restore the trainer hook even on failure. The parent must
+still register and verify the model, runtime, source, resource limits, saved
+adapter and independent reload before treating a canary as completed. Tests use
+synthetic model arrays and a fake trainer; they do not execute the 14B model.
