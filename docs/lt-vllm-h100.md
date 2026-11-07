@@ -11,7 +11,8 @@ The official [model card](https://huggingface.co/Qwen/Qwen3.8-27B) and
 [vLLM recipe](https://recipes.vllm.ai/Qwen/Qwen3.8-27B) describe compatibility;
 the recipe states vLLM 0.17.0+ and Transformers 5.8.0+. These instructions use
 vLLM 0.33.0 as a pinned starting point, not a validated combination. Record any
-change as a new registration. Do not start a frozen run before applicable
+change as a new registration. The runner checks the registered vLLM version
+before creating its task journal and checks it again in each worker. Do not start a frozen run before applicable
 research gates and authorization are met.
 
 ```sh
@@ -69,7 +70,10 @@ Keep the virtual environment active for all commands. Preparation verifies the
 200-task allocation and creates a new run directory; it performs no inference.
 The runner reads the snapshot from the standard Hugging Face cache and does not
 download weights. Each invocation runs up to 10 pending tasks; repeat until the
-score reports all 200 attempted. Check status and errors between batches.
+score reports status `complete`, with 200 attempted and 400 candidates.
+The vLLM batch stops after an error or timeout and records that task as a
+terminal failure. Inspect diagnostics and stop; rerunning will not repair that
+result. Resolve the cause and prepare a new registration before a clean run.
 
 ```sh
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
