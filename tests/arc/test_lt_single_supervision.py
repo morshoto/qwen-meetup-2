@@ -28,3 +28,15 @@ class SingleSupervisionTests(unittest.TestCase):
             (journal.root / 'a.worker.json').write_text(json.dumps(row))
             with patch('src.arc.lt_single_supervision.os.killpg', side_effect=ProcessLookupError):
                 self.assertEqual(reconcile(journal, 'a'), 'recovered_complete')
+
+    def test_stop_on_error_preserves_later_tasks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            journal = BatchJournal(Path(tmp), ['a', 'b'], 'run:single')
+            called = []
+            def worker(task, path):
+                called.append(task)
+                return {'leader_reaped': True, 'group_absent': True, 'status': 'error'}
+            self.assertEqual(supervised_batch(journal, 'single', 2, worker, stop_on_failure=True), 1)
+            self.assertEqual(called, ['a'])
+            self.assertEqual(journal.pending(2), ['b'])
+            self.assertEqual(json.loads((journal.root / 'a.result.json').read_text())['status'], 'error')
