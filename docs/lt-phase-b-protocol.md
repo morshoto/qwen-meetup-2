@@ -227,3 +227,7 @@ Collection preflight must reject a draft protocol even if a caller supplies a de
 ### Historical Phase A allocation replay
 
 If an allocation decision later changes the Phase B pool, replay the frozen Phase A proposal using the training exclusions recorded in that historical proposal and verify their digest against the frozen Phase A manifest. Use the current Phase B pool only for the new Phase B exclusions and comparison proposal. Never rewrite the historical Phase A proposal or treat a fixture replacement pool as an allocation decision.
+
+### Frozen-gate integration fixture
+
+An opt-in local check may assemble a hypothetical frozen protocol in a temporary source copy using an ephemeral disjoint fixture pool. It must preserve the historical Phase A files, bind the resulting allocation and temporary source inventory, and exercise the real collection preflight without loading model weights or reading answer files. This fixture neither changes the real pool nor freezes or authorizes an experiment.
