@@ -167,3 +167,13 @@ unless termination and group cleanup are observed. Escaped descendants and
 system-owned Metal services remain explicitly unproven. Tests use synthetic
 children and controlled samples, not Qwen inference. The per-task 300-second
 ceiling is a conservative preflight proposal and is not yet a frozen run cap.
+
+### Monitored collection journal plan
+
+Run one task at a time through the existing durable `BatchJournal` and
+`supervised_batch`. Persist each worker's resource and cleanup observation before
+committing its task result. Stop the batch after the first worker error, timeout,
+preflight refusal, invalid evidence, or unverified group cleanup. An interrupted
+or partially recorded task remains marked started and requires reconciliation;
+never automatically rerun it. This orchestration is not a substitute for
+verifying the frozen manifest, model/runtime and public-export identities.
