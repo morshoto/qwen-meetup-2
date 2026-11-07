@@ -24,7 +24,15 @@ git clone https://github.com/morshoto/qwen-meetup-2.git
 cd qwen-meetup-2
 python3 -m venv .venv-vllm
 . .venv-vllm/bin/activate
-python -m pip install 'vllm==0.33.0' 'transformers>=5.8.0' huggingface_hub
+python -m pip install 'vllm==0.33.0' 'transformers>=5.8.0' huggingface_hub 'cuda-toolkit[nvcc]==13.0.3.0' ninja
+# The tested pip CUDA layout on Linux; do not overwrite existing paths.
+export CUDA_HOME="$(python -c 'import nvidia; from pathlib import Path; print(Path(next(iter(nvidia.__path__))) / "cu13")')
+export PATH="$(dirname "$(command -v python)"):$CUDA_HOME/bin:$PATH"
+export LD_LIBRARY_PATH="$CUDA_HOME/lib:${LD_LIBRARY_PATH:-}"
+test -e "$CUDA_HOME/lib64" || ln -s lib "$CUDA_HOME/lib64"
+test -e "$CUDA_HOME/lib/libcudart.so" || ln -s libcudart.so.13 "$CUDA_HOME/lib/libcudart.so"
+nvcc --version
+ninja --version
 python -c 'import importlib.metadata as m; print("vllm", m.version("vllm"), "transformers", m.version("transformers"))'
 python -m src.cli.lt_h100_preflight --vllm-version 0.33.0
 # For an uv-created virtual environment without pip, record packages with:
@@ -174,3 +182,14 @@ Verify the target is absent, inspect and remove any pilot-owned billed volumes,
 and record the final account balance. A failed watchdog or uncertain teardown
 requires immediate manual inspection; do not assume the credit balance is a
 hard spending cap. Stop or cancel the watchdog only after teardown is verified.
+
+## Observed H100 generation
+
+At source commit `0fdd3facb5ef248f43ac34a25c1e467de34f55c9`, a retained
+H100 80 GB instance ran Qwen3.8-27B BF16 using vLLM 0.33.0, CUDA 13.0
+compiler components, text-only mode, eager execution and one concurrent
+sequence. One development task generated two distinct 202-token raw
+responses. Both were rejected by the direct-grid parser because the expected
+output count did not match. The owned worker leader was reaped and its process
+group was absent. This validates raw generation for this setup, not valid ARC
+output, benchmark accuracy, independent sampling, or the frozen 200-task run.
