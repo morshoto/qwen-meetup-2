@@ -20,7 +20,11 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def verify_model(manifest):
-    return verify_phase_a_model({'models': {'single': manifest['model']}}, 'single')
+    root = verify_phase_a_model({'models': {'single': manifest['model']}}, 'single')
+    template = json.loads((root / 'tokenizer_config.json').read_bytes()).get('chat_template')
+    if not isinstance(template, str) or not template or sha(template.encode()) != manifest['model']['chat_template_sha256']:
+        raise ValueError('chat template identity differs')
+    return root
 
 
 def prepare(directory, config):
