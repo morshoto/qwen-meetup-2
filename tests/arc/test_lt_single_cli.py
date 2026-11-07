@@ -75,3 +75,22 @@ class SingleRunnerTests(unittest.TestCase):
                 self.assertEqual(verify_model(manifest), root)
                 manifest['model']['chat_template_sha256'] = '0' * 64
                 with self.assertRaises(ValueError): verify_model(manifest)
+
+    def test_vllm_runner_routes_selected_backend_and_current_python(self):
+        from src.cli.lt_single import worker_command
+        command = worker_command({'backend': {'name': 'vllm', 'version': '0.16.0'}},
+                                 Path('/run'), 'a', Path('/out'), Path('/model'))
+        import sys
+        self.assertEqual(command[0], sys.executable)
+        self.assertEqual(command[command.index('--backend') + 1], 'vllm')
+        self.assertEqual(command[command.index('--backend-version') + 1], '0.16.0')
+
+    def test_model_verification_accepts_separate_chat_template(self):
+        import hashlib
+        from src.cli.lt_single import verify_model
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'chat_template.jinja').write_text('template')
+            manifest = {'model': {'chat_template_sha256': hashlib.sha256(b'template').hexdigest()}}
+            with patch('src.cli.lt_single.verify_phase_a_model', return_value=root):
+                self.assertEqual(verify_model(manifest), root)
