@@ -95,5 +95,23 @@ class TrainerPreflightTests(unittest.TestCase):
             self.assertGreater(len(tokens), offset)
             self.assertLessEqual(len(tokens), trainer['max_seq_length'])
 
+    def test_verified_fixture_dataset_passes_native_mask_audit(self):
+        from mlx_lm.tuner.datasets import ChatDataset
+        from mlx_lm.utils import load_tokenizer
+        from src.arc.lt_phase_b_sft_preflight import audit_sft_dataset
+        from src.arc.mlx_chat_template import install_training_template_policy
+        from tests.arc import test_lt_phase_b_sft_preflight as fixture_module
+        fixture = fixture_module.SFTPreflightTests('test_audits_exact_verified_examples_and_prefix')
+        fixture.setUp()
+        path = Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
+        install_training_template_policy('off')
+        tokenizer = load_tokenizer(path)
+        report = audit_sft_dataset(dataset=fixture.dataset, tasks=fixture.fixture.tasks, tokenizer=tokenizer,
+            dataset_factory=lambda example, tok: ChatDataset([example], tok, mask_prompt=True))
+        self.assertEqual((report['train_count'], report['valid_count']), (2, 1))
+        self.assertGreater(report['maximum_tokens'], 0)
+        self.assertLessEqual(report['maximum_tokens'], 512)
+        self.assertFalse(report['training_allowed'])
+
 
 if __name__ == '__main__': unittest.main()
