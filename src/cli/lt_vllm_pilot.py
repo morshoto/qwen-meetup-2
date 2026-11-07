@@ -70,7 +70,9 @@ def prepare(directory, export, receipt, model, version):
     return manifest['sha256']
 
 
-def run(directory):
+def run(directory, *, max_tasks=3):
+    if type(max_tasks) is not int or not 1 <= max_tasks <= 3:
+        raise ValueError('max_tasks must be between 1 and 3')
     manifest = json.loads((directory / 'manifest.json').read_bytes())
     export = json.loads((directory / 'dev-export.json').read_bytes())
     receipt = json.loads((directory / 'dev-receipt.json').read_bytes())
@@ -97,7 +99,7 @@ def run(directory):
             def record(pid):
                 _create(journal.root / (task + '.process.json'), {'task_id': task, 'identity': journal.identity, 'pid': pid})
             return run_worker(argv, timeout=1800, on_start=record)
-        return supervised_batch(journal, 'single', len(manifest['task_ids']), worker, stop_on_failure=True,
+        return supervised_batch(journal, 'single', max_tasks, worker, stop_on_failure=True,
                                 on_result=lambda task, status: print(json.dumps({'task_id': task, 'status': status}), flush=True))
     finally:
         os.close(fd)
@@ -111,6 +113,7 @@ def main():
     parser.add_argument('--receipt', type=Path)
     parser.add_argument('--model', type=Path)
     parser.add_argument('--vllm-version')
+    parser.add_argument('--max-tasks', type=int, choices=(1, 2, 3), default=3)
     args = parser.parse_args()
     directory = args.directory.resolve()
     if args.operation == 'prepare':
@@ -119,7 +122,7 @@ def main():
         print(prepare(directory, json.loads(args.export.read_bytes()), json.loads(args.receipt.read_bytes()),
                       json.loads(args.model.read_bytes()), args.vllm_version))
     else:
-        print(json.dumps({'completed_this_batch': run(directory)}))
+        print(json.dumps({'completed_this_batch': run(directory, max_tasks=args.max_tasks)}))
 
 
 if __name__ == '__main__':
