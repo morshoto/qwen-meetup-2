@@ -10,6 +10,7 @@ from src.arc.data import Verifier, validate_grid
 from src.arc.lt_attestation import _object
 from src.arc.lt_phase_b_collection_preflight import preflight_collection
 from src.arc.lt_phase_b_protocol_gate import require_protocol_solutions
+from src.arc.lt_phase_b_prepare_dispatch import require_preparation_receipt
 from src.arc.lt_phase_b_collection_replay import replay_collection_dataset
 from src.arc.lt_phase_b_dispatch import _private_run_directory
 from src.arc.lt_phase_b_registered_worker import _digest
@@ -40,6 +41,18 @@ def preflight_training_data(*, training_spec, expected_training_sha256, collecti
     if checked != expected:
         raise ValueError('collection preflight differs')
     require_protocol_solutions(source_root, source_inventory, solution_bytes)
+    data_path = directory / 'data-spec.json'
+    data_spec = _json_file(data_path, _private_file(data_path))
+    if (data_spec.get('protocol') != 'lt-phase-b-data-v1' or data_spec.get('status') != 'frozen' or
+            data_spec.get('run_id') != collection_spec['run_id'] or
+            data_spec.get('collection_sha256') != expected_collection_sha256 or
+            data_spec.get('source_code_sha256') != collection_spec['source_code_sha256'] or
+            data_spec.get('solution_sha256') != training_spec['solution_sha256']):
+        raise ValueError('SFT data descriptor differs')
+    preparation = require_preparation_receipt(directory, data_sha256=_digest(data_spec),
+                                              collection_sha256=expected_collection_sha256)
+    if not isinstance(preparation, dict) or preparation.get('status') != 'private_sft_prepared_unverified':
+        raise ValueError('SFT preparation is not trainable')
     tasks = load_public_export(export, receipt)
     challenges = _object(challenge_bytes)
     comparison_receipt = {'comparison_sha256': expected_collection_sha256,

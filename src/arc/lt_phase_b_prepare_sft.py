@@ -7,6 +7,7 @@ import fcntl
 import hashlib
 import os
 import re
+import stat
 
 from src.arc.data import Verifier, validate_grid
 from src.arc.lt_attestation import _object
@@ -23,10 +24,14 @@ from src.arc.lt_public import build_public_export, load_public_export
 def prepare_sft(*, data_spec, expected_data_sha256, collection_spec, expected_collection_sha256,
                 source_root, run_dir, source_inventory, allocation_receipt, receipt, export,
                 challenge_bytes, solution_bytes, official_challenge_bytes, python_executable, model_path,
-                tokenizer, dataset_factory):
+                tokenizer, dataset_factory, _locked_fd=None):
     root, directory = _private_run_directory(source_root, run_dir)
-    lockfd = os.open(directory / 'run.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    owns_lock = _locked_fd is None
+    lockfd = os.open(directory / 'run.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600) if owns_lock else _locked_fd
     try:
+        held, current = os.fstat(lockfd), os.stat(directory / 'run.lock', follow_symlinks=False)
+        if not stat.S_ISREG(held.st_mode) or (held.st_dev, held.st_ino) != (current.st_dev, current.st_ino):
+            raise ValueError('run lock identity differs')
         fcntl.flock(lockfd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         for name in ('eligibility.json', 'sft-data', 'sft-preparation.json'):
             path = directory / name
@@ -86,4 +91,4 @@ def prepare_sft(*, data_spec, expected_data_sha256, collection_spec, expected_co
         _create(directory / 'sft-preparation.json', result)
         return result
     finally:
-        os.close(lockfd)
+        if owns_lock: os.close(lockfd)
