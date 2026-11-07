@@ -59,6 +59,8 @@ class AllocationReceiptTests(unittest.TestCase):
         from src.arc.lt_phase_b_registered_worker import _SETTINGS, _digest
         from src.arc.lt_public import build_public_export
         from src.arc.lt_source import capture_source_tree
+        from src.arc.rsi_runtime_identity import snapshot_runtime_identity
+        from src.arc.rsi_environment_identity import snapshot_environment
         tasks = self.fixture_pool()
         allocation = derive_allocation(ROOT, self.challenges, self.official, tasks)
         inventory = capture_source_tree(ROOT)
@@ -67,6 +69,8 @@ class AllocationReceiptTests(unittest.TestCase):
                 'source_code_sha256': inventory['code_sha256'], 'allocation_audit_sha256': _digest(allocation),
                 'prompt_sha256': hashlib.sha256(PROMPT.encode()).hexdigest(),
                 'selected_task_sha256': allocation['training_task_sha256'],
+                'runtime_manifest': snapshot_runtime_identity('/tmp/qwen-p3a-mlx-venv/bin/python'),
+                'environment_manifest': snapshot_environment('/tmp/qwen-p3a-mlx-venv/bin/python'),
                 'model_manifest': manifest, 'settings': dict(_SETTINGS)}
         receipt = {'comparison_sha256': _digest(spec), 'selected_task_sha256': spec['selected_task_sha256']}
         export = build_public_export(json.loads(self.challenges), receipt)

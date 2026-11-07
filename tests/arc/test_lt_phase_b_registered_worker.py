@@ -34,6 +34,9 @@ class RegisteredWorkerTests(unittest.TestCase):
         self.spec = {'protocol': 'lt-phase-b-collection-v1', 'status': 'frozen', 'run_id': 'fixture',
                      'source_code_sha256': 'a' * 64, 'allocation_audit_sha256': sha(self.allocation),
                      'prompt_sha256': hashlib.sha256(PROMPT.encode()).hexdigest(),
+                     'runtime_manifest': {'interpreter_realpath': '/fixture', 'interpreter_sha256': 'd' * 64,
+                                          'machine': 'arm64', 'packages': {'mlx-lm': '0.30.7', 'mlx': '0.32.4'}},
+                     'environment_manifest': {'interpreter_realpath': '/fixture', 'interpreter_sha256': 'd' * 64},
                      'selected_task_sha256': self.hashes, 'model_manifest': {
                          'model_id': 'mlx-community/Qwen3-14B-4bit',
                          'revision': 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4',
@@ -47,6 +50,10 @@ class RegisteredWorkerTests(unittest.TestCase):
         self.patcher = patch('src.arc.lt_phase_b_registered_worker.verify_source_tree')
         self.verify_source = self.patcher.start()
         self.addCleanup(self.patcher.stop)
+        self.runtime = patch('src.arc.lt_phase_b_registered_worker.verify_runtime_identity')
+        self.environment = patch('src.arc.lt_phase_b_registered_worker.verify_environment')
+        self.runtime_verify = self.runtime.start(); self.addCleanup(self.runtime.stop)
+        self.environment_verify = self.environment.start(); self.addCleanup(self.environment.stop)
         self.versions = patch('src.arc.lt_phase_b_registered_worker.importlib.metadata.version',
                               side_effect=lambda x: {'mlx-lm': '0.30.7', 'mlx': '0.32.4'}[x])
         self.versions.start(); self.addCleanup(self.versions.stop)
@@ -74,11 +81,14 @@ class RegisteredWorkerTests(unittest.TestCase):
         self.assertEqual(result['adapter_state'], 'off')
         self.assertEqual(len(self.created), 1)
         self.assertEqual(self.verify_source.call_count, 2)
+        self.assertEqual(self.runtime_verify.call_count, 2)
+        self.assertEqual(self.environment_verify.call_count, 2)
 
     def test_invalid_registration_never_loads_model(self):
         for changed in (dict(self.spec, status='draft'), dict(self.spec, allocation_audit_sha256='bad'),
                         dict(self.spec, settings={**self.spec['settings'], 'candidate_count': 1}),
-                        dict(self.spec, selected_task_sha256={}), dict(self.spec, source_code_sha256='c' * 64)):
+                        dict(self.spec, selected_task_sha256={}), dict(self.spec, source_code_sha256='c' * 64),
+                        dict(self.spec, environment_manifest={'interpreter_realpath': '/wrong', 'interpreter_sha256': 'd' * 64})):
             with self.subTest(changed=changed), self.assertRaises(ValueError): self.run_task(changed)
         self.assertEqual(self.created, [])
 
@@ -92,6 +102,11 @@ class RegisteredWorkerTests(unittest.TestCase):
         self.versions.stop()
         with patch('src.arc.lt_phase_b_registered_worker.importlib.metadata.version', return_value='wrong'):
             with self.assertRaises(ValueError): self.run_task()
+        self.assertEqual(self.created, [])
+
+    def test_runtime_identity_failure_prevents_backend_construction(self):
+        self.runtime_verify.side_effect = ValueError('runtime differs')
+        with self.assertRaises(ValueError): self.run_task()
         self.assertEqual(self.created, [])
 
 
