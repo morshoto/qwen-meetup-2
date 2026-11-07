@@ -24,6 +24,64 @@ _BOOTSTRAP = ('import sys; sys.path.insert(0, sys.argv.pop(1)); '
               'from src.cli.lt_phase_b_canary_worker import main; main()')
 
 
+def review_training_attempt(directory, *, canary, expected_canary_sha256, expected_collection_sha256):
+    """Replay local training evidence without claiming independent attestation."""
+    directory = Path(directory)
+    started = _read_object(directory / 'canary-started.json')
+    process = _read_object(directory / 'canary-process.json')
+    if (started != {'canary_sha256': expected_canary_sha256, 'collection_sha256': expected_collection_sha256} or
+            set(process) != {'pid', 'canary_sha256'} or type(process.get('pid')) is not int or process['pid'] <= 0 or
+            process.get('canary_sha256') != expected_canary_sha256):
+        raise ValueError('canary start identity differs')
+    observation = _read_object(directory / 'canary-observation.json')
+    if observation.get('status') != 'complete':
+        raise ValueError('canary training did not complete')
+    evidence = directory / 'canary-evidence'
+    monitor = observation.get('observation')
+    if not isinstance(monitor, dict):
+        raise ValueError('canary monitoring unavailable')
+    elapsed, loss = monitor.get('elapsed_seconds'), monitor.get('loss')
+    if (observation.get('leader_reaped') is not True or observation.get('group_absent') is not True or
+            monitor.get('stop_reason') != 'process_exited' or type(monitor.get('exit_code')) is not int or monitor['exit_code'] != 0 or
+            monitor.get('stream_complete') is not True or monitor.get('post_reap_group_absent') is not True or
+            type(elapsed) not in (int, float) or not math.isfinite(elapsed) or not 0 <= elapsed <= canary['timeout_seconds'] or
+            not isinstance(loss, dict) or loss.get('status') != 'ok' or
+            type(loss.get('last_step')) is not int or loss['last_step'] != 1 or
+            type(loss.get('last_loss')) not in (int, float) or not math.isfinite(loss['last_loss']) or
+            training_resource_decision(observation.get('baseline'), monitor.get('samples'),
+                                       limits=canary['resource_limits']) is not None):
+        raise ValueError('canary monitoring evidence differs')
+    text = monitor.get('log')
+    if not isinstance(text, str):
+        raise ValueError('canary training log unavailable')
+    log_bytes = text.encode()
+    if len(log_bytes) > 4 * 1024**2 or hashlib.sha256(log_bytes).hexdigest() != monitor.get('log_sha256'):
+        raise ValueError('canary training log identity differs')
+    if monitor['samples'][-1]['monotonic_seconds'] - observation['baseline']['monotonic_seconds'] > canary['timeout_seconds']:
+        raise ValueError('canary sample window exceeded')
+    watch = TrainingLossWatch()
+    for offset in range(0, len(log_bytes), 8192):
+        watch.feed(log_bytes[offset:offset + 8192])
+    watch.finish()
+    if watch.snapshot() != loss:
+        raise ValueError('canary loss differs from retained log')
+    before = _read_object(evidence / 'tensor-before.json')
+    after = _read_object(evidence / 'tensor-after.json')
+    checked = compare_tensor_states(before, after)
+    if _read_object(evidence / 'tensor-evidence.json') != checked:
+        raise ValueError('canary tensor evidence differs')
+    result = _read_object(directory / 'canary-result.json')
+    if result != {**checked, 'canary_sha256': expected_canary_sha256,
+                  'collection_sha256': expected_collection_sha256, 'canary_run_id': canary['run_id'],
+                  'promotion_allowed': False}:
+        raise ValueError('canary worker result differs')
+    adapter = inspect_adapter_artifact(directory / 'canary-adapter', expected_tensors=after['adapter'])
+    summary = {'status': 'training_observed_reload_pending', 'training_verified': False, 'promotion_allowed': False,
+               'canary_sha256': expected_canary_sha256, 'collection_sha256': expected_collection_sha256,
+               'loss': loss, 'tensor_evidence': checked, 'adapter': adapter}
+    return summary
+
+
 def run_canary(*, source_root, run_dir, expected_collection_sha256, expected_canary_sha256,
                challenge_path, official_archive, python_executable, model_path):
     root, directory = _private_run_directory(source_root, run_dir)
@@ -86,48 +144,8 @@ def run_canary(*, source_root, run_dir, expected_collection_sha256, expected_can
         if observation.get('status') != 'complete':
             return {'status': 'training_failed', 'training_verified': False, 'promotion_allowed': False,
                     'reason': observation.get('reason') or observation.get('observation', {}).get('stop_reason')}
-        monitor = observation.get('observation')
-        if not isinstance(monitor, dict):
-            raise ValueError('canary monitoring unavailable')
-        elapsed, loss = monitor.get('elapsed_seconds'), monitor.get('loss')
-        if (observation.get('leader_reaped') is not True or observation.get('group_absent') is not True or
-                monitor.get('stop_reason') != 'process_exited' or type(monitor.get('exit_code')) is not int or monitor['exit_code'] != 0 or
-                monitor.get('stream_complete') is not True or monitor.get('post_reap_group_absent') is not True or
-                type(elapsed) not in (int, float) or not math.isfinite(elapsed) or not 0 <= elapsed <= canary['timeout_seconds'] or
-                not isinstance(loss, dict) or loss.get('status') != 'ok' or
-                type(loss.get('last_step')) is not int or loss['last_step'] != 1 or
-                type(loss.get('last_loss')) not in (int, float) or not math.isfinite(loss['last_loss']) or
-                training_resource_decision(observation.get('baseline'), monitor.get('samples'),
-                                           limits=canary['resource_limits']) is not None):
-            raise ValueError('canary monitoring evidence differs')
-        text = monitor.get('log')
-        if not isinstance(text, str):
-            raise ValueError('canary training log unavailable')
-        log_bytes = text.encode()
-        if len(log_bytes) > 4 * 1024**2 or hashlib.sha256(log_bytes).hexdigest() != monitor.get('log_sha256'):
-            raise ValueError('canary training log identity differs')
-        if monitor['samples'][-1]['monotonic_seconds'] - observation['baseline']['monotonic_seconds'] > canary['timeout_seconds']:
-            raise ValueError('canary sample window exceeded')
-        watch = TrainingLossWatch()
-        for offset in range(0, len(log_bytes), 8192):
-            watch.feed(log_bytes[offset:offset + 8192])
-        watch.finish()
-        if watch.snapshot() != loss:
-            raise ValueError('canary loss differs from retained log')
-        before = _read_object(evidence / 'tensor-before.json')
-        after = _read_object(evidence / 'tensor-after.json')
-        checked = compare_tensor_states(before, after)
-        if _read_object(evidence / 'tensor-evidence.json') != checked:
-            raise ValueError('canary tensor evidence differs')
-        result = _read_object(directory / 'canary-result.json')
-        if result != {**checked, 'canary_sha256': expected_canary_sha256,
-                      'collection_sha256': expected_collection_sha256, 'canary_run_id': canary['run_id'],
-                      'promotion_allowed': False}:
-            raise ValueError('canary worker result differs')
-        adapter = inspect_adapter_artifact(directory / 'canary-adapter', expected_tensors=after['adapter'])
-        summary = {'status': 'training_observed_reload_pending', 'training_verified': False, 'promotion_allowed': False,
-                   'canary_sha256': expected_canary_sha256, 'collection_sha256': expected_collection_sha256,
-                   'loss': loss, 'tensor_evidence': checked, 'adapter': adapter}
+        summary = review_training_attempt(directory, canary=canary,
+            expected_canary_sha256=expected_canary_sha256, expected_collection_sha256=expected_collection_sha256)
         _create(directory / 'canary-training-summary.json', summary)
         return summary
     finally:
