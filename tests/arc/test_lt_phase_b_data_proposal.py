@@ -38,7 +38,7 @@ class DataProposalTests(unittest.TestCase):
         self.assertEqual(result['spec']['status'], 'draft')
         self.assertEqual(result['spec']['solution_sha256'], self.protocol['data']['solution_sha256'])
         self.assertEqual(result['spec_sha256'], _digest(result['spec']))
-        self.assertNotIn('fixture', str(result))
+        self.assertNotIn('[[[9]]]', str(result))
         self.assertEqual(self.preflight.call_count, 2)
 
     def test_mismatched_data_or_changed_protocol_refuses_proposal(self):
