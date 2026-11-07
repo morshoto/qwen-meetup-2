@@ -258,3 +258,15 @@ exact ID or visible-content overlaps with protected groups, and a hash binding
 the result to the worker descriptor. The existing preallocated pool must fail
 this check while the five scheduled-slot overlaps remain. A synthetic or
 alternative set used in tests does not amend the pool or authorize execution.
+
+### Runtime identity test plan
+
+The local `/tmp/qwen-p3a-mlx-venv/bin/python` probe reported arm64 Python 3.12.9,
+MLX-LM 0.30.7 and MLX 0.32.4. Its venv-only inventory contained 6,251 files,
+368,149,344 bytes, and SHA-256
+`f864e7d3a30f5d945998a459f00963f902ce7410dacac7488184429fcfc6b9ab`.
+This is a point-in-time inventory, not a frozen run or complete native-library
+closure. Bind the worker descriptor to the existing runtime and environment
+manifests, verify both against the executing interpreter before and after model
+generation, and reject mismatches before backend construction. Continue to
+report independent provenance and process isolation as unverified.
