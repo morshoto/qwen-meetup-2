@@ -94,6 +94,10 @@ terminating the instance. The manifest binds the task settings, model inventory,
 backend version and code; the score includes these identities and incomplete
 counts. The process-group observations do not prove full host or GPU cleanup.
 
+The vLLM backend uses BF16, text-only mode, eager execution and one concurrent
+sequence to limit H100 memory pressure. These settings are registered; they
+remain unverified until the next hardware run.
+
 The worker reloads the model per task to retain existing process isolation and
 recovery. This may be expensive on rented hardware; measure a small authorized
 development pilot, including loading, before budgeting the full run. The
