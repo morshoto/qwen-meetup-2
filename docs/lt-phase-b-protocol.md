@@ -131,3 +131,7 @@ The supervised worker must distinguish the synthetic one-step canary from the re
 ### Registered real-training worker preparation
 
 Bind a proposed frozen real-training descriptor to the collection, source inventory, canary descriptor and replayed canary reload, private SFT manifest, exact trainer configuration, selected training task IDs, and existing resource settings. The worker must verify runtime, environment, source and 14B model identity on both sides of the instrumented trainer callback. This descriptor-level consistency check is not authorization: the supervising dispatcher must independently replay the complete collection and offline eligibility evidence, enforce resource and time limits, and preserve one-shot failure records before launching the worker.
+
+### Collection-to-dataset replay
+
+Before real training, replay every registered collection task from its private journal: require matching identity, start and process markers, complete worker output and matching committed row, in-limit resource observations, and observed child/group termination. Reconstruct eligibility with the independent training-task verifier, reproduce the exact SFT examples and split, and compare their private hashes and lineage metadata to the materialized manifest. Reject missing, failed, interrupted, changed, or extra records. This is local evidence replay, not independent process attestation or a substitute for allocation and run registration checks.
