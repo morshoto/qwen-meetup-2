@@ -231,3 +231,7 @@ If an allocation decision later changes the Phase B pool, replay the frozen Phas
 ### Frozen-gate integration fixture
 
 An opt-in local check may assemble a hypothetical frozen protocol in a temporary source copy using an ephemeral disjoint fixture pool. It must preserve the historical Phase A files, bind the resulting allocation and temporary source inventory, and exercise the real collection preflight without loading model weights or reading answer files. This fixture neither changes the real pool nor freezes or authorizes an experiment.
+
+### Frozen answer-file binding
+
+SFT preparation and every real-training preflight must compare the supplied solutions-file hash with the exact frozen protocol file bound by the collection source inventory, in addition to checking their data or training descriptors. Read only the registered protocol and file hash for this check; a later descriptor cannot replace the protocol's answer-file identity.
