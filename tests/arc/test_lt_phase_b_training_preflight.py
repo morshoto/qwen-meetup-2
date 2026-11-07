@@ -69,6 +69,23 @@ class TrainingPreflightTests(unittest.TestCase):
             with self.assertRaises(ValueError): self.invoke()
             replay.assert_not_called()
 
+    def test_rebound_descriptor_cannot_override_frozen_protocol_answers(self):
+        from src.arc.lt_phase_b_protocol_gate import require_protocol_solutions
+        root = self.fixture.fixture.root
+        (root / 'configs').mkdir()
+        protocol = {'protocol': 'lt-phase-b-exploratory', 'status': 'frozen',
+                    'data': {'solution_sha256': hashlib.sha256(self.solutions).hexdigest()}}
+        path = root / 'configs/lt.phase-b.protocol.json'; path.write_text(json.dumps(protocol))
+        inventory = {'files': {'configs/lt.phase-b.protocol.json': hashlib.sha256(path.read_bytes()).hexdigest()}}
+        alternate = json.dumps({**json.loads(self.solutions), 'a': [[[9]]]}).encode()
+        training = {**self.training, 'solution_sha256': hashlib.sha256(alternate).hexdigest()}
+        self.protocol_solutions.side_effect = require_protocol_solutions
+        with patch('src.arc.lt_phase_b_training_preflight.replay_collection_dataset') as replay:
+            with self.assertRaises(ValueError):
+                self.invoke(solution_bytes=alternate, training_spec=training, expected_training_sha256=_digest(training),
+                            source_inventory=inventory)
+            replay.assert_not_called()
+
     def test_wrong_training_answers_or_comparison_content_fail(self):
         values = json.loads(self.solutions); values['a'] = [[[9]]]
         bad = json.dumps(values).encode()

@@ -12,7 +12,7 @@ class FrozenSolutionsTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory(); self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name); (self.root / 'configs').mkdir()
         self.solutions = b'{"training-task":[[[1]]]}'
-        self.protocol = {'status': 'frozen', 'data': {'solution_sha256': hashlib.sha256(self.solutions).hexdigest()}}
+        self.protocol = {'protocol': 'lt-phase-b-exploratory', 'status': 'frozen', 'data': {'solution_sha256': hashlib.sha256(self.solutions).hexdigest()}}
         self.path = self.root / 'configs/lt.phase-b.protocol.json'
         self.write_protocol()
 
