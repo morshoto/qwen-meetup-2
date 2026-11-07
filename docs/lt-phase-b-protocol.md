@@ -139,3 +139,7 @@ Before real training, replay every registered collection task from its private j
 ### Training-answer identity
 
 The frozen real-training descriptor must bind the exact ARC training-solutions file hash before eligibility is replayed. Recompute the collection preflight from the public challenge inventories, verify the solutions bytes against that registered hash, and construct the verifier only from selected training-task answers. Comparison-task public inputs are used only for disjointness checks. Neither answers nor reconstructed examples are included in the preflight result or passed to the trainer worker.
+
+### One-shot real-data dispatch
+
+Under the private run lock, replay the registered collection and dataset, validate the canary identity and reload evidence, and launch the registered trainer in a fresh isolated Python child with a 20-step monitored expectation. Persist start, PID, resource/loss observation and worker output without overwriting. Recompute the finite loss stream, tensor delta and saved adapter identity before recording an unverified, reload-pending summary. Preserve failed or interrupted attempts for reconciliation; never retry or promote automatically. Recheck the collection/data preflight after the child exits. This dispatcher does not by itself establish independent runtime attestation or escaped-descendant cleanup.
