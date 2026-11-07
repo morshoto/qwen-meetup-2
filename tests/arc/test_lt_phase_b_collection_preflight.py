@@ -22,6 +22,9 @@ class CollectionPreflightTests(unittest.TestCase):
         self.derive = self.audit.start(); self.addCleanup(self.audit.stop)
         self.sources = patch('src.arc.lt_phase_b_collection_preflight.verify_source_tree')
         self.verify = self.sources.start(); self.addCleanup(self.sources.stop)
+        self.gate = patch('src.arc.lt_phase_b_collection_preflight.validate_frozen_protocol',
+                          return_value={'status': 'frozen_protocol_consistent_unverified', 'execution_ready': False})
+        self.protocol_gate = self.gate.start(); self.addCleanup(self.gate.stop)
         self.runtime = patch('src.arc.lt_phase_b_collection_preflight.verify_runtime_identity')
         self.environment = patch('src.arc.lt_phase_b_collection_preflight.verify_environment')
         self.model = patch('src.arc.lt_phase_b_collection_preflight.verify_model_manifest')
@@ -47,6 +50,12 @@ class CollectionPreflightTests(unittest.TestCase):
         self.runtime_check.assert_called_once()
         self.environment_check.assert_called_once()
         self.model_check.assert_called_once()
+
+    def test_unfrozen_protocol_fails_before_runtime_or_model_probe(self):
+        self.protocol_gate.side_effect = ValueError('protocol not frozen')
+        with self.assertRaises(ValueError): self.call()
+        self.runtime_check.assert_not_called()
+        self.model_check.assert_not_called()
 
     def test_refuses_changed_allocation_export_or_run(self):
         for changed in ({'expected_run_sha256': 'f' * 64}, {'export': {'bad': True}},
