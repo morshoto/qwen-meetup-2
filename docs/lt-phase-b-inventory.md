@@ -216,3 +216,11 @@ prompted result. Failed rows remain task-level observations without fabricated
 worker metadata; their journal identity must be independently verified by the
 caller. These comparisons establish consistency only, not independent model or
 process attestation.
+
+### Adapter state identity at worker boundary
+
+The public handoff must check the constructed backend's adapter state and digest
+against the requested state before generation. Adapter-off must have no digest;
+adapter-on must match the registered digest. This catches accidental local
+misconfiguration, not a dishonest runtime or a mismatch of other inference
+settings. The paired scorer still needs independent run and settings binding.
