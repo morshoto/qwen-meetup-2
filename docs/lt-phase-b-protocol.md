@@ -103,3 +103,15 @@ exact JSONL hashes and task/lineage split in a non-answer manifest. For the
 one- or two-task overfitting case, omit `valid.jsonl`: the installed trainer
 cannot load an existing empty JSONL file as a validation dataset. Failed or
 incomplete collections must not create training files.
+
+## Real-data trainer configuration preparation
+
+Before any real-data training, verify the owner-only SFT manifest and exact
+JSONL file hashes and reject missing files, changed files, duplicate task IDs or
+lineage, and unsupported yield states. Propose one fixed MLX-LM 0.30.7
+configuration: 20 steps at most, rank 8, eight layers, batch size 1, sequence
+length 512, learning rate 1e-4, seed 20261111, prompt masking and thinking off.
+For a disjoint split the trainer may report validation loss, but no checkpoint
+is chosen from it; for an overfitting-only yield the validation file is absent.
+This configuration proposal does not itself pass the real 14B canary, establish
+model or source provenance, or authorize a training launch.
