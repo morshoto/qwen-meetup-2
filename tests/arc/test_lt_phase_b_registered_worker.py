@@ -28,8 +28,11 @@ class RegisteredWorkerTests(unittest.TestCase):
                                               'test': [{'input': [[2]]}]} for i in range(100)}
         self.hashes = {key: sha(value) for key, value in self.challenges.items()}
         self.inventory = {'code_sha256': 'a' * 64}
+        self.allocation = {'status': 'allocation_consistent_unverified', 'execution_ready': False,
+                           'training_task_sha256': self.hashes,
+                           'comparison_task_sha256': {f'{i + 100:08x}': 'f' * 64 for i in range(50)}}
         self.spec = {'protocol': 'lt-phase-b-collection-v1', 'status': 'frozen', 'run_id': 'fixture',
-                     'source_code_sha256': 'a' * 64, 'allocation_audit_sha256': 'b' * 64,
+                     'source_code_sha256': 'a' * 64, 'allocation_audit_sha256': sha(self.allocation),
                      'prompt_sha256': hashlib.sha256(PROMPT.encode()).hexdigest(),
                      'selected_task_sha256': self.hashes, 'model_manifest': {
                          'model_id': 'mlx-community/Qwen3-14B-4bit',
@@ -58,6 +61,7 @@ class RegisteredWorkerTests(unittest.TestCase):
             return Backend()
         args = {'spec': spec, 'expected_run_sha256': run_sha, 'source_inventory': self.inventory,
                 'source_root': '.', 'model_path': '/not-used', 'export': export, 'receipt': receipt,
+                'allocation_receipt': self.allocation,
                 'task_id': '00000000', 'backend_factory': factory}
         args.update(kwargs)
         return run_registered_task(**args)
@@ -80,6 +84,7 @@ class RegisteredWorkerTests(unittest.TestCase):
 
     def test_tampered_public_export_or_runtime_fails_before_model(self):
         with self.assertRaises(ValueError): self.run_task(expected_run_sha256='e' * 64)
+        with self.assertRaises(ValueError): self.run_task(allocation_receipt={**self.allocation, 'execution_ready': True})
         receipt = {'comparison_sha256': sha(self.spec), 'selected_task_sha256': self.hashes}
         export = build_public_export(self.challenges, receipt)
         export['tasks']['00000000']['test'][0]['output'] = [[1]]
