@@ -64,6 +64,7 @@ class PilotTests(unittest.TestCase):
                         'elapsed_seconds': 2, 'returncode': 1, 'stderr': 'failed'}
             with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']), \
                  patch('src.cli.lt_vllm_pilot.development_manifest_sha', return_value='a' * 64), \
+                 patch('src.cli.lt_vllm_pilot.check_h100'), \
                  patch('src.cli.lt_vllm_pilot.verify_model', return_value=Path('/model')), \
                  patch('src.cli.lt_vllm_pilot.importlib.metadata.version', return_value='0.33.0'), \
                  patch('src.cli.lt_vllm_pilot.run_worker', side_effect=worker):
@@ -90,6 +91,7 @@ class PilotTests(unittest.TestCase):
                 return {'status': 'complete', 'leader_reaped': True, 'group_absent': True, 'returncode': 0}
             with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']), \
                  patch('src.cli.lt_vllm_pilot.development_manifest_sha', return_value='a' * 64), \
+                 patch('src.cli.lt_vllm_pilot.check_h100'), \
                  patch('src.cli.lt_vllm_pilot.verify_model', return_value=Path('/model')), \
                  patch('src.cli.lt_vllm_pilot.importlib.metadata.version', return_value='0.33.0'), \
                  patch('src.cli.lt_vllm_pilot.run_worker', side_effect=worker):

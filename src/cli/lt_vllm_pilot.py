@@ -15,9 +15,10 @@ from src.arc.lt_public import load_public_export
 from src.arc.lt_single_supervision import supervised_batch
 from src.arc.lt_task_supervisor import run_worker
 from src.cli.lt_single import verify_model
+from src.cli.lt_h100_preflight import check as check_h100
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCES = ('src/cli/lt_vllm_pilot.py', 'src/cli/lt_single_worker.py', 'src/arc/lt_vllm_backend.py',
+SOURCES = ('src/cli/lt_h100_preflight.py', 'src/cli/lt_vllm_pilot.py', 'src/cli/lt_single_worker.py', 'src/arc/lt_vllm_backend.py',
            'src/arc/lt_live_backend.py', 'src/arc/lt_worker.py', 'src/arc/lt_task_supervisor.py',
            'src/arc/lt_single_supervision.py', 'src/arc/lt_batch_journal.py', 'src/arc/lt_public.py',
            'src/arc/lt_direct_format.py', 'src/arc/agent.py')
@@ -84,6 +85,7 @@ def run(directory):
     fd = os.open(directory / 'run.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     try:
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        check_h100(manifest['backend_version'])
         model_path = verify_model(manifest)
         if importlib.metadata.version('vllm') != manifest['backend_version']:
             raise ValueError('runtime version differs')
