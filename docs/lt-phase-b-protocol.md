@@ -219,3 +219,7 @@ After real training and its separately observed reload, build a draft comparison
 ### Training-data registration proposal
 
 Build a draft data descriptor from a validated collection registration and the challenge and solutions hashes recorded in the protocol. Hash the solutions bytes without selecting or printing answers, and recheck the collection preflight and protocol source before returning. The draft is non-authorizing; preparation still requires a separately frozen descriptor and the allocation decision.
+
+### Frozen protocol execution gate
+
+Collection preflight must reject a draft protocol even if a caller supplies a descriptor labeled frozen. Before any Phase B worker, verify that the source-bound protocol marks its task pool, comparison manifest and training settings frozen; bind the exact pool and comparison IDs, registered model and inference settings, and require all pre-execution allocation, manifest and identity gates to be closed. The synthetic canary remains a future gate rather than a prerequisite for collection. A frozen protocol check is local consistency, not independent authorization or proof of unrecorded exposure.
