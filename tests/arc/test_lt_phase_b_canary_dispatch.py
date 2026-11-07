@@ -62,6 +62,7 @@ class CanaryDispatchTests(unittest.TestCase):
                     'observation': {'stop_reason': 'process_exited', 'exit_code': 0, 'elapsed_seconds': 1.,
                         'stream_complete': True, 'post_reap_group_absent': True, 'samples': [state()],
                         'log': 'Iter 1: Train loss 0.125, x\n',
+                        'log_sha256': hashlib.sha256(b'Iter 1: Train loss 0.125, x\n').hexdigest(),
                         'loss': {'status': 'ok', 'last_step': 1, 'last_loss': .125},
                         'cleanup_observation': {'group_cleanup_verified': False}, 'escaped_processes_excluded': False}}
         self.worker = patch('src.arc.lt_phase_b_canary_dispatch.run_monitored_worker', side_effect=worker)
@@ -97,6 +98,17 @@ class CanaryDispatchTests(unittest.TestCase):
         self.assertTrue((self.run / 'canary-observation.json').exists())
         self.assertFalse((self.run / 'canary-training-summary.json').exists())
         with self.assertRaises(ValueError): self.invoke()
+
+    def test_changed_log_digest_is_rejected_and_attempt_is_retained(self):
+        original = self.process.side_effect
+        def forged(*args, **kwargs):
+            result = original(*args, **kwargs)
+            result['observation']['log_sha256'] = '0' * 64
+            return result
+        self.process.side_effect = forged
+        with self.assertRaises(ValueError): self.invoke()
+        self.assertTrue((self.run / 'canary-observation.json').exists())
+        self.assertFalse((self.run / 'canary-training-summary.json').exists())
 
     def test_preflight_failure_never_starts(self):
         self.preflight_check.side_effect = ValueError('fixture mismatch')
