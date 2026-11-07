@@ -7,6 +7,7 @@ import fcntl
 import hashlib
 import math
 import os
+import re
 import zipfile
 from pathlib import Path
 
@@ -76,6 +77,14 @@ def review_training_attempt(directory, *, canary, expected_canary_sha256, expect
                   'promotion_allowed': False}:
         raise ValueError('canary worker result differs')
     adapter = inspect_adapter_artifact(directory / 'canary-adapter', expected_tensors=after['adapter'])
+    if (not isinstance(adapter, dict) or set(adapter) != {'status', 'adapter_sha256', 'weights_sha256',
+            'config_sha256', 'matched_tensor_count', 'reload_verified', 'promotion_allowed'} or
+            adapter['status'] != 'adapter_files_consistent_unverified' or
+            type(adapter['matched_tensor_count']) is not int or adapter['matched_tensor_count'] != len(after['adapter']) or
+            adapter['reload_verified'] is not False or adapter['promotion_allowed'] is not False or
+            any(not isinstance(adapter[key], str) or not re.fullmatch(r'[0-9a-f]{64}', adapter[key])
+                for key in ('adapter_sha256', 'weights_sha256', 'config_sha256'))):
+        raise ValueError('adapter artifact evidence differs')
     summary = {'status': 'training_observed_reload_pending', 'training_verified': False, 'promotion_allowed': False,
                'canary_sha256': expected_canary_sha256, 'collection_sha256': expected_collection_sha256,
                'loss': loss, 'tensor_evidence': checked, 'adapter': adapter}

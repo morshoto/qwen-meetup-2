@@ -46,7 +46,7 @@ class CanaryDispatchTests(unittest.TestCase):
             'status': 'adapter_files_consistent_unverified', 'adapter_sha256': 'f' * 64,
             'weights_sha256': 'e' * 64, 'config_sha256': 'd' * 64, 'matched_tensor_count': 2,
             'reload_verified': False, 'promotion_allowed': False})
-        self.adapter_check.start(); self.addCleanup(self.adapter_check.stop)
+        self.adapter_inspect = self.adapter_check.start(); self.addCleanup(self.adapter_check.stop)
         self.shapes = patch('src.arc.lt_phase_b_tensor_evidence._expected_shapes',
                             return_value={'layer.lora_a': [2, 1], 'layer.lora_b': [1, 2]})
         self.shapes.start(); self.addCleanup(self.shapes.stop)
@@ -126,7 +126,7 @@ class CanaryDispatchTests(unittest.TestCase):
         self.assertFalse((self.run / 'canary-training-summary.json').exists())
 
     def test_incomplete_adapter_inspection_never_creates_summary(self):
-        self.adapter_check.return_value = {
+        self.adapter_inspect.return_value = {
             'status': 'adapter_files_consistent_unverified', 'adapter_sha256': 'f' * 64,
             'weights_sha256': 'e' * 64, 'config_sha256': 'd' * 64, 'matched_tensor_count': 1,
             'reload_verified': False, 'promotion_allowed': False}
