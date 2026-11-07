@@ -223,3 +223,7 @@ Build a draft data descriptor from a validated collection registration and the c
 ### Frozen protocol execution gate
 
 Collection preflight must reject a draft protocol even if a caller supplies a descriptor labeled frozen. Before any Phase B worker, verify that the source-bound protocol marks its task pool, comparison manifest and training settings frozen; bind the exact pool and comparison IDs, registered model and inference settings, and require all pre-execution allocation, manifest and identity gates to be closed. The synthetic canary remains a future gate rather than a prerequisite for collection. The frozen registration records the allocation-receipt digest; `source_closure` and `runtime_and_environment` are set to `bound_by_collection_descriptor`, while `protocol_hash` is set to `bound_by_source_inventory`. The collection descriptor carries the source-inventory digest, avoiding a self-referential hash inside the inventoried protocol file. A frozen protocol check is local consistency, not independent authorization or proof of unrecorded exposure.
+
+### Historical Phase A allocation replay
+
+If an allocation decision later changes the Phase B pool, replay the frozen Phase A proposal using the training exclusions recorded in that historical proposal and verify their digest against the frozen Phase A manifest. Use the current Phase B pool only for the new Phase B exclusions and comparison proposal. Never rewrite the historical Phase A proposal or treat a fixture replacement pool as an allocation decision.
