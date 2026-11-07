@@ -2,7 +2,7 @@
 import json
 
 
-def supervised_batch(journal, model, limit, worker, on_result=None):
+def supervised_batch(journal, model, limit, worker, on_result=None, *, stop_on_failure=False):
     if model != 'single': raise ValueError('invalid model')
     completed = 0
     for task_id in journal.pending(limit):
@@ -30,6 +30,8 @@ def supervised_batch(journal, model, limit, worker, on_result=None):
         journal.finish(task_id, row)
         if on_result is not None: on_result(task_id, row['status'])
         completed += 1
+        if stop_on_failure and status != 'complete':
+            break
     return completed
 
 
