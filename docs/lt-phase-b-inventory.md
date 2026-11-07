@@ -194,3 +194,15 @@ At source commit `b57f80e`, a one-second synthetic Python child was run on
 the post-reap signal-zero lookup. `escaped_processes_excluded` remained false.
 Only this summary was retained; it is not model, canary, independent cleanup,
 or peak-resource evidence. The synthetic check used no ARC data or model.
+
+### Public worker handoff plan
+
+Validate the entire Phase A-style public export and its per-task hashes before
+constructing a backend. Bind a selected task to the supplied run identity,
+adapter state and source digest, then use the existing two-candidate worker and
+frozen direct-grid prompt. Record a hash of the actual serialized public user
+payload used by the direct-grid backend. Test that held-out test outputs are
+rejected before backend construction and never appear in the backend prompt.
+The caller must separately verify that run/source identities are the frozen
+registration and that model, runtime and adapter identities are genuine; this
+handoff is not an OS isolation boundary or authorization to run.
