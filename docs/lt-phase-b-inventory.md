@@ -86,3 +86,9 @@ reasons; select at most one correct candidate per task lineage. Zero yield skips
 training, one or two tasks are labeled overfitting-only, and at least three use
 a deterministic task-disjoint split with one or more validation tasks. Schema
 and mask behavior still require a real installed-trainer preflight before use.
+
+For paired uncertainty, report the observed improvement-minus-regression rate
+and a conservative two-sided 95% Hoeffding interval over paired per-task changes
+in [-1, 1]. The interval is conditional on independent task observations and
+is not evidence that the fixed, selected ARC tasks are a random population
+sample. Report no interval for an empty paired denominator.
