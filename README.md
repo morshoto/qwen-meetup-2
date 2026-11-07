@@ -162,3 +162,41 @@ records; neither authorizes execution or establishes an RSI result.
 The [extended exposure review](research/rsi/extended-exposure-review.json)
 records a bounded scan of additional retained artifacts. It does not establish
 that prompts, missing history, or model pretraining are free of exposure.
+
+### Configured single-model ARC experiment
+
+Issue #9 adds a separate exploratory single-model registration on the same
+200 Phase A tasks. It uses the Phase A direct-grid prompt, two candidates and
+MLX runtime. It does not alter the historical two-model registration or start
+inference during preparation. H100/vLLM support is tracked separately in #11.
+
+`configs/lt.single.14b.example.json` illustrates the four required fields:
+Hugging Face `model_id`, immutable commit `revision`, SHA-256 hashes of every
+file in the snapshot, and the SHA-256 of its tokenizer chat-template string.
+For another MLX-compatible model, prepare its snapshot locally under
+`~/.cache/huggingface/hub/models--OWNER--NAME/snapshots/REVISION/` and make a
+new JSON config with the exact flat file inventory. The runner checks that
+inventory and every file hash before inference; it does not download models.
+The model must support the existing MLX runtime and chat-template options.
+The example does not establish compatibility with every Qwen model.
+
+Place the Phase A ARC training challenges and solutions in `data/raw/` as
+`arc-agi_training_challenges.json` and `arc-agi_training_solutions.json`.
+The existing allocation, source and model-audit files must also be present.
+On the Phase A macOS/MLX environment, create a new, non-existing run directory:
+
+```sh
+python -m src.cli.lt_single prepare --config configs/lt.single.14b.example.json --directory artifacts/my-single-run
+python -m src.cli.lt_single run --directory artifacts/my-single-run
+python -m src.cli.lt_single score --directory artifacts/my-single-run > artifacts/my-single-score.json
+```
+
+Each `run` processes at most ten pending tasks and can be repeated. An
+interrupted task stops the run; inspect its process evidence and use
+`python -m src.cli.lt_single reconcile --directory artifacts/my-single-run --task TASK_ID`
+to recover or allow a retry only after the owned process group is absent.
+The runner currently uses `/opt/homebrew/bin/python3.12`, offline `uv`,
+`mlx-lm==0.30.7` and `mlx==0.32.4`, matching Phase A. The report records the
+configured identity, task and source registration and actual denominators;
+missing work remains incomplete. Requested seeds do not establish independent
+samples. These results are exploratory and are not official evaluation scores.
