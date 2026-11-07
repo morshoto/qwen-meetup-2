@@ -283,3 +283,13 @@ markers prevent automatic replay of interrupted attempts. Fixture tests must
 show that failed preflight and concurrent ownership never launch a child. The
 local lock and consistency checks do not independently attest the runtime,
 prove complete descendant cleanup, or replace the outstanding allocation choice.
+
+The implemented collection worker currently accepts only a descriptor matching
+the Phase A direct-grid inference settings and the proposed 300-second per-task
+monitor ceiling. Its resource policy specifies at least 20 GiB free disk and
+20% free memory, at most 512 MiB swap growth and 32 GiB sampled process-tree
+RSS, with MLX's 48 GiB memory limit. These are provisional limits, not measured
+peaks or a frozen registration. The runtime/environment and model-file
+inventories are rechecked; the local files and process remain unauthenticated.
+The dispatcher passes no solution or official evaluation path to the child and
+uses `-I -B` with the selected source root. No Phase B model task has run.
