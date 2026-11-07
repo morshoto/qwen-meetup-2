@@ -15,8 +15,19 @@ class TrainerPreflightTests(unittest.TestCase):
 
         path = Path.home() / '.cache/huggingface/hub/models--mlx-community--Qwen3-14B-4bit/snapshots/a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4'
         tokenizer = AutoTokenizer.from_pretrained(str(path), local_files_only=True)
-        messages = [{'role': 'user', 'content': 'Return only JSON for the synthetic input [[0]].'},
-                    {'role': 'assistant', 'content': '[[[1]]]'}]
+        from src.arc.data import Task, Verifier
+        from src.arc.lt_phase_b_dataset import build_dataset
+        ids = ['a', 'b', 'c']
+        tasks = {x: Task(x, (([[0]], [[1]]),), ([[0]],)) for x in ids}
+        calls = [{'candidate': i, 'raw': '[[[1]]]', 'usage': None, 'error': None} for i in (0, 1)]
+        rows = [{'task_id': x, 'model': '14b', 'status': 'complete',
+                 'candidates': [[[[1]]], [[[1]]]], 'calls': calls,
+                 'cleanup': {'leader_reaped': True, 'group_absent': True}} for x in ids]
+        output = build_dataset(tasks, rows, Verifier({x: [[[1]]] for x in ids}),
+            comparison_ids={'eval'}, source={'model_id': 'mlx-community/Qwen3-14B-4bit',
+            'model_revision': 'a4d9b2df59d2c150bef02fcbe0d91046b7ca33a4',
+            'source_code_sha256': 'a' * 64, 'run_id': 'synthetic'})
+        messages = output['train'][0]['messages']
         with tempfile.TemporaryDirectory() as tmp:
             Path(tmp, 'train.jsonl').write_text(json.dumps({'messages': messages}) + '\n')
             train, valid, test = load_local_dataset(Path(tmp), tokenizer, types.SimpleNamespace(mask_prompt=True))
