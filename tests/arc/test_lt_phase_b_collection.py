@@ -5,6 +5,7 @@ from pathlib import Path
 
 from src.arc.lt_batch_journal import BatchJournal, _create
 from src.arc.lt_phase_b_collection import collect_batch
+from tests.arc.test_rsi_process_monitor import state
 
 
 class CollectionTests(unittest.TestCase):
@@ -22,8 +23,10 @@ class CollectionTests(unittest.TestCase):
                          'candidates': [[[[1]]], [[[1]]]], 'calls': []})
         return {'status': 'complete', 'leader_reaped': True, 'group_absent': True,
                 'returncode': 0, 'elapsed_seconds': 1., 'stdout': '', 'stderr': None,
-                'baseline': {'fixture': True}, 'observation': {'stop_reason': 'process_exited',
-                'samples': [{'fixture': True}], 'escaped_processes_excluded': False}}
+                'baseline': state(), 'observation': {'stop_reason': 'process_exited', 'exit_code': 0,
+                'group_signals_confirmed': True, 'stream_complete': True,
+                'cleanup_observation': {'group_cleanup_verified': True},
+                'samples': [state()], 'escaped_processes_excluded': False}}
 
     def test_success_persists_observation_and_resumes(self):
         result = collect_batch(self.journal, limit=2, worker=self.worker)
