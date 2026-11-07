@@ -53,7 +53,7 @@ class BackendTests(unittest.TestCase):
         on = PhaseBBackend('model', model_manifest={}, adapter_state='on',
                            adapter_path=self.root, adapter_sha256=self.hash)
         self.assertEqual(on.adapter_sha256, self.hash)
-        self.assertEqual(self.calls[-1][2]['adapter_path'], str(self.root))
+        self.assertEqual(self.calls[-1][2]['adapter_path'], str(self.root.resolve()))
 
     def test_reject_wrong_identity_state_configuration_and_loaded_values(self):
         for kwargs in ({'adapter_state': 'off', 'adapter_path': self.root, 'adapter_sha256': self.hash},
