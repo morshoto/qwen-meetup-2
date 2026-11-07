@@ -18,6 +18,7 @@ _PATHS = {'phase_a': 'configs/lt.phase-a.frozen.json', 'training': 'configs/lt.p
           'registry': 'research/rsi/bounded-exposure-proposal.json',
           'strict_split': 'research/rsi/exploratory-split-proposal.json',
           'development': 'configs/lt.phase-a.development.json',
+          'proposal_code': 'src/arc/lt_phase_b_proposal.py',
           'selection_code': 'src/arc/lt_phase_b_comparison_selection.py',
           'content_check_code': 'src/arc/lt_phase_b_dataset.py'}
 
