@@ -206,3 +206,13 @@ rejected before backend construction and never appear in the backend prompt.
 The caller must separately verify that run/source identities are the frozen
 registration and that model, runtime and adapter identities are genuine; this
 handoff is not an OS isolation boundary or authorization to run.
+
+### Dataset provenance binding
+
+Bind each successful collection row to the declared run digest, source digest,
+public task hash, prompt hash and adapter-off state before verification. Reject
+mismatches and do not promote a self-reported 32B, adapted or differently
+prompted result. Failed rows remain task-level observations without fabricated
+worker metadata; their journal identity must be independently verified by the
+caller. These comparisons establish consistency only, not independent model or
+process attestation.
