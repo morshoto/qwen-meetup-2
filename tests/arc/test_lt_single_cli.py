@@ -112,7 +112,8 @@ class SingleRunnerTests(unittest.TestCase):
                 return {'leader_reaped': True, 'group_absent': True, 'status': 'error'}
             with patch('src.cli.lt_single.ROOT', root), patch('src.cli.lt_single.build', return_value=manifest), \
                  patch('src.cli.lt_single.verify'), patch('src.cli.lt_single.verify_model', return_value=Path('/model')), \
-                 patch('src.cli.lt_single.run_worker', side_effect=worker):
+                 patch('src.cli.lt_single.run_worker', side_effect=worker), \
+                 patch('src.cli.lt_single.importlib.metadata.version', return_value='0.33.0'):
                 prepare(dest, config)
                 self.assertEqual(run(dest), 1)
                 self.assertFalse((dest / 'single/b.started.json').exists())

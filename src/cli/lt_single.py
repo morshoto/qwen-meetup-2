@@ -2,6 +2,7 @@
 import argparse
 import fcntl
 import hashlib
+import importlib.metadata
 import json
 import os
 import sys
@@ -73,6 +74,9 @@ def run(directory):
     try:
         fcntl.flock(lockfd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         model_path = verify_model(manifest)
+        backend = manifest.get('backend')
+        if backend and importlib.metadata.version('vllm') != backend['version']:
+            raise ValueError('runtime version differs')
         journal = BatchJournal(directory / 'single', manifest['task_ids'], manifest['sha256'] + ':single')
         def worker(task, output):
             argv = worker_command(manifest, directory, task, output, model_path)
