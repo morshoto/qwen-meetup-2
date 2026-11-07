@@ -97,3 +97,15 @@ class PilotTests(unittest.TestCase):
                 self.assertEqual(run(root / 'run'), 0)
             self.assertEqual(seen, ['dev', 'dev2', 'dev3'])
             self.assertEqual(len(json.loads((root / 'run/single/dev.result.json').read_text())['candidates']), 2)
+
+    def test_failed_runtime_preflight_does_not_start_pilot(self):
+        from src.cli.lt_vllm_pilot import run
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            with patch('src.cli.lt_vllm_pilot.development_ids', return_value=['dev', 'dev2', 'dev3']), \
+                 patch('src.cli.lt_vllm_pilot.development_manifest_sha', return_value='a' * 64), \
+                 patch('src.cli.lt_vllm_pilot.check_h100', side_effect=RuntimeError('C compiler missing')):
+                with self.assertRaisesRegex(RuntimeError, 'C compiler'):
+                    run(root / 'run')
+                self.assertFalse((root / 'run/single').exists())
