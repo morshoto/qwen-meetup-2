@@ -45,7 +45,7 @@ class SingleManifestTests(unittest.TestCase):
     @patch('src.arc.lt_single_manifest.build_phase_a')
     def test_rejects_unpinned_revision_and_unsafe_inventory(self, base):
         base.return_value = self.base
-        for update in ({'revision': 'main'}, {'model_id': ''},
+        for update in ({'revision': 'main'}, {'model_id': ''}, {'model_id': '../../escape'},
                        {'files_sha256': {'../escape': '2' * 64}},
                        {'files_sha256': {}}, {'chat_template_sha256': 'bad'}):
             with self.subTest(update=update), self.assertRaises(ValueError):
