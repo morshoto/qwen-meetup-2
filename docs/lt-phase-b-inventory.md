@@ -224,3 +224,13 @@ against the requested state before generation. Adapter-off must have no digest;
 adapter-on must match the registered digest. This catches accidental local
 misconfiguration, not a dishonest runtime or a mismatch of other inference
 settings. The paired scorer still needs independent run and settings binding.
+
+### Paired identity test plan
+
+Require a supplied comparison registration with run, source, adapter and
+per-task hashes. Reject completed rows whose identity differs, whose adapter-on
+hash does not match, or whose adapter-off row has an adapter. Compare prompt
+hashes for each complete pair. Failed rows may carry no candidates and remain
+unpaired; they cannot contribute a pass. These checks bind locally recorded
+claims to one another; verifying the registration and the loaded runtime is a
+separate prerequisite for real evaluation.
