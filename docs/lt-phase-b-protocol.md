@@ -135,3 +135,7 @@ Bind a proposed frozen real-training descriptor to the collection, source invent
 ### Collection-to-dataset replay
 
 Before real training, replay every registered collection task from its private journal: require matching identity, start and process markers, complete worker output and matching committed row, in-limit resource observations, and observed child/group termination. Reconstruct eligibility with the independent training-task verifier, reproduce the exact SFT examples and split, and compare their private hashes and lineage metadata to the materialized manifest. Reject missing, failed, interrupted, changed, or extra records. This is local evidence replay, not independent process attestation or a substitute for allocation and run registration checks.
+
+### Training-answer identity
+
+The frozen real-training descriptor must bind the exact ARC training-solutions file hash before eligibility is replayed. Recompute the collection preflight from the public challenge inventories, verify the solutions bytes against that registered hash, and construct the verifier only from selected training-task answers. Comparison-task public inputs are used only for disjointness checks. Neither answers nor reconstructed examples are included in the preflight result or passed to the trainer worker.
