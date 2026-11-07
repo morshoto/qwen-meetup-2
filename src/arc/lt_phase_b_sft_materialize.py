@@ -23,12 +23,16 @@ def _write(directory_fd, name, raw):
         os.fsync(stream.fileno())
 
 
-def materialize_sft(*, source_root, run_dir, dataset, tasks, verifier, source, tokenizer, dataset_factory):
+def materialize_sft(*, source_root, run_dir, dataset, tasks, verifier, source, tokenizer, dataset_factory, _locked_fd=None):
     _, directory = _private_run_directory(source_root, run_dir)
     if not isinstance(source, dict) or directory.name != 'lt-phase-b-' + str(source.get('run_id')):
         raise ValueError('run directory identity differs')
-    lockfd = os.open(directory / 'run.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    owns_lock = _locked_fd is None
+    lockfd = os.open(directory / 'run.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600) if owns_lock else _locked_fd
     try:
+        held, current = os.fstat(lockfd), os.stat(directory / 'run.lock', follow_symlinks=False)
+        if not stat.S_ISREG(held.st_mode) or (held.st_dev, held.st_ino) != (current.st_dev, current.st_ino):
+            raise ValueError('run lock identity differs')
         fcntl.flock(lockfd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         frozen_data, frozen_source = copy.deepcopy(dataset), copy.deepcopy(source)
         report = audit_sft_dataset(dataset=frozen_data, tasks=tasks, verifier=verifier, source=frozen_source,
@@ -68,4 +72,4 @@ def materialize_sft(*, source_root, run_dir, dataset, tasks, verifier, source, t
             os.close(runfd)
         return manifest
     finally:
-        os.close(lockfd)
+        if owns_lock: os.close(lockfd)
