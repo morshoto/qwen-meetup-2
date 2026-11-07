@@ -61,6 +61,7 @@ class CanaryDispatchTests(unittest.TestCase):
                     'baseline': state(), 'elapsed_seconds': 1., 'stdout': 'Iter 1: Train loss 0.125, x\n', 'stderr': None,
                     'observation': {'stop_reason': 'process_exited', 'exit_code': 0, 'elapsed_seconds': 1.,
                         'stream_complete': True, 'post_reap_group_absent': True, 'samples': [state()],
+                        'log': 'Iter 1: Train loss 0.125, x\n',
                         'loss': {'status': 'ok', 'last_step': 1, 'last_loss': .125},
                         'cleanup_observation': {'group_cleanup_verified': False}, 'escaped_processes_excluded': False}}
         self.worker = patch('src.arc.lt_phase_b_canary_dispatch.run_monitored_worker', side_effect=worker)
