@@ -28,7 +28,7 @@ def run_registered_training(*, training_spec, expected_training_sha256, canary_s
         collection_spec=collection_spec, expected_collection_sha256=expected_collection_sha256,
         source_inventory=source_inventory, allocation_receipt=allocation_receipt, receipt=receipt)
     keys = {'protocol', 'status', 'run_id', 'collection_sha256', 'canary_sha256', 'source_code_sha256',
-            'dataset_manifest_sha256', 'config_sha256', 'yield_status', 'checkpoint_policy',
+            'dataset_manifest_sha256', 'config_sha256', 'solution_sha256', 'yield_status', 'checkpoint_policy',
             'timeout_seconds', 'resource_limits'}
     valid_hash = lambda x: isinstance(x, str) and bool(re.fullmatch(r'[0-9a-f]{64}', x))
     if (not isinstance(training_spec, dict) or set(training_spec) != keys or
@@ -39,6 +39,7 @@ def run_registered_training(*, training_spec, expected_training_sha256, canary_s
             training_spec.get('canary_sha256') != expected_canary_sha256 or
             training_spec.get('source_code_sha256') != collection_spec['source_code_sha256'] or
             not valid_hash(training_spec.get('config_sha256')) or not valid_hash(training_spec.get('dataset_manifest_sha256')) or
+            not valid_hash(training_spec.get('solution_sha256')) or
             training_spec.get('checkpoint_policy') != 'final_step_only' or
             type(training_spec.get('timeout_seconds')) is not int or
             training_spec['timeout_seconds'] != settings['task_timeout_seconds'] or
