@@ -2,6 +2,7 @@ import hashlib
 import json
 import unittest
 from unittest.mock import patch
+from pathlib import Path
 
 from src.arc.lt_batch_journal import _create
 from src.arc.lt_live_backend import PROMPT
@@ -49,7 +50,7 @@ class ComparisonDispatchTests(unittest.TestCase):
             output = argv[argv.index('--output') + 1]
             self.calls.append((task, adapter_state)); on_start(1234)
             prompt = json.dumps({'instruction': PROMPT, 'task': self.challenges[task]}, sort_keys=True, separators=(',', ':'))
-            _create(__import__('pathlib').Path(output), {'task_id': task, 'model': '14b', 'status': 'complete',
+            _create(Path(output), {'task_id': task, 'model': '14b', 'status': 'complete',
                 'candidates': [[[[1]]], [[[1]]]], 'adapter_state': adapter_state,
                 'adapter_sha256': 'f'*64 if adapter_state == 'on' else None, 'run_sha256': self.sha,
                 'source_code_sha256': c.spec['source_code_sha256'], 'public_task_sha256': self.tasks[task],
@@ -96,6 +97,10 @@ class ComparisonDispatchTests(unittest.TestCase):
         self.worker.side_effect = changed
         with self.assertRaises(ValueError): self.invoke()
         self.assertTrue(list((self.run / 'comparison-off').glob('*.result.json')))
+        self.fixture.solution.write_text('{}')
+        self.worker.side_effect = original
+        with self.assertRaises(ValueError): self.invoke()
+        self.assertEqual(len(self.calls), 1)
 
 
 if __name__ == '__main__': unittest.main()
