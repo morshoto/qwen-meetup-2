@@ -40,3 +40,16 @@ class SingleSupervisionTests(unittest.TestCase):
             self.assertEqual(called, ['a'])
             self.assertEqual(journal.pending(2), ['b'])
             self.assertEqual(json.loads((journal.root / 'a.result.json').read_text())['status'], 'error')
+
+    def test_completed_worker_records_wall_time_including_startup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            journal = BatchJournal(Path(tmp), ['a'], 'run:single')
+            def worker(task, path):
+                path.write_text(json.dumps({'task_id': task, 'model': 'single', 'status': 'complete',
+                                            'candidates': [None, None], 'runtime_seconds': 2.0}))
+                return {'leader_reaped': True, 'group_absent': True, 'status': 'complete',
+                        'returncode': 0, 'elapsed_seconds': 7.0}
+            supervised_batch(journal, 'single', 1, worker)
+            row = json.loads((journal.root / 'a.result.json').read_text())
+            self.assertEqual(row['cleanup']['worker_wall_seconds'], 7.0)
+            self.assertEqual(row['runtime_seconds'], 2.0)
