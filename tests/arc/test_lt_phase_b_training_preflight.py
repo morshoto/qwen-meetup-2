@@ -37,7 +37,12 @@ class TrainingPreflightTests(unittest.TestCase):
         self.collection_preflight = patcher.start(); self.addCleanup(patcher.stop)
         patcher = patch('src.arc.lt_phase_b_training_preflight.require_protocol_solutions')
         self.protocol_solutions = patcher.start(); self.addCleanup(patcher.stop)
-        patcher = patch('src.arc.lt_phase_b_training_preflight.require_preparation_receipt')
+        data_spec = {'protocol': 'lt-phase-b-data-v1', 'status': 'frozen', 'run_id': self.collection['run_id'],
+            'collection_sha256': self.collection_sha, 'source_code_sha256': self.collection['source_code_sha256'],
+            'solution_sha256': self.training['solution_sha256']}
+        path = f.fixture.run / 'data-spec.json'; path.write_text(json.dumps(data_spec)); path.chmod(0o600)
+        patcher = patch('src.arc.lt_phase_b_training_preflight.require_preparation_receipt',
+                        return_value={'status': 'private_sft_prepared_unverified'})
         self.preparation_receipt = patcher.start(); self.addCleanup(patcher.stop)
 
     def invoke(self, **kwargs):

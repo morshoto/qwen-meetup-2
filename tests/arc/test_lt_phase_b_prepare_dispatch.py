@@ -65,6 +65,13 @@ class PrepareDispatchTests(unittest.TestCase):
             require_preparation_receipt(self.run, data_sha256=_digest(self.fixture.spec),
                                         collection_sha256=self.fixture.fixture.collection_sha)
 
+    def test_failed_final_preflight_leaves_no_completion(self):
+        checked = self.preflight.return_value
+        self.preflight.side_effect = [checked, ValueError('source changed')]
+        with self.assertRaises(ValueError): self.invoke()
+        self.assertTrue((self.run / 'sft-dispatch-started.json').exists())
+        self.assertFalse((self.run / 'sft-dispatch-complete.json').exists())
+
     def test_changed_eligibility_or_summary_invalidates_receipt(self):
         self.invoke()
         for name in ('eligibility.json', 'sft-preparation.json', 'sft-data/manifest.json'):
