@@ -293,3 +293,12 @@ peaks or a frozen registration. The runtime/environment and model-file
 inventories are rechecked; the local files and process remain unauthenticated.
 The dispatcher passes no solution or official evaluation path to the child and
 uses `-I -B` with the selected source root. No Phase B model task has run.
+
+A subsequent tokenizer-only preflight used the installed MLX-LM
+`TokenizerWrapper` with the existing `install_training_template_policy('off')`.
+For a synthetic chat example, the native `ChatDataset` prompt-mask offset
+matched the full thinking-off inference prefix exactly, and the target contained
+the completion. This resolves the earlier observed mask difference for that
+fixture when the policy is installed; it is not evidence of a training step or
+that every real example fits the sequence limit. Register and test the policy
+and truncation for actual datasets before training.
