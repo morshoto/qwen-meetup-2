@@ -68,6 +68,29 @@ class WorkerSupervisorTests(unittest.TestCase):
         self.assertEqual(nonfinite['status'], 'error')
         self.assertEqual(nonfinite['observation']['stop_reason'], 'nonfinite_loss')
 
+    def test_real_training_requires_registered_final_step(self):
+        def run(last, **kwargs):
+            code = f'print("Iter {last}: Train loss 0.125, x", flush=True)'
+            return run_monitored_worker([sys.executable, '-u', '-c', code], root='.', timeout=3,
+                baseline_sampler=lambda _: state(), process_sampler=lambda _root, _pid: state(),
+                interval_seconds=.05, sample_timeout_seconds=.2, terminate_grace_seconds=.1,
+                training=True, **kwargs)
+        self.assertEqual(run(20, expected_training_steps=20)['status'], 'complete')
+        self.assertEqual(run(19, expected_training_steps=20)['status'], 'error')
+        self.assertEqual(run(21, expected_training_steps=20)['status'], 'error')
+        self.assertEqual(run(20)['status'], 'error')
+
+    def test_invalid_expected_training_steps_fail_before_spawn(self):
+        with patch('src.arc.lt_phase_b_worker_supervisor.subprocess.Popen') as popen:
+            for bad in (True, 0, 2, 19, 21, 20.0):
+                with self.subTest(bad=bad), self.assertRaises(ValueError):
+                    run_monitored_worker([sys.executable, '-c', 'pass'], root='.', timeout=3,
+                        training=True, expected_training_steps=bad)
+            with self.assertRaises(ValueError):
+                run_monitored_worker([sys.executable, '-c', 'pass'], root='.', timeout=3,
+                    training=False, expected_training_steps=20)
+            popen.assert_not_called()
+
     def test_invalid_monitor_settings_are_rejected_before_spawning(self):
         with patch('src.arc.lt_phase_b_worker_supervisor.subprocess.Popen') as popen:
             for settings in ({'interval_seconds': 0}, {'sample_timeout_seconds': float('nan')},
