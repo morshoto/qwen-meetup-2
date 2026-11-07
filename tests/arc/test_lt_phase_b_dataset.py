@@ -67,6 +67,27 @@ class DatasetTests(unittest.TestCase):
         bad['calls'][0]['error'] = 'timeout'
         with self.assertRaises(ValueError): self.build([bad])
 
+    def test_worker_failure_is_preserved_and_never_counted_as_zero_yield(self):
+        failure = {'task_id': 'a', 'model': '14b', 'status': 'timeout',
+                   'candidates': [], 'calls': [], 'worker_diagnostics': {'stderr': 'deadline'},
+                   'cleanup': {'leader_reaped': True, 'group_absent': True}}
+        rows = [failure] + [row(x, [self.good, self.bad]) for x in ('b', 'c', 'd')]
+        result = self.build(rows)
+        self.assertEqual(result['yield_status'], 'collection_failed')
+        self.assertEqual(result['failed_task_count'], 1)
+        self.assertEqual(result['eligible_task_count'], 3)
+        self.assertEqual((result['train'], result['valid']), ([], []))
+        record = result['journal'][0]
+        self.assertEqual(record['verification_status'], 'worker_timeout')
+        self.assertIsNone(record['candidate_index'])
+        self.assertIsNone(record['prediction'])
+        self.assertIsNone(record['task_exact_match'])
+        self.assertEqual(record['worker_diagnostics']['stderr'], 'deadline')
+        for bad in (dict(failure, model='32b'), dict(failure, candidates=[self.good]),
+                    dict(failure, cleanup={'leader_reaped': True, 'group_absent': False})):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                self.build([bad])
+
     def test_incomplete_collection_never_declares_zero_yield(self):
         result = self.build([row('a', [self.bad, None])])
         self.assertEqual(result['yield_status'], 'collection_incomplete')
