@@ -15,7 +15,7 @@ style: |
   <h1>Can Qwen Improve Itself<br />on ARC?</h1>
   <div class="rule"></div>
   <p class="lead">自己生成データから、問題を解く力は伸ばせるのか？</p>
-  <p class="subtle">Qwen3 · ARC-AGI-2 · Apple Silicon · experiments through 2026-11-05</p>
+  <p class="subtle">Qwen3 / Qwen3.8 · ARC-AGI-2 · Apple Silicon / Colab A100 · through 2026-11-08</p>
 </div>
 
 ---
@@ -28,18 +28,93 @@ style: |
   <div class="axis-card axis-card--amber"><h3>3 · Improve</h3><p>そのデータで学習し、独立した問題で改善するか？</p></div>
 </div>
 <div class="callout callout--info u-mt-34">結果：学習の仕組みは動いた。ARCの正答率向上はまだ示せていない。</div>
-<p class="source">Overview: ../nb/00_overview.ipynb</p>
+<p class="source">Overview: ../nb/results/00_overview.ipynb</p>
+
+---
+
+## RSIとは？
+
+<div class="quote">Recursive Self-Improvement<br />AIが改善の仕組み自体を変え、改善を繰り返す</div>
+<div class="layout--split u-mt-30">
+  <div class="card"><h3>狭義 · 改善方法も改善</h3><p>改善器やエージェント自身を変更し、次の改善に使う。</p></div>
+  <div class="card"><h3>広義 · 反復的な自己改善</h3><p>自己生成した経験やフィードバックで、回答・コード・戦略などを改善。</p></div>
+</div>
+<p>重み更新は必須ではない。ここでは広義の関連研究も扱う。</p>
+<p class="source"><a href="https://arxiv.org/abs/2505.22954">Darwin Gödel Machine (2025)</a> · <a href="https://arxiv.org/abs/2310.02304">STOP (2023)</a></p>
+
+---
+
+## 何を改善するか？ 5つの切り口
+
+<div class="layout--three">
+  <div class="axis-card"><h3>重み / 方策</h3><p>学習・蒸留でモデルを更新</p></div>
+  <div class="axis-card axis-card--teal"><h3>Self-Play</h3><p>自分で課題を作り、解いて学ぶ</p></div>
+  <div class="axis-card axis-card--amber"><h3>プロンプト進化</h3><p>失敗から指示や推論手順を改良</p></div>
+</div>
+<div class="layout--split u-mt-24">
+  <div class="card"><h3>Agent / Code Evolution</h3><p>ツール・制御フロー・コードを改良</p></div>
+  <div class="card"><h3>Meta Self-Improvement</h3><p>改善する仕組み自体を改良</p></div>
+</div>
+<p class="source">分類は改善対象による整理。Self-Playは重み更新を伴うなど、カテゴリーは重なる。</p>
+
+---
+
+## 代表的な研究：改善対象は重みだけではない
+
+<div class="layout--split">
+  <div class="card"><h3>コード・エージェント</h3><p><a href="https://arxiv.org/abs/2506.13131">AlphaEvolve (2025)</a>：コードを生成・評価し進化</p><p><a href="https://arxiv.org/abs/2408.08435">ADAS (2024)</a>：エージェント設計を探索</p></div>
+  <div class="card"><h3>プロンプト・自己生成</h3><p><a href="https://arxiv.org/abs/2507.19457">GEPA (2025)</a>：実行結果を振り返り指示を進化</p><p><a href="https://arxiv.org/abs/2505.03335">Absolute Zero (2025)</a>：課題の生成と検証から学習</p></div>
+</div>
+<div class="callout callout--info u-mt-24">改善対象は異なる。すべてが狭義のRSIを実証したわけではない。</div>
+<p class="source">発表年は初出。ADASは期間外の先行研究。Absolute Zeroは重みを更新する。</p>
 
 ---
 
 ## ARCは「例からルールを見つける」課題
 
-<div class="layout--split">
-  <div class="card"><h3>入力</h3><p>色付きグリッドの入力と出力の例を複数見る。</p><p>新しい入力に同じ変換を適用する。</p></div>
-  <div class="card"><h3>今回の方法</h3><p>Qwenに変換用Pythonを書かせる。</p><p>隔離環境で実行し、独立した出力で検証する。</p></div>
+<div class="layout--three">
+  <div class="axis-card"><h3>1 · 例を見る</h3><p>色付きグリッドの入力と出力の組を読む。</p></div>
+  <div class="axis-card axis-card--teal"><h3>2 · ルールを推測</h3><p>色・形・位置などの関係を見つける。</p></div>
+  <div class="axis-card axis-card--amber"><h3>3 · 新しい入力を解く</h3><p>同じルールを適用し、出力を予測する。</p></div>
 </div>
-<div class="quote u-mt-30">動くコードと、正しい変換は違う。</div>
-<p class="source">../docs/p3c-live-audit.md · Evaluation labels are kept out of prompts</p>
+<div class="callout callout--info u-mt-34">まず説明用の合成例を2問、その後に公開されている実際の訓練問題を紹介します。</div>
+<p class="source">ARC-AGI-2: <a href="https://github.com/arcprize/ARC-AGI-2">github.com/arcprize/ARC-AGI-2</a></p>
+
+---
+
+## 例1：色を変えるルールは？
+
+<img width="100%" src="./img/arc-example-recolor.svg">
+<div class="callout callout--info u-mt-24">ルール：青いマスを赤に変える。黒い背景はそのまま。</div>
+<p class="source">説明用の合成例 · 正解は説明のため表示</p>
+
+---
+
+## 例2：形の位置はどう変わる？
+
+<img width="100%" src="./img/arc-example-mirror.svg">
+<div class="callout callout--info u-mt-24">ルール：グリッド全体を左右反転する。</div>
+<p class="source">説明用の合成例 · 正解は説明のため表示</p>
+
+---
+
+## 実際のARC-AGI-2訓練問題
+
+<img width="100%" src="./img/arc-real-84db8fc4.svg">
+<p>4組の例からルールを考え、右側のテスト入力の出力を予測する。</p>
+<p class="source">公開訓練問題 <a href="https://github.com/arcprize/ARC-AGI-2/blob/main/data/training/84db8fc4.json">84db8fc4</a> · プロジェクトの開発パイロットでも使用 · テストの正解は非表示</p>
+
+---
+
+## Qwen × ARC：次に比較したいこと
+
+<div class="layout--three">
+  <div class="axis-card"><h3>GEPA型</h3><p>プロンプト・推論手順を改善</p></div>
+  <div class="axis-card axis-card--teal"><h3>DGM型</h3><p>エージェントのコードを改善</p></div>
+  <div class="axis-card axis-card--amber"><h3>AlphaEvolve型</h3><p>候補を生成・評価して選抜</p></div>
+</div>
+<div class="callout callout--warning u-mt-34">構想：同じ初期状態から分岐し、予算と未使用タスクを揃えて比較。未実施。</div>
+<p class="source"><a href="https://arxiv.org/abs/2505.22954">DGM</a> · <a href="https://arxiv.org/abs/2507.19457">GEPA</a> · <a href="https://arxiv.org/abs/2506.13131">AlphaEvolve</a> · 正式な実行は別途プロトコルと検証が必要</p>
 
 ---
 
@@ -148,6 +223,29 @@ style: |
 
 ---
 
+## Phase A：200問でモデルを比較
+
+<div class="layout--split">
+  <div class="card"><h3>Qwen3-14B</h3><div class="stat">3 / 200<small><br />pass@1 · pass@2 も 3 / 200</small></div></div>
+  <div class="card"><h3>Qwen3-32B</h3><div class="stat">2 / 200<small><br />pass@1 · pass@2 は 4 / 200</small></div></div>
+</div>
+<p>同じ固定200問を各2回生成。重複回答もあり、pass@2は記録された試行の結果。</p>
+<div class="callout callout--warning">探索的な比較であり、公式スコアや学習による改善ではない。</div>
+<p class="source"><a href="https://github.com/morshoto/qwen-meetup-2/blob/3346fbb8d9406caa38a64b2a3d4557a8c86942c5/docs/lt-phase-a-summary.md">Phase A summary · PR #8</a></p>
+
+---
+
+## Qwen3.8：Colab A100で開発パイロット
+
+<div class="layout--split">
+  <div class="card"><h3>Qwen3.8-27B FP8</h3><div class="stat">3 / 3<small><br />開発タスクの実行が完了</small></div><p>Colab A100 40 GB · vLLM</p></div>
+  <div class="card"><h3>出力形式の検証</h3><div class="stat">0 / 6<small><br />形式を満たした生成候補</small></div><p>全候補で出力数が不一致。</p></div>
+</div>
+<div class="callout callout--warning u-mt-24">正答率は未計測。200問評価やRSIの改善結果ではない。</div>
+<p class="source">結果: ../nb/results/14_qwen38_a100_results.ipynb · 実行: ../nb/experiments/001_qwen38_colab_arc.ipynb</p>
+
+---
+
 <!-- _class: slide--closing -->
 <div class="slide-closing">
   <div class="eyebrow">TAKEAWAY</div>
@@ -157,7 +255,7 @@ style: |
   <div class="layout--next">
     <div class="card"><h3>1 · Data</h3><p>独立検証と多様性がボトルネック</p></div>
     <div class="card"><h3>2 · Provenance</h3><p>依存コードも含めて事前固定</p></div>
-    <div class="card"><h3>3 · Evaluation</h3><p>同条件の比較で転移を測る</p></div>
+    <div class="card"><h3>3 · Evaluation</h3><p>形式を検証し、同条件で転移を測る</p></div>
   </div>
   <p class="source">Explore the evidence: ../nb/README.md</p>
 </div>

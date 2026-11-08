@@ -8,7 +8,7 @@ from unittest.mock import Mock
 
 class ExploratoryNotebookTests(unittest.TestCase):
     def test_incomplete_branch_uses_read_only_partial_view(self):
-        notebook=json.loads(Path('nb/13_rsi_exploratory_50.ipynb').read_text())
+        notebook=json.loads(Path('nb/results/13_rsi_exploratory_50.ipynb').read_text())
         code=''.join(notebook['cells'][3]['source'])
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp); registration=root/'registration.json'; split=root/'split.json'; run=root/'run'; run.mkdir()
@@ -25,7 +25,7 @@ class ExploratoryNotebookTests(unittest.TestCase):
             self.assertEqual(read.call_args.kwargs['candidate_adapter'],'a'*64)
 
     def test_default_results_branch_rejects_incomplete_marker(self):
-        notebook=json.loads(Path('nb/13_rsi_exploratory_50.ipynb').read_text())
+        notebook=json.loads(Path('nb/results/13_rsi_exploratory_50.ipynb').read_text())
         code=''.join(notebook['cells'][3]['source'])
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp); results=root/'exploratory-results.json';results.write_text('{}')

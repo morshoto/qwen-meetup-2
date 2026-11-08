@@ -37,4 +37,4 @@ The [local history search](../research/rsi/history-search-20261105.md) compared
 all three worktrees and reviewed earlier session records. It did not identify a
 separate prompt archive or establish a complete exposure history.
 
-The requested [50-task exploratory plan](../research/rsi/exploratory-50-plan.md) and [notebook](../nb/13_rsi_exploratory_50.ipynb) are prepared. No 50-task model comparison has been run; the future 14B RSI adapter is not yet available.
+The requested [50-task exploratory plan](../research/rsi/exploratory-50-plan.md) and [notebook](../nb/results/13_rsi_exploratory_50.ipynb) are prepared. No 50-task model comparison has been run; the future 14B RSI adapter is not yet available.

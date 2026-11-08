@@ -1,20 +1,10 @@
-# Qwen × ARC experiment notebooks
+# Qwen × ARC notebooks
 
-Start with [the overview](00_overview.ipynb), then follow the notebooks in order:
+The notebooks are grouped by purpose:
 
-1. [P3-B: collection and adapter training](01_p3b_training.ipynb)
-2. [E1: failure diagnosis](02_e1_diagnosis.ipynb)
-3. [E2: search strategy comparison](03_e2_search.ipynb)
-4. [E3: solution collection](04_e3_collection.ipynb)
-5. [E4: synthetic transformation search](05_e4_operators.ipynb)
-6. [E5: autonomous self-play](06_e5_selfplay.ipynb)
-7. [E6: generator distillation](07_e6_distillation.ipynb)
-8. [E6-F: Oracle repair](08_e6f_repair.ipynb)
-9. [E6-G: novelty feedback](09_e6g_novelty.ipynb)
-10. [E7: paired novelty comparison](10_e7_paired.ipynb)
-11. [E8: model scaling](11_e8_scaling.ipynb)
-12. [E9: model-isolated collection](12_e9_collection.ipynb)
+- [Results and LT material](results/): reports and visualizations of recorded experiments. Start with the [overview](results/00_overview.ipynb) or the [Qwen3.8 A100 development pilot](results/14_qwen38_a100_results.ipynb). The latter embeds a fixed snapshot; rerunning it does not read new experiment results.
+- [Experiments](experiments/): notebooks for preparing or running work. The [Qwen3.8 Phase A notebook](experiments/002_qwen38_phase_a_colab.ipynb) adds pilot diagnostics and a development gate to the [original Colab notebook](experiments/001_qwen38_colab_arc.ipynb). The prior pilot had no valid candidates; a reviewed format fix and successful retry are still needed before Phase A. Both notebooks require a compatible Colab GPU, Google Drive, inputs and a commit containing their supporting code; see [PR #15](https://github.com/morshoto/qwen-meetup-2/pull/15). They do not train or load an RSI adapter. The separate [data template](experiments/data_001.ipynb) is a starting point for new work.
 
-Each notebook embeds aggregate results recorded through November 5, 2026 and links to its sources. Some detailed artifact links resolve only when the locally retained, Git-ignored artifacts are present; the notebooks themselves do not read them. The saved charts can be viewed without running code.
+The numbered E1–E9 results notebooks embed aggregate results recorded through November 5, 2026 and link to their sources. Some detailed artifact links resolve only when the locally retained, Git-ignored artifacts are present; these reports do not read them. The saved charts can be viewed without running code. The [50-task RSI comparison notebook](results/13_rsi_exploratory_50.ipynb) reads existing results or an explicitly selected interrupted-run record; it does not train or run a model.
 
-To rerun the notebooks, install the project environment with `uv sync`, open the notebooks with a Jupyter-compatible editor using the project Python environment, and run all cells. They use pandas and Matplotlib; no model server, GPU, Docker, or network access is needed for execution. The existing `data_001.ipynb` is a separate template.
+To rerun the static reports, install the project environment with `uv sync`, open them in a Jupyter-compatible editor, and run all cells. They use pandas and Matplotlib and do not need a model server, GPU, Docker, or network access.

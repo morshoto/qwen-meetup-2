@@ -3,7 +3,7 @@
 The user requested an exploratory comparison after training the Qwen3-14B RSI
 adapter, followed by a separate 200-task evaluation if the results justify it.
 The current experiment has no trained adapter from this protocol. This plan and
-the [notebook](../../nb/13_rsi_exploratory_50.ipynb) do not run or authorize a
+the [notebook](../../nb/results/13_rsi_exploratory_50.ipynb) do not run or authorize a
 model, training, external compute, or benchmark submission.
 
 ## Task separation
