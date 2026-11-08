@@ -10,12 +10,12 @@ from src.arc.lt_public import load_public_export
 from src.arc.lt_worker import execute_task
 
 
-def make_backend(name, version, model_path):
+def make_backend(name, version, model_path, max_model_len=None):
     if name == 'vllm':
         if importlib.metadata.version('vllm') != version:
             raise ValueError('runtime version differs')
         from src.arc.lt_vllm_backend import VLLMBackend
-        return VLLMBackend(model_path)
+        return VLLMBackend(model_path) if max_model_len is None else VLLMBackend(model_path, max_model_len=max_model_len)
     if name != 'mlx' or importlib.metadata.version('mlx-lm') != '0.30.7' or importlib.metadata.version('mlx') != '0.32.4':
         raise ValueError('runtime version differs')
     return MLXBackend(model_path)
@@ -28,10 +28,11 @@ def main():
     parser.add_argument('--task', required=True)
     parser.add_argument('--backend', choices=('mlx', 'vllm'), default='mlx')
     parser.add_argument('--backend-version')
+    parser.add_argument('--max-model-len', type=int)
     args = parser.parse_args()
     tasks = load_public_export(json.loads(args.export.read_bytes()), json.loads(args.receipt.read_bytes()))
     if args.task not in tasks: raise ValueError('unregistered task')
-    row = execute_task(tasks[args.task], make_backend(args.backend, args.backend_version, args.model_path), '14b')
+    row = execute_task(tasks[args.task], make_backend(args.backend, args.backend_version, args.model_path, args.max_model_len), '14b')
     row['model'] = 'single'
     _create(args.output, row)
 

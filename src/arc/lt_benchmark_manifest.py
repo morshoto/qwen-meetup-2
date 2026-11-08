@@ -18,7 +18,7 @@ def sha(data): return hashlib.sha256(data).hexdigest()
 
 def canonical(value): return json.dumps(value,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
 
-def build(root: Path) -> dict:
+def build(root: Path, *, solutions_sha256=None) -> dict:
     challenges=(root/'data/raw/arc-agi_training_challenges.json').read_bytes()
     registry=(root/'research/rsi/bounded-exposure-proposal.json').read_bytes()
     split=(root/'research/rsi/exploratory-split-proposal.json').read_bytes()
@@ -33,9 +33,13 @@ def build(root: Path) -> dict:
     for model in ('14b','32b'):
         observed=json.loads((root/f'research/rsi/audits/technical-model-{model}.json').read_bytes())['model']
         models[model]={key:observed[key] for key in ('model_id','revision','files_sha256','chat_template_sha256')}
+    if solutions_sha256 is None:
+        solutions_sha256 = sha((root/'data/raw/arc-agi_training_solutions.json').read_bytes())
+    elif not isinstance(solutions_sha256, str) or len(solutions_sha256) != 64 or any(c not in '0123456789abcdef' for c in solutions_sha256):
+        raise ValueError('invalid solutions digest')
     value={'protocol':'lt-phase-a-exploratory','task_ids':proposal['task_ids'],
            'challenges_sha256':sha(challenges),
-           'solutions_sha256':sha((root/'data/raw/arc-agi_training_solutions.json').read_bytes()),
+           'solutions_sha256':solutions_sha256,
            'training_ids_sha256':sha(canonical(training)),
            'allocation_audit_sha256':sha(canonical(audit)), 'models':models,
            'source_sha256':source,'prompt_sha256':sha(PROMPT.encode()),

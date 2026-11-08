@@ -10,14 +10,15 @@ SOURCE_FILES = ('src/arc/lt_single_manifest.py', 'src/arc/lt_single_score.py', '
                 'src/cli/lt_single.py', 'src/cli/lt_single_worker.py')
 
 
-def build(root: Path, model: dict) -> dict:
+def build(root: Path, model: dict, *, solutions_sha256=None) -> dict:
     backend = None
     if isinstance(model, dict) and set(model) == {'model', 'backend'}:
         backend = model['backend']
         model = model['model']
-        if (not isinstance(backend, dict) or set(backend) != {'name', 'version'} or
+        if (not isinstance(backend, dict) or set(backend) not in ({'name', 'version'}, {'name', 'version', 'max_model_len'}) or
                 backend['name'] != 'vllm' or not isinstance(backend['version'], str) or
-                not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', backend['version'])):
+                not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', backend['version']) or
+                ('max_model_len' in backend and (type(backend['max_model_len']) is not int or not 1 <= backend['max_model_len'] <= 131072))):
             raise ValueError('invalid backend configuration')
     if not isinstance(model, dict) or set(model) != {
         'model_id', 'revision', 'files_sha256', 'chat_template_sha256'
@@ -35,7 +36,7 @@ def build(root: Path, model: dict) -> dict:
                 '/' in name or '\\' in name or not isinstance(digest, str) or
                 not re.fullmatch(r'[0-9a-f]{64}', digest) for name, digest in files.items())):
         raise ValueError('invalid model identity or inventory')
-    phase_a = build_phase_a(root)
+    phase_a = build_phase_a(root) if solutions_sha256 is None else build_phase_a(root, solutions_sha256=solutions_sha256)
     value = {key: copy.deepcopy(val) for key, val in phase_a.items()
              if key not in ('models', 'sha256')}
     value.update(protocol='lt-single-model-exploratory', phase_a_sha256=phase_a['sha256'],
@@ -45,15 +46,19 @@ def build(root: Path, model: dict) -> dict:
         for key in ('mlx_memory_limit_bytes', 'mlx_lm_version', 'mlx_version'):
             value.pop(key, None)
         value['backend_settings'] = copy.deepcopy(VLLM_SETTINGS)
+        if 'max_model_len' in backend:
+            value['backend_settings']['max_model_len'] = backend['max_model_len']
+            value['backend_settings']['gpu_memory_utilization'] = 0.95
         value['single_source_sha256']['src/arc/lt_vllm_backend.py'] = sha((root / 'src/arc/lt_vllm_backend.py').read_bytes())
         value['backend'] = copy.deepcopy(backend)
     return {**value, 'sha256': sha(canonical(value))}
 
 
-def verify(root: Path, manifest: dict) -> None:
+def verify(root: Path, manifest: dict, *, public_only=False) -> None:
     try:
-        if manifest != build(root, {'model': manifest['model'], 'backend': manifest['backend']}
-                             if 'backend' in manifest else manifest['model']):
+        config = {'model': manifest['model'], 'backend': manifest['backend']} if 'backend' in manifest else manifest['model']
+        rebuilt = build(root, config, solutions_sha256=manifest['solutions_sha256']) if public_only else build(root, config)
+        if manifest != rebuilt:
             raise ValueError('single-model registration differs')
     except (KeyError, TypeError) as exc:
         raise ValueError('invalid single-model registration') from exc
