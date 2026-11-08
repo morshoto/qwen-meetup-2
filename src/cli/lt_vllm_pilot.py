@@ -34,7 +34,7 @@ def development_manifest_sha():
     return sha(canonical(value))
 
 
-def _manifest(export, receipt, model, version):
+def _manifest(export, receipt, model, version, max_model_len=None):
     tasks = load_development_export(export, receipt)
     if receipt['development_manifest_sha256'] != development_manifest_sha():
         raise ValueError('development manifest differs')
@@ -43,7 +43,7 @@ def _manifest(export, receipt, model, version):
         raise ValueError('development task set differs')
     if not isinstance(model, dict) or set(model) != {'model_id', 'revision', 'files_sha256', 'chat_template_sha256'}:
         raise ValueError('invalid model identity')
-    if (model['model_id'] != 'Qwen/Qwen3.8-27B' or not isinstance(model['revision'], str) or
+    if (model['model_id'] not in ('Qwen/Qwen3.8-27B', 'Qwen/Qwen3.8-27B-FP8') or not isinstance(model['revision'], str) or
         not re.fullmatch(r'[0-9a-f]{40}', model['revision']) or not isinstance(model['chat_template_sha256'], str) or
         not re.fullmatch(r'[0-9a-f]{64}', model['chat_template_sha256']) or not isinstance(model['files_sha256'], dict) or
         not model['files_sha256'] or any(not isinstance(k, str) or k in ('', '.', '..') or '/' in k or '\\' in k or
@@ -51,16 +51,22 @@ def _manifest(export, receipt, model, version):
         raise ValueError('invalid model identity')
     if not isinstance(version, str) or not re.fullmatch(r'\d+\.\d+\.\d+', version):
         raise ValueError('invalid runtime version')
+    if max_model_len is not None and (type(max_model_len) is not int or not 1 <= max_model_len <= 131072):
+        raise ValueError('invalid context length')
     value = {'purpose': 'development_only', 'task_ids': ids, 'model': model, 'backend_version': version,
              'export_sha256': sha(canonical(export)), 'receipt_sha256': sha(canonical(receipt)),
              'sources_sha256': {p: sha((ROOT / p).read_bytes()) for p in SOURCES},
              'settings': {**VLLM_SETTINGS, 'temperature': 0.6,
                           'max_tokens': 4096, 'candidate_count': 2, 'seed_base': 20261111, 'thinking': 'off'}}
+    if max_model_len is not None:
+        value['settings']['max_model_len'] = max_model_len
+        value['settings']['gpu_memory_utilization'] = 0.95
+        value['max_model_len'] = max_model_len
     return {**value, 'sha256': sha(canonical(value))}
 
 
-def prepare(directory, export, receipt, model, version):
-    manifest = _manifest(export, receipt, model, version)
+def prepare(directory, export, receipt, model, version, max_model_len=None):
+    manifest = _manifest(export, receipt, model, version, max_model_len)
     directory.mkdir(mode=0o700, parents=False, exist_ok=False)
     public = {'comparison_sha256': export['development_manifest_sha256'], 'tasks': export['tasks']}
     public_receipt = {'comparison_sha256': receipt['development_manifest_sha256'],
@@ -71,13 +77,15 @@ def prepare(directory, export, receipt, model, version):
     return manifest['sha256']
 
 
-def run(directory, *, max_tasks=3):
+def run(directory, *, max_tasks=3, timeout_seconds=1800):
     if type(max_tasks) is not int or not 1 <= max_tasks <= 3:
         raise ValueError('max_tasks must be between 1 and 3')
+    if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 1800:
+        raise ValueError('invalid task timeout')
     manifest = json.loads((directory / 'manifest.json').read_bytes())
     export = json.loads((directory / 'dev-export.json').read_bytes())
     receipt = json.loads((directory / 'dev-receipt.json').read_bytes())
-    if manifest != _manifest(export, receipt, manifest['model'], manifest['backend_version']):
+    if manifest != _manifest(export, receipt, manifest['model'], manifest['backend_version'], manifest.get('max_model_len')):
         raise ValueError('pilot registration differs')
     expected_export = {'comparison_sha256': export['development_manifest_sha256'], 'tasks': export['tasks']}
     expected_receipt = {'comparison_sha256': receipt['development_manifest_sha256'], 'selected_task_sha256': receipt['selected_task_sha256']}
@@ -97,9 +105,11 @@ def run(directory, *, max_tasks=3):
             argv = [sys.executable, '-m', 'src.cli.lt_single_worker', '--export', str(directory / 'export.json'),
                     '--receipt', str(directory / 'receipt.json'), '--output', str(output), '--task', task,
                     '--model-path', str(model_path), '--backend', 'vllm', '--backend-version', manifest['backend_version']]
+            if 'max_model_len' in manifest:
+                argv += ['--max-model-len', str(manifest['max_model_len'])]
             def record(pid):
                 _create(journal.root / (task + '.process.json'), {'task_id': task, 'identity': journal.identity, 'pid': pid})
-            return run_worker(argv, timeout=1800, on_start=record)
+            return run_worker(argv, timeout=timeout_seconds, on_start=record)
         return supervised_batch(journal, 'single', max_tasks, worker, stop_on_failure=True,
                                 on_result=lambda task, status: print(json.dumps({'task_id': task, 'status': status}), flush=True))
     finally:
@@ -115,15 +125,17 @@ def main():
     parser.add_argument('--model', type=Path)
     parser.add_argument('--vllm-version')
     parser.add_argument('--max-tasks', type=int, choices=(1, 2, 3), default=3)
+    parser.add_argument('--max-model-len', type=int)
+    parser.add_argument('--timeout-seconds', type=int, default=1800)
     args = parser.parse_args()
     directory = args.directory.resolve()
     if args.operation == 'prepare':
         if not all((args.export, args.receipt, args.model, args.vllm_version)):
             parser.error('prepare requires --export, --receipt, --model, and --vllm-version')
         print(prepare(directory, json.loads(args.export.read_bytes()), json.loads(args.receipt.read_bytes()),
-                      json.loads(args.model.read_bytes()), args.vllm_version))
+                      json.loads(args.model.read_bytes()), args.vllm_version, args.max_model_len))
     else:
-        print(json.dumps({'completed_this_batch': run(directory, max_tasks=args.max_tasks)}))
+        print(json.dumps({'completed_this_batch': run(directory, max_tasks=args.max_tasks, timeout_seconds=args.timeout_seconds)}))
 
 
 if __name__ == '__main__':

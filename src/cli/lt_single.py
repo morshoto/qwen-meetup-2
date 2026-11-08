@@ -55,12 +55,17 @@ def worker_command(manifest, directory, task, output, model_path):
              '--task', task, '--model-path', str(model_path)]
     if backend is not None:
         argv += ['--backend', backend['name'], '--backend-version', backend['version']]
+        if 'max_model_len' in backend:
+            argv += ['--max-model-len', str(backend['max_model_len'])]
     return argv
 
 
-def run(directory):
+def run(directory, *, max_tasks=None, timeout_seconds=None, public_only=False):
     manifest = json.loads((directory / 'manifest.json').read_bytes())
-    verify(ROOT, manifest)
+    if public_only:
+        verify(ROOT, manifest, public_only=True)
+    else:
+        verify(ROOT, manifest)
     receipt = json.loads((directory / 'receipt.json').read_bytes())
     export = json.loads((directory / 'export.json').read_bytes())
     challenges = json.loads((ROOT / 'data/raw/arc-agi_training_challenges.json').read_bytes())
@@ -78,14 +83,18 @@ def run(directory):
         if backend and importlib.metadata.version('vllm') != backend['version']:
             raise ValueError('runtime version differs')
         journal = BatchJournal(directory / 'single', manifest['task_ids'], manifest['sha256'] + ':single')
+        if max_tasks is not None and (type(max_tasks) is not int or not 1 <= max_tasks <= manifest['batch_size']):
+            raise ValueError('invalid batch limit')
+        if timeout_seconds is not None and (type(timeout_seconds) is not int or not 1 <= timeout_seconds <= manifest['task_timeout_seconds']):
+            raise ValueError('invalid task timeout')
         def worker(task, output):
             argv = worker_command(manifest, directory, task, output, model_path)
             def record_process(pid):
                 _create(journal.root / (task + '.process.json'),
                         {'task_id': task, 'identity': journal.identity, 'pid': pid})
-            return run_worker(argv, timeout=manifest['task_timeout_seconds'], on_start=record_process)
+            return run_worker(argv, timeout=timeout_seconds or manifest['task_timeout_seconds'], on_start=record_process)
         options = {'stop_on_failure': True} if manifest.get('backend', {}).get('name') == 'vllm' else {}
-        return supervised_batch(journal, 'single', manifest['batch_size'], worker,
+        return supervised_batch(journal, 'single', max_tasks or manifest['batch_size'], worker,
                                 on_result=lambda task, status: print(json.dumps({'task_id': task, 'status': status}), flush=True),
                                 **options)
     finally:
@@ -132,13 +141,16 @@ def main():
     parser.add_argument('--directory', type=Path, required=True)
     parser.add_argument('--config', type=Path)
     parser.add_argument('--task')
+    parser.add_argument('--max-tasks', type=int)
+    parser.add_argument('--timeout-seconds', type=int)
+    parser.add_argument('--public-only', action='store_true')
     args = parser.parse_args()
     directory = args.directory.resolve()
     if args.operation == 'prepare':
         if not args.config: parser.error('--config is required for prepare')
         print(prepare(directory, args.config))
     elif args.operation == 'run':
-        print(json.dumps({'completed_this_batch': run(directory)}))
+        print(json.dumps({'completed_this_batch': run(directory, max_tasks=args.max_tasks, timeout_seconds=args.timeout_seconds, public_only=args.public_only)}))
     elif args.operation == 'score':
         print(json.dumps(score_directory(directory), sort_keys=True, allow_nan=False))
     else:
