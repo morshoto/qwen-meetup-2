@@ -62,6 +62,10 @@ def worker_command(manifest, directory, task, output, model_path):
 
 def run(directory, *, max_tasks=None, timeout_seconds=None, public_only=False):
     manifest = json.loads((directory / 'manifest.json').read_bytes())
+    if max_tasks is not None and (type(max_tasks) is not int or not 1 <= max_tasks <= manifest['batch_size']):
+        raise ValueError('invalid batch limit')
+    if timeout_seconds is not None and (type(timeout_seconds) is not int or not 1 <= timeout_seconds <= manifest['task_timeout_seconds']):
+        raise ValueError('invalid task timeout')
     if public_only:
         verify(ROOT, manifest, public_only=True)
     else:
@@ -83,10 +87,6 @@ def run(directory, *, max_tasks=None, timeout_seconds=None, public_only=False):
         if backend and importlib.metadata.version('vllm') != backend['version']:
             raise ValueError('runtime version differs')
         journal = BatchJournal(directory / 'single', manifest['task_ids'], manifest['sha256'] + ':single')
-        if max_tasks is not None and (type(max_tasks) is not int or not 1 <= max_tasks <= manifest['batch_size']):
-            raise ValueError('invalid batch limit')
-        if timeout_seconds is not None and (type(timeout_seconds) is not int or not 1 <= timeout_seconds <= manifest['task_timeout_seconds']):
-            raise ValueError('invalid task timeout')
         def worker(task, output):
             argv = worker_command(manifest, directory, task, output, model_path)
             def record_process(pid):
