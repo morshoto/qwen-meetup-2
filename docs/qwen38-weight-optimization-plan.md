@@ -66,3 +66,9 @@ Only after the training result reports `trained` and its adapter evidence replay
 ```
 
 The evaluation journal and report retain incomplete runs and errors. Open [the results notebook](../nb/results/17_qwen38_weight_optimization.ipynb) from this worktree to display the available receipts without exposing candidate responses. Report creation, evaluation and training are not implied by a successful synthetic canary.
+
+### Recorded recovery for this run
+
+The first registered evaluation stopped on its first worker before model loading: the saved adapter directory was mode `755`, while the worker required a private directory. The failed start, worker logs, execution receipt and `resource_stop` termination remain under `evaluation/adapter-v1`. No response was produced. The directory was made private without changing the adapter bytes. A separately registered `evaluation-v2` recovery binds the exact original failure evidence and retains the same comparison, adapter, prompt, seeds and limits. It does not replace or resume the stopped journal.
+
+For this recorded recovery, use `src.cli.qwen38_weight_evaluate_recovery` in place of `src.cli.qwen38_weight_evaluate` in the three evaluation commands above. Its separate descriptor is `evaluation/evaluation-v2.json`; its private journal and reports are under `evaluation/adapter-v2`. The recovery is specific to the recorded pre-inference failure and rejects altered failure evidence or any original response.
