@@ -4,6 +4,7 @@ import json
 import pytest
 
 from src.arc.qwen38_rsi_comparison import digest
+from src.arc.qwen38_weight_preflight import PACKAGES
 from src.arc.qwen38_weight_sft import select_training_examples
 from src.arc.qwen38_weight_sft_bundle import write_bundle, verify_bundle
 
@@ -22,7 +23,7 @@ def fixture(count):
                     'fresh_verification_sha256': 'd' * 64, 'challenge_sha256': 'e' * 64,
                     'solution_sha256': 'f' * 64, 'source_files_sha256': {'training.py': '1' * 64},
                     'historical_aggregate_sha256': None, 'historical_checkpoint_inventory_sha256': None,
-                    'packages': {'mlx-vlm': '0.6.8'}, 'model_files_sha256': {'model.safetensors': '2' * 64},
+                    'packages': PACKAGES.copy(), 'model_files_sha256': {'model.safetensors': '2' * 64},
                     'training_settings': {'rank': 8, 'batch_size': 1, 'learning_rate': 2e-5, 'max_steps': 20,
                                           'seed': 20261111, 'max_sequence_length': 2048,
                                           'gradient_checkpointing': True, 'completion_only_loss': True}}

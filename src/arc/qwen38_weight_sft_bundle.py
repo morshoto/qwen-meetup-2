@@ -10,6 +10,7 @@ from pathlib import Path
 from src.arc.lt_live_backend import PROMPT
 from src.arc.qwen38_local_runner import clean_task, parse_prediction
 from src.arc.qwen38_rsi_comparison import digest
+from src.arc.qwen38_weight_preflight import PACKAGES
 
 
 def _valid_hash(value):
@@ -18,10 +19,24 @@ def _valid_hash(value):
 
 def _contents(selection, registration):
     required = {'execution_sha256', 'fresh_journal_sha256', 'fresh_verification_sha256', 'challenge_sha256',
-                'solution_sha256', 'training_code_sha256', 'historical_aggregate_sha256'}
-    if set(registration) != required or any(not _valid_hash(registration[k]) for k in required - {'historical_aggregate_sha256'}):
+                'solution_sha256', 'training_code_sha256', 'historical_aggregate_sha256',
+                'historical_checkpoint_inventory_sha256', 'source_files_sha256', 'packages',
+                'model_files_sha256', 'training_settings'}
+    hashes = {'execution_sha256', 'fresh_journal_sha256', 'fresh_verification_sha256',
+              'challenge_sha256', 'solution_sha256', 'training_code_sha256'}
+    if set(registration) != required or any(not _valid_hash(registration[k]) for k in hashes):
         raise ValueError('invalid SFT source registration')
-    if registration['historical_aggregate_sha256'] is not None and not _valid_hash(registration['historical_aggregate_sha256']):
+    sources, model = registration['source_files_sha256'], registration['model_files_sha256']
+    if (not isinstance(sources, dict) or not sources or not all(_valid_hash(v) for v in sources.values()) or
+        digest(sources) != registration['training_code_sha256'] or not isinstance(model, dict) or not model or
+        not all(_valid_hash(v) for v in model.values()) or registration['packages'] != PACKAGES):
+        raise ValueError('invalid SFT source, model or package inventory')
+    settings = {'rank': 8, 'batch_size': 1, 'learning_rate': 2e-5, 'max_steps': 20, 'seed': 20261111,
+                'max_sequence_length': 2048, 'gradient_checkpointing': True, 'completion_only_loss': True}
+    if registration['training_settings'] != settings:
+        raise ValueError('training settings differ from the frozen protocol')
+    historical = (registration['historical_aggregate_sha256'], registration['historical_checkpoint_inventory_sha256'])
+    if historical != (None, None) and not all(_valid_hash(v) for v in historical):
         raise ValueError('invalid historical source identity')
     examples = selection['examples']; counts = selection['counts']; mode = selection['mode']
     if (counts['unique_parents'] != len(examples) or len({e['task_id'] for e in examples}) != len(examples) or
