@@ -101,3 +101,35 @@ def replay_bundle(**kwargs):
     path = _bundle_path(kwargs['manifest'], kwargs['run_dir'], create_parent=False)
     result = verify_bundle(path, selection, registration)
     return selection, registration, result
+
+
+def main(argv=None):
+    import argparse
+    from zipfile import ZipFile
+    parser = argparse.ArgumentParser()
+    for flag in ('manifest', 'proposal', 'review', 'repo', 'model-path', 'challenges', 'solutions',
+                 'archive', 'canary-dir', 'run-dir', 'history-dir'):
+        parser.add_argument('--' + flag, required=True)
+    parser.add_argument('--verify-only', action='store_true')
+    args = parser.parse_args(argv)
+    with ZipFile(args.archive) as archive:
+        official_bytes = archive.read('arc-agi_evaluation_challenges.json')
+    inputs = {'manifest': json.loads(Path(args.manifest).read_bytes()),
+              'proposal': json.loads(Path(args.proposal).read_bytes()), 'review': json.loads(Path(args.review).read_bytes()),
+              'repo': Path(args.repo).resolve(), 'model_path': Path(args.model_path).resolve(),
+              'challenges': Path(args.challenges).read_bytes(), 'solutions': Path(args.solutions).read_bytes(),
+              'official_bytes': official_bytes, 'canary_dir': Path(args.canary_dir).resolve(),
+              'run_dir': Path(args.run_dir).resolve(), 'history_dir': Path(args.history_dir).resolve()}
+    if args.verify_only:
+        selection, _, receipt = replay_bundle(**inputs)
+        result = {'status': receipt['status'], 'mode': selection['mode'], 'counts': selection['counts'],
+                  'manifest_sha256': receipt['manifest_sha256']}
+    else:
+        receipt = prepare_bundle(**inputs)
+        result = {key: receipt[key] for key in ('status', 'mode', 'counts', 'sha256')}
+    print(json.dumps(result, sort_keys=True), flush=True)
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
