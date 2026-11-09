@@ -36,3 +36,17 @@ def test_trainer_dataset_refuses_changed_source(tmp_path):
     bundle = training / 'sft-v1'; bundle.mkdir(mode=0o700); (bundle / 'train.jsonl').write_bytes(b'changed')
     with pytest.raises(ValueError): materialize_trainer_dataset(bundle, training, 'a' * 64)
     assert not (training / 'trainer-data-v1').exists()
+
+
+def test_insufficient_gate_writes_skip_without_starting_training(tmp_path, monkeypatch):
+    import json
+    import src.cli.qwen38_weight_train as train
+    root = tmp_path / 'run'; root.mkdir(mode=0o700); (root / 'training').mkdir(mode=0o700)
+    manifest = {'sha256': 'a' * 64, 'run_dir': str(root.resolve())}
+    selection = {'status': 'insufficient_verified_data', 'mode': 'none', 'counts': {'unique_parents': 0}}
+    monkeypatch.setattr(train, 'replay_bundle', lambda **kwargs: (selection, {}, {'status': 'matches_supplied_replay', 'manifest_sha256': 'b' * 64}))
+    monkeypatch.setattr(train, 'run_supervised', lambda *a, **k: (_ for _ in ()).throw(AssertionError('trainer launched')))
+    result = train.execute_training(manifest=manifest, run_dir=root)
+    assert result['status'] == 'insufficient_verified_data' and 'score' not in result
+    assert not (root / 'training/trainer-data-v1').exists()
+    assert json.loads((root / 'training/training-decision-v1.json').read_text()) == result
