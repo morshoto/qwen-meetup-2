@@ -45,3 +45,11 @@ def test_supervisor_rejects_fast_oversized_worker_output(tmp_path):
                             poll_seconds=.1, max_output_bytes=1024)
     assert result['status'] == 'error' and result['reason'] == 'output_limit'
     assert result['process_group_gone'] is True
+
+
+def test_supervisor_cleans_descendants_when_leader_exits(tmp_path):
+    script = 'import subprocess,sys; subprocess.Popen([sys.executable,"-c","import time; time.sleep(30)"]); print("spawned",flush=True)'
+    result = run_supervised([sys.executable, '-c', script], {}, tmp_path / 'descendant',
+                            timeout_seconds=5, probe=good_probe, poll_seconds=.02)
+    assert result['status'] == 'error' and result['reason'] == 'remaining_process_group'
+    assert result['process_group_gone'] is True
