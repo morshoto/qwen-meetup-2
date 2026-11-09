@@ -159,3 +159,31 @@ def execute_training(**kwargs):
             try: _write_decision(failed, result)
             except OSError: pass  # Preserve the original failure and the underlying artifacts.
         raise
+
+
+def main(argv=None):
+    import argparse
+    from zipfile import ZipFile
+    parser = argparse.ArgumentParser()
+    for flag in ('manifest', 'proposal', 'review', 'repo', 'model-path', 'challenges', 'solutions',
+                 'archive', 'canary-dir', 'run-dir', 'history-dir'):
+        parser.add_argument('--' + flag, required=True)
+    args = parser.parse_args(argv)
+    with ZipFile(args.archive) as archive:
+        official_bytes = archive.read('arc-agi_evaluation_challenges.json')
+    inputs = {'manifest': json.loads(Path(args.manifest).read_bytes()),
+              'proposal': json.loads(Path(args.proposal).read_bytes()), 'review': json.loads(Path(args.review).read_bytes()),
+              'repo': Path(args.repo).resolve(), 'model_path': Path(args.model_path).resolve(),
+              'challenges': Path(args.challenges).read_bytes(), 'solutions': Path(args.solutions).read_bytes(),
+              'official_bytes': official_bytes, 'canary_dir': Path(args.canary_dir).resolve(),
+              'run_dir': Path(args.run_dir).resolve(), 'history_dir': Path(args.history_dir).resolve()}
+    result = execute_training(**inputs)
+    summary = {key: result[key] for key in ('status', 'mode', 'counts', 'sha256')}
+    if result.get('adapter_sha256') is not None:
+        summary['adapter_sha256'] = result['adapter_sha256']
+    print(json.dumps(summary, sort_keys=True), flush=True)
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
