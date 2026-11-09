@@ -57,3 +57,28 @@ def test_history_rejects_tampered_or_unverifiable_evidence(change):
         args['aggregate_bytes'] = json.dumps(aggregate, sort_keys=True).encode()
         args['expected_aggregate_sha256'] = hashlib.sha256(args['aggregate_bytes']).hexdigest()
     with pytest.raises(ValueError): audit_history(**args)
+
+
+def test_history_deduplicates_answer_lineage_across_parents():
+    args = fixture()
+    args['solutions']['b'] = copy.deepcopy(args['solutions']['a'])
+    aggregate = json.loads(args['aggregate_bytes'])
+    candidate = aggregate['task_results']['b']['candidates'][0]
+    candidate['outputs'] = copy.deepcopy(args['solutions']['a'])
+    candidate['raw'] = json.dumps(candidate['outputs'], separators=(',', ':'))
+    args['checkpoints'] = copy.deepcopy(aggregate['task_results'])
+    args['aggregate_bytes'] = json.dumps(aggregate, sort_keys=True).encode()
+    args['expected_aggregate_sha256'] = hashlib.sha256(args['aggregate_bytes']).hexdigest()
+    report = audit_history(**args)
+    assert report['counts']['eligible_unique_parents'] == 1
+    assert report['counts']['duplicate_answer_lineage'] == 1
+
+
+def test_history_blocks_transitive_input_and_explicit_lineage():
+    from src.arc.qwen38_weight_history import historical_blocked_ids
+    args = fixture()
+    tasks = args['tasks']
+    tasks['b']['test'][0]['input'] = tasks['a']['train'][0]['input']
+    tasks['c']['test'][0]['input'] = tasks['b']['train'][0]['input']
+    assert historical_blocked_ids(tasks, {}, {'a'}, {}) == {'a', 'b', 'c'}
+    assert historical_blocked_ids(fixture()['tasks'], {}, {'a'}, {'a': 'family', 'b': 'family'}) == {'a', 'b'}
