@@ -6,7 +6,7 @@ from src.arc.qwen38_weight_allocation import allocate_weight_pool
 
 
 def task(n):
-    return {'train': [{'input': [[n]], 'output': [[n + 1]]}], 'test': [{'input': [[n + 2]]}]}
+    return {'train': [{'input': [[n]], 'output': [[n + 1]]}], 'test': [{'input': [[n + 200]]}]}
 
 
 def test_seeded_allocation_preserves_disjoint_reservations_and_families():

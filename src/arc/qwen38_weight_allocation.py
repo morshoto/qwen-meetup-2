@@ -16,6 +16,11 @@ def fingerprint(task):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()).hexdigest()
 
 
+def input_fingerprints(task):
+    return {hashlib.sha256(json.dumps(pair['input'], separators=(',', ':')).encode()).hexdigest()
+            for pair in task['train'] + task['test']}
+
+
 def allocate_weight_pool(tasks, official_evaluation, exclusions, lineage, *, seed=20261111, pool_size=200, validation_size=25):
     if pool_size < 0 or validation_size < 1:
         raise ValueError('invalid allocation sizes')
@@ -43,8 +48,15 @@ def allocate_weight_pool(tasks, official_evaluation, exclusions, lineage, *, see
         for item, value in sorted(mapping.items()):
             if value in seen: union(item, seen[value])
             else: seen[value] = item
+    inputs = {k: input_fingerprints(v) for k, v in tasks.items()}
+    seen_inputs = {}
+    for item in sorted(ids):
+        for value in sorted(inputs[item]):
+            if value in seen_inputs: union(item, seen_inputs[value])
+            else: seen_inputs[value] = item
     eval_fingerprints = {fingerprint(t) for t in official_evaluation.values()}
-    excluded = reserved | (ids & set(official_evaluation)) | {k for k, v in fingerprints.items() if v in eval_fingerprints}
+    eval_inputs = set().union(*(input_fingerprints(t) for t in official_evaluation.values())) if official_evaluation else set()
+    excluded = reserved | (ids & set(official_evaluation)) | {k for k, v in fingerprints.items() if v in eval_fingerprints} | {k for k, v in inputs.items() if v & eval_inputs}
     blocked_groups = {find(k) for k in excluded}
     groups = {}
     for item in sorted(ids):
