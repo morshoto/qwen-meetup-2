@@ -34,7 +34,8 @@ def fixture():
     baseline['sha256'] = digest(baseline)
     return dict(challenges_bytes=challenges_bytes, solutions_bytes=solutions_bytes,
                 official=official, baseline=baseline, proposal=proposal,
-                phase_b=proposal['training_exclusions'][:],
+                phase_b=proposal['training_exclusions'][:], scheduled=list(tasks)[240:260],
+                phase_b_comparison=list(tasks)[260:310],
                 prior={'confirmatory_task_ids': proposal['protected_exclusions'][:], 'exploratory_task_ids': []},
                 exposure={'matched_task_ids': proposal['known_exposure_exclusions'][:]},
                 lineage={}, prompt=prompt, source_hashes={'official_challenges': digest(official)},
@@ -101,3 +102,15 @@ def test_load_sources_hashes_actual_files_and_public_evaluation(tmp_path):
     assert result['source_hashes']['phase_a_proposal'] == hashlib.sha256(paths['configs/lt.phase-a.comparison-proposal.json']).hexdigest()
     assert result['baseline'] == args['baseline']
     assert result['lineage'] == {}
+
+
+def test_prior_scheduled_and_proposed_comparison_are_excluded():
+    args = fixture()
+    result = audited_registration(**args)
+    selected = set(result['allocation']['fresh'] + result['allocation']['validation'])
+    assert not selected.intersection(args['scheduled'])
+    assert not selected.intersection(args['phase_b_comparison'])
+    assert result['exclusions']['strict_scheduled'] == args['scheduled']
+    assert result['exclusions']['phase_b_comparison_proposed'] == args['phase_b_comparison']
+    args['scheduled'] = []
+    with pytest.raises(ValueError): audited_registration(**args)
