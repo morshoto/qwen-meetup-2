@@ -13,6 +13,7 @@ from src.cli.qwen38_weight_prepare_sft import SFT_SOURCES
 COMPARISON_SHA256 = 'cff354ce06e7e1604725f87f1567b34f0d1408e57e2b73c1d3889e2d9fe2f626'
 EVALUATION_SOURCES = tuple(dict.fromkeys(SFT_SOURCES + (
     'src/arc/qwen38_weight_paired.py', 'src/arc/qwen38_weight_training_receipt.py',
+    'src/arc/qwen38_weight_eval_schedule.py',
     'src/arc/qwen38_weight_eval_registration.py', 'src/cli/qwen38_weight_eval_worker.py',
     'src/cli/qwen38_weight_evaluate.py',
 )))
