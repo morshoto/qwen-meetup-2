@@ -14,7 +14,7 @@ def fixture(tmp_path, monkeypatch):
     challenges = json.dumps(tasks, sort_keys=True).encode(); solutions = json.dumps(answers, sort_keys=True).encode()
     model = {'id': 'mlx-community/Qwen3.8-27B-4bit', 'revision': '10c35caafbb80f7dc6a7a432cdd11af10a6d4818',
              'quantization': '4-bit MLX'}
-    manifest = {'status': 'execution_ready', 'sha256': 'a' * 64,
+    manifest = {'status': 'execution_ready', 'sha256': 'a' * 64, 'run_dir': str((tmp_path / 'run').resolve()),
                 'allocation': {'fresh': ['a'], 'validation': [], 'seed': 9}, 'model': model,
                 'input_hashes': {'challenges': hashlib.sha256(challenges).hexdigest(),
                                  'solutions': hashlib.sha256(solutions).hexdigest()},
@@ -152,3 +152,11 @@ def test_resource_failure_is_recorded_and_prevents_further_dispatch(tmp_path, mo
     assert collect.collect_step(**kwargs)['attempt_status'] == 'error'
     assert collect.collect_step(**kwargs)['status'] == 'resource_stop'
     assert len(calls) == 1
+
+
+def test_collection_refuses_a_different_run_directory(tmp_path, monkeypatch):
+    manifest, challenges, solutions = fixture(tmp_path, monkeypatch)
+    kwargs = dict(manifest=manifest, proposal={}, review={}, repo=tmp_path, model_path=tmp_path,
+                  challenges=challenges, solutions=solutions, canary_dir=tmp_path, run_dir=tmp_path / 'other')
+    with pytest.raises(ValueError): collect.collect_step(**kwargs)
+    assert not (tmp_path / 'other').exists()
