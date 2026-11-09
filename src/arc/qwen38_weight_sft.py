@@ -71,3 +71,31 @@ def prepare_examples(tasks, solutions, records, *, blocked_ids, forbidden_answer
     counts['unique_parents'] = len(parents)
     return {'status': 'requires_source_replay' if len(parents) >= 5 else 'insufficient_verified_data',
             'counts': dict(counts), 'examples': examples}
+
+
+def select_training_examples(tasks, solutions, fresh_records, historical_records, *, blocked_ids,
+                             forbidden_answer_fingerprints, token_counter, max_tokens=2048):
+    """Apply the exploratory five-parent gate without authorizing training.
+
+    Inputs must be independently replayed against their frozen sources by the
+    caller. The return value remains provisional until a source-bound receipt.
+    """
+    if (any(record.get('source') != 'current_gen0_self_generated' for record in fresh_records) or
+        any(record.get('source') != 'historical_fp8' for record in historical_records)):
+        raise ValueError('sample source label mismatch')
+    options = {'blocked_ids': blocked_ids, 'forbidden_answer_fingerprints': forbidden_answer_fingerprints,
+               'token_counter': token_counter, 'max_tokens': max_tokens}
+    fresh = prepare_examples(tasks, solutions, fresh_records, **options)
+    selected = fresh if fresh['counts']['unique_parents'] >= 5 else prepare_examples(
+        tasks, solutions, list(fresh_records) + list(historical_records), **options)
+    counts = selected['counts']
+    if counts['historical_fp8'] and counts['current_gen0_self_generated']:
+        mode = 'mixed_source'
+    elif counts['historical_fp8']:
+        mode = 'historical_fp8_distillation'
+    elif counts['current_gen0_self_generated']:
+        mode = 'fresh_only'
+    else:
+        mode = 'none'
+    return {'status': 'eligible_pending_source_replay' if counts['unique_parents'] >= 5 else 'insufficient_verified_data',
+            'mode': mode, 'fresh_only_counts': fresh['counts'], 'counts': counts, 'examples': selected['examples']}
