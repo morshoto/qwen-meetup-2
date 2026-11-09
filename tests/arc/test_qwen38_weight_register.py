@@ -116,3 +116,16 @@ def test_prior_scheduled_and_proposed_comparison_are_excluded():
     assert result['exclusions']['phase_b_comparison_proposed'] == args['phase_b_comparison']
     args['scheduled'] = []
     with pytest.raises(ValueError): audited_registration(**args)
+
+
+def test_registration_declares_real_training_gate_and_settings():
+    result = audited_registration(**fixture())
+    gate = result['training_gate']
+    assert gate['minimum_unique_verified_parents'] == 5
+    assert gate['validation_success_required'] is False
+    assert gate['fresh_only_first'] is True
+    assert gate['mixed_source_label'] == 'mixed-source verified-sample fine-tuning'
+    assert result['training_settings'] == {'rank': 8, 'batch_size': 1, 'learning_rate': 2e-5,
+                                           'max_steps': 20, 'seed': 20261111,
+                                           'max_sequence_length': 2048, 'gradient_checkpointing': True,
+                                           'completion_only_loss': True}
