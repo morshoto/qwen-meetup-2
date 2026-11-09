@@ -80,6 +80,20 @@ def _replay_evaluation(rows, descriptor, root, model_path):
             raise ValueError('evaluation worker command differs from registration')
 
 
+def _finalize_evaluation(eval_root, descriptor, rows, status, wall_elapsed):
+    from src.arc.qwen38_rsi_comparison import digest
+    path = eval_root / 'termination.json'
+    if path.exists():
+        value = json.loads(path.read_bytes())
+        if (value.get('sha256') != digest({k: v for k, v in value.items() if k != 'sha256'}) or
+            value.get('evaluation_sha256') != descriptor['sha256'] or value.get('journal_sha256') != digest(rows) or
+            value.get('status') != status):
+            raise ValueError('evaluation termination receipt mismatch')
+        return value
+    return freeze_registration(path, {'status': status, 'evaluation_sha256': descriptor['sha256'],
+                                      'journal_sha256': digest(rows), 'wall_seconds': wall_elapsed})
+
+
 def evaluate_step(**kwargs):
     descriptor = verify_evaluation_descriptor(**kwargs)
     root = Path(kwargs['run_dir']).resolve(); eval_root = Path(descriptor['run_dir'])
@@ -94,9 +108,14 @@ def evaluate_step(**kwargs):
         wall_elapsed = _run_start(eval_root, descriptor['sha256'])
         rows = journal.read(); _replay_evaluation(rows, descriptor, root, kwargs['model_path'])
         action = next_evaluation_action(descriptor, rows)
-        if action['status'] != 'ready': return action
+        if action['status'] != 'ready':
+            if action['status'] != 'requires_reconciliation':
+                _finalize_evaluation(eval_root, descriptor, rows, action['status'], wall_elapsed)
+            return action
         remaining = descriptor['wall_seconds_limit'] - wall_elapsed
-        if remaining <= 0: return {'status': 'time_budget_exhausted'}
+        if remaining <= 0:
+            _finalize_evaluation(eval_root, descriptor, rows, 'time_budget_exhausted', wall_elapsed)
+            return {'status': 'time_budget_exhausted'}
         tasks = json.loads(kwargs['challenges'])
         request = create_request(action['task_id'], tasks[action['task_id']],
                                  candidate_index=action['candidate_index'], seed=action['seed'])
@@ -165,17 +184,27 @@ def report_evaluation(**kwargs):
         elapsed = time.time() - start['started_epoch']
         if elapsed < 0: raise ValueError('system clock precedes evaluation start')
         rows = journal.read(); _replay_evaluation(rows, descriptor, root, kwargs['model_path'])
+        termination_path = eval_root / 'termination.json'
+        termination = None
+        if termination_path.exists():
+            termination = json.loads(termination_path.read_bytes())
+            wall = termination.get('wall_seconds')
+            if (termination.get('sha256') != digest({k: v for k, v in termination.items() if k != 'sha256'}) or
+                termination.get('evaluation_sha256') != descriptor['sha256'] or termination.get('journal_sha256') != digest(rows) or
+                isinstance(wall, bool) or not isinstance(wall, (int, float)) or not math.isfinite(wall) or wall < 0):
+                raise ValueError('evaluation termination evidence mismatch')
         assembly = assemble_rows(descriptor, json.loads(kwargs['challenges']), rows)
         baseline = [json.loads(baseline_files[task_id]) for task_id in descriptor['task_ids']]
         scores = paired_report(descriptor['task_ids'], baseline, assembly['rows'], Verifier(json.loads(kwargs['solutions'])),
                                manifest_sha256=descriptor['comparison_sha256'], prompt_sha256=descriptor['prompt_sha256'],
                                adapter_sha256=descriptor['adapter_sha256'])
-        result = {'status': assembly['status'], 'schedule_status': assembly['schedule_status'],
+        result = {'status': assembly['status'] if termination is not None else 'incomplete',
+                  'schedule_status': termination['status'] if termination is not None else assembly['schedule_status'],
                   'journal_sha256': digest(rows), 'evaluation_sha256': descriptor['sha256'],
                   'comparison_sha256': descriptor['comparison_sha256'], 'training_result_sha256': training['sha256'],
                   'adapter_sha256': descriptor['adapter_sha256'], 'training_mode': selection['mode'],
                   'training_source_counts': selection['counts'], 'evaluation_errors': assembly['errors'],
-                  'wall_seconds': elapsed, 'paired': scores,
+                  'wall_seconds': termination['wall_seconds'] if termination is not None else None, 'paired': scores,
                   'limitations': ['Previously evaluated tasks are exploratory, not an official ARC score.',
                                   'A parameter update and one generation do not establish recursive improvement.']}
-        return freeze_registration(eval_root / ('report-' + result['journal_sha256'] + '.json'), result)
+        return freeze_registration(eval_root / ('report-' + digest(result) + '.json'), result)
