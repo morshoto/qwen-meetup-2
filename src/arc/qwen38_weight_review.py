@@ -61,3 +61,36 @@ def review_selection(proposal, tasks, solutions, official):
             'selected_parent_overlap': 0, 'selected_input_overlap': 0,
             'blocked_training_parents': len(blocked), 'official_challenges': len(official),
             'unresolved_semantic_exposure': True}
+
+
+PROPOSAL_SHA256 = '581d0250bf5aa1b9874094e12b16b151fdb9ea5dad8f9ef406279ab2b3f669de'
+HISTORY_MANIFEST_SHA256 = '911763ed410c9bafc12e4259bd8c29a26c5d00a2e12a3d67c5cce045c0f9cc7b'
+HISTORY_AGGREGATE_SHA256 = 'f07534b2a20704cda4eb19879b43d047bfb34d865e94e24028be552ace58f77e'
+PHASE_B_HEAD = '4d6a9bc21e8756ce375ce493675bca71e49af221'
+
+
+def bind_review(proposal, observed, source_hashes, review_source_sha256,
+                history_manifest_sha256, history_aggregate_sha256, phase_b_head):
+    """Bind a completed bounded audit; callers must actually replay the inputs."""
+    import re
+    if (proposal.get('sha256') != PROPOSAL_SHA256 or
+        _hash({k: v for k, v in proposal.items() if k != 'sha256'}) != PROPOSAL_SHA256 or
+        source_hashes != proposal['input_hashes'] or
+        not isinstance(review_source_sha256, str) or not re.fullmatch('[0-9a-f]{64}', review_source_sha256) or
+        history_manifest_sha256 != HISTORY_MANIFEST_SHA256 or history_aggregate_sha256 != HISTORY_AGGREGATE_SHA256 or
+        phase_b_head != PHASE_B_HEAD):
+        raise ValueError('bounded review source mismatch')
+    if (observed.get('fresh_parents') != len(proposal['allocation']['fresh']) or
+        observed.get('validation_parents') != len(proposal['allocation']['validation']) or
+        observed.get('selected_parent_overlap') != 0 or observed.get('selected_input_overlap') != 0 or
+        observed.get('official_challenges') != 120 or observed.get('unresolved_semantic_exposure') is not True):
+        raise ValueError('bounded selection review did not pass')
+    result = {'status': 'reviewed_bounded', 'proposal_sha256': PROPOSAL_SHA256,
+              'known_lineage_sha256': _hash(proposal['known_lineage']), 'unresolved_exposure': True,
+              'selection': observed, 'input_hashes': source_hashes, 'review_source_sha256': review_source_sha256,
+              'history_manifest_sha256': history_manifest_sha256, 'history_aggregate_sha256': history_aggregate_sha256,
+              'phase_b_head': phase_b_head,
+              'limitations': ['No complete semantic lineage or model-pretraining exposure inventory exists.',
+                              'The Phase B comparison set is a proposal, not a frozen registration.']}
+    result['sha256'] = _hash(result)
+    return result
