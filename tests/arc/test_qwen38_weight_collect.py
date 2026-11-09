@@ -69,3 +69,26 @@ def test_unresolved_attempt_never_restarts_and_proposal_cannot_dispatch(tmp_path
     assert collect.collect_step(**kwargs)['status'] == 'requires_reconciliation' and len(calls) == 1
     manifest['status'] = 'proposal_not_authorization'
     with pytest.raises(ValueError): collect.collect_step(**kwargs)
+
+
+def test_worker_cleanup_evidence_must_match_before_commit(tmp_path, monkeypatch):
+    manifest, challenges, solutions = fixture(tmp_path, monkeypatch)
+    def inconsistent(command, payload, directory, **kwargs):
+        directory = Path(directory); directory.mkdir()
+        for name in ('stdout.log', 'stderr.log'):
+            (directory / name).write_text('')
+        (directory / 'request.json').write_text(json.dumps(payload))
+        saved = {'status': 'error', 'reason': 'remaining_process_group', 'exit_code': 0,
+                 'process_group_gone': False, 'elapsed_seconds': 1}
+        (directory / 'execution.json').write_text(json.dumps(saved))
+        response = {'raw': '[[[4]]]', 'prompt_tokens': 5, 'completion_tokens': 1,
+                    'finish_reason': 'stop', 'seconds': 1, 'peak_memory_gb': 1}
+        (directory / 'response.json').write_text(json.dumps(capture_response(payload['request'], response, payload['max_tokens'])))
+        return {**saved, 'status': 'complete', 'reason': None, 'process_group_gone': True}
+    monkeypatch.setattr(collect, 'run_supervised', inconsistent)
+    kwargs = dict(manifest=manifest, proposal={}, review={}, repo=tmp_path, model_path=tmp_path,
+                  challenges=challenges, solutions=solutions, canary_dir=tmp_path, run_dir=tmp_path / 'run')
+    with pytest.raises(ValueError): collect.collect_step(**kwargs)
+    from src.arc.qwen38_weight_journal import AttemptJournal
+    with AttemptJournal(tmp_path / 'run/journal') as journal:
+        assert journal.read()[-1]['status'] == 'started'
