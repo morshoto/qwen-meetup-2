@@ -11,6 +11,20 @@ from pathlib import Path
 from src.arc.qwen38_rsi_comparison import digest
 
 
+def _valid_request(request):
+    return (isinstance(request, dict) and isinstance(request.get('task_id'), str) and
+            re.fullmatch(r'[A-Za-z0-9_-]+', request['task_id']) is not None and
+            type(request.get('candidate_index')) is int and 0 <= request['candidate_index'] < 8 and
+            type(request.get('seed')) is int and request['seed'] >= 0 and
+            isinstance(request.get('manifest_sha256'), str) and
+            re.fullmatch(r'[0-9a-f]{64}', request['manifest_sha256']) is not None and
+            not set(request) & {'status', 'elapsed_seconds', 'sha256', 'start_sha256'})
+
+
+def _valid_seconds(value):
+    return not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and value >= 0
+
+
 class AttemptJournal:
     def __init__(self, root):
         self.root = Path(root)
@@ -61,13 +75,13 @@ class AttemptJournal:
                 raise ValueError('noncontiguous journal')
             try:
                 start = json.loads((self.root / name).read_bytes())
-                if start.get('sequence') != index or start.get('sha256') != digest({k: v for k, v in start.items() if k != 'sha256'}):
+                if not _valid_request(start.get('request')) or start.get('sequence') != index or start.get('sha256') != digest({k: v for k, v in start.items() if k != 'sha256'}):
                     raise ValueError('invalid start identity')
                 result_name = f'{index:06}.result.json'
                 if result_name in names:
                     end = json.loads((self.root / result_name).read_bytes())
                     if (end.get('start_sha256') != start['sha256'] or end.get('sha256') != digest({k: v for k, v in end.items() if k != 'sha256'}) or
-                        end.get('status') not in ('complete', 'error') or
+                        end.get('status') not in ('complete', 'error') or not _valid_seconds(end.get('elapsed_seconds')) or
                         bool((set(end) - {'sha256', 'start_sha256'}) & set(start['request']))):
                         raise ValueError('invalid result identity')
                     result.append({**start['request'], **{k: v for k, v in end.items() if k not in ('sha256', 'start_sha256')}})
@@ -88,7 +102,7 @@ class AttemptJournal:
         rows = self.read()
         if rows and rows[-1]['status'] == 'started':
             raise ValueError('previous attempt requires reconciliation')
-        if not isinstance(request, dict) or not {'task_id', 'candidate_index', 'seed', 'manifest_sha256'} <= request.keys():
+        if not _valid_request(request):
             raise ValueError('invalid attempt identity')
         value = {'sequence': len(rows), 'request': request}
         value['sha256'] = digest(value)
@@ -102,7 +116,7 @@ class AttemptJournal:
         if not isinstance(outcome, dict) or outcome.get('status') not in ('complete', 'error') or set(outcome) & ((set(rows[index]) - {'status', 'elapsed_seconds'}) | {'sha256', 'start_sha256'}):
             raise ValueError('invalid attempt outcome')
         seconds = outcome.get('elapsed_seconds')
-        if isinstance(seconds, bool) or not isinstance(seconds, (int, float)) or not math.isfinite(seconds) or seconds < 0:
+        if not _valid_seconds(seconds):
             raise ValueError('invalid attempt elapsed time')
         start = json.loads((self.root / f'{index:06}.start.json').read_bytes())
         value = {**outcome, 'start_sha256': start['sha256']}
