@@ -45,3 +45,15 @@ def test_insufficient_data_never_writes_sft_dataset(tmp_path):
     assert result['status'] == 'insufficient_verified_data'
     assert not (root / 'train.jsonl').exists()
     assert 'score' not in result
+
+
+@pytest.mark.parametrize('change', ['status', 'mode', 'prompt'])
+def test_bundle_rejects_forged_gate_or_prompt(tmp_path, change):
+    selection, registration = fixture(5)
+    if change == 'status': selection['status'] = 'invented'
+    elif change == 'mode': selection['mode'] = 'mixed_source'
+    else:
+        prompt = json.loads(selection['examples'][0]['messages'][0]['content'])
+        prompt['task']['test'][0]['output'] = [[9]]
+        selection['examples'][0]['messages'][0]['content'] = json.dumps(prompt)
+    with pytest.raises(ValueError): write_bundle(tmp_path / 'forged', selection, registration)
