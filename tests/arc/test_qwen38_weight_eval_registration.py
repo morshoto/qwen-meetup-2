@@ -78,3 +78,19 @@ def test_evaluation_rejects_baseline_source_drift(tmp_path, monkeypatch):
     (repo / 'logic.py').write_text('changed')
     with pytest.raises(ValueError):
         evaluation.build_evaluation_descriptor(comparison, execution, training, evidence, challenges, rows, repo, expected_count=2)
+
+
+def test_evaluation_inventory_covers_transitive_project_imports():
+    import ast
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2]; inventory = set(evaluation.EVALUATION_SOURCES)
+    for name in inventory:
+        path = root / name
+        assert path.is_file(), name
+        for node in ast.walk(ast.parse(path.read_text())):
+            if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith('src.'):
+                target = node.module.replace('.', '/') + '.py'
+                if (root / target).is_file(): assert target in inventory, (name, target)
+                for alias in node.names:
+                    child = node.module.replace('.', '/') + '/' + alias.name + '.py'
+                    if (root / child).is_file(): assert child in inventory, (name, child)
