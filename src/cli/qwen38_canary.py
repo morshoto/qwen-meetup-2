@@ -64,7 +64,7 @@ def run(model, root, timeout=900, minimum_free=10, maximum_swap=16 * 1024**3):
     data = root / 'data'; data.mkdir()
     (data / 'train.jsonl').write_text(json.dumps({'messages': [{'role': 'user', 'content': 'Return one.'}, {'role': 'assistant', 'content': '1'}]}) + '\n')
     before = hashes(model)
-    command = [sys.executable, '-u', '-m', 'mlx_vlm.lora', '--model-path', str(model), '--dataset', str(data),
+    command = [sys.executable, '-u', '-m', 'src.cli.qwen38_canary_worker', '--model-path', str(model), '--dataset', str(data),
                '--iters', '1', '--batch-size', '1', '--max-seq-length', '512', '--grad-checkpoint',
                '--train-on-completions', '--steps-per-report', '1', '--lora-rank', '8', '--learning-rate', '0.00002',
                '--output-path', str(root / 'adapter')]
@@ -77,7 +77,9 @@ def run(model, root, timeout=900, minimum_free=10, maximum_swap=16 * 1024**3):
             initial = resources(); samples.append({'seconds': 0, 'free_percent': initial[0], 'swap_bytes': initial[1]})
             reason = resource_limit(*initial, minimum_free, maximum_swap)
             if reason is None:
-                child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                env = os.environ.copy()
+                env['QWEN38_CANARY_INITIAL'] = str(root / 'initial.safetensors')
+                child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True, env=env)
                 while child.poll() is None:
                     elapsed = time.monotonic() - start
                     current = resources(); samples.append({'seconds': elapsed, 'free_percent': current[0], 'swap_bytes': current[1]})
