@@ -53,3 +53,86 @@ def verify_evaluation_descriptor(**kwargs):
     if saved != descriptor:
         raise ValueError('evaluation descriptor changed')
     return descriptor
+
+
+import sys
+from src.arc.qwen38_weight_eval_schedule import next_evaluation_action
+from src.arc.qwen38_weight_generation import capture_response, create_request
+from src.arc.qwen38_weight_journal import AttemptJournal
+from src.arc.qwen38_weight_supervisor import run_supervised
+from src.cli.qwen38_weight_collect import _artifact_hashes, _replay_artifacts, _run_start, _validate_worker_execution
+
+
+def _worker_command(descriptor, root, model_path, index):
+    adapter = root / 'training/adapter-run-v1/adapter'
+    worker_dir = Path(descriptor['run_dir']) / 'workers' / f'{index:06}'
+    return [sys.executable, '-u', '-m', 'src.cli.qwen38_weight_eval_worker',
+            '--model-path', str(Path(model_path).resolve()), '--adapter-path', str(adapter),
+            '--adapter-sha256', descriptor['adapter_sha256'], '--adapter-config-sha256', descriptor['adapter_config_sha256'],
+            '--output', str(worker_dir / 'response.json')]
+
+
+def _replay_evaluation(rows, descriptor, root, model_path):
+    workers = Path(descriptor['run_dir']) / 'workers'
+    _replay_artifacts(rows, workers, descriptor['max_tokens'], descriptor['supervision'])
+    for index, row in enumerate(rows):
+        if row.get('worker_command') != _worker_command(descriptor, root, model_path, index):
+            raise ValueError('evaluation worker command differs from registration')
+
+
+def evaluate_step(**kwargs):
+    descriptor = verify_evaluation_descriptor(**kwargs)
+    root = Path(kwargs['run_dir']).resolve(); eval_root = Path(descriptor['run_dir'])
+    if (descriptor.get('status') != 'evaluation_ready' or eval_root != root / 'evaluation/adapter-v1' or
+        not eval_root.parent.is_dir() or eval_root.parent.stat().st_mode & 0o077):
+        raise ValueError('evaluation destination or descriptor invalid')
+    eval_root.mkdir(mode=0o700, exist_ok=True)
+    workers = eval_root / 'workers'; workers.mkdir(mode=0o700, exist_ok=True)
+    if any(p.is_symlink() or p.stat().st_mode & 0o077 for p in (eval_root, workers)):
+        raise ValueError('evaluation evidence directories must be private')
+    with AttemptJournal(eval_root / 'journal') as journal:
+        wall_elapsed = _run_start(eval_root, descriptor['sha256'])
+        rows = journal.read(); _replay_evaluation(rows, descriptor, root, kwargs['model_path'])
+        action = next_evaluation_action(descriptor, rows)
+        if action['status'] != 'ready': return action
+        remaining = descriptor['wall_seconds_limit'] - wall_elapsed
+        if remaining <= 0: return {'status': 'time_budget_exhausted'}
+        tasks = json.loads(kwargs['challenges'])
+        request = create_request(action['task_id'], tasks[action['task_id']],
+                                 candidate_index=action['candidate_index'], seed=action['seed'])
+        if request['prompt_sha256'] != descriptor['prompt_sha256']:
+            raise ValueError('evaluation prompt differs from baseline')
+        directory = workers / f'{len(rows):06}'
+        if directory.exists(): raise ValueError('worker evidence exists without journal start')
+        command = _worker_command(descriptor, root, kwargs['model_path'], len(rows))
+        identity = {k: v for k, v in request.items() if k not in ('content', 'test_count')}
+        identity.update({'manifest_sha256': descriptor['sha256'], 'model': kwargs['manifest']['model'], 'worker_command': command})
+        journal.start(identity)
+        limits = descriptor['supervision']
+        execution = run_supervised(command, {'request': request, 'max_tokens': descriptor['max_tokens']}, directory,
+                                   timeout_seconds=min(remaining, descriptor['per_attempt_seconds']),
+                                   min_free=limits['minimum_free_percent'], max_swap=limits['maximum_swap_bytes'],
+                                   max_output_bytes=limits['max_output_bytes'], cwd=kwargs['repo'])
+        if json.loads((directory / 'execution.json').read_bytes()) != execution:
+            raise ValueError('evaluation worker execution receipt mismatch')
+        if execution.get('process_group_gone') is not True:
+            return {'status': 'requires_reconciliation'}
+        _validate_worker_execution(execution, command, limits)
+        if verify_evaluation_descriptor(**kwargs) != descriptor:
+            raise ValueError('evaluation postflight changed')
+        artifacts = _artifact_hashes(directory)
+        if execution['status'] == 'complete':
+            try:
+                response = json.loads((directory / 'response.json').read_bytes())
+                capture = capture_response(request, response, descriptor['max_tokens'])
+                if response != capture: raise ValueError('evaluation worker response mismatch')
+                outcome = {k: v for k, v in capture.items() if k not in identity}
+                outcome.update({'status': 'complete', 'elapsed_seconds': execution['elapsed_seconds'], 'worker_artifacts': artifacts})
+            except (ValueError, KeyError, OSError, TypeError):
+                outcome = {'status': 'error', 'error': 'worker_output_invalid', 'elapsed_seconds': execution['elapsed_seconds'], 'worker_artifacts': artifacts}
+        else:
+            outcome = {'status': 'error', 'error': execution.get('reason') or 'worker_failed',
+                       'elapsed_seconds': execution['elapsed_seconds'], 'worker_artifacts': artifacts}
+        journal.finish(len(rows), outcome)
+        return {'status': 'attempt_recorded', 'task_id': action['task_id'], 'candidate_index': action['candidate_index'],
+                'attempt_status': outcome['status']}

@@ -59,6 +59,7 @@ def test_evaluation_steps_never_receive_solutions_and_replay_pairs(tmp_path, mon
                        'supervision': {'minimum_free_percent': 10, 'maximum_swap_bytes': 100, 'max_output_bytes': 10000}})
     descriptor['sha256'] = digest({k: v for k, v in descriptor.items() if k != 'sha256'})
     monkeypatch.setattr(evaluate, 'verify_evaluation_descriptor', lambda **kwargs: descriptor)
+    (kwargs['run_dir'] / 'evaluation').mkdir(mode=0o700)
     calls = []
     def worker(command, payload, directory, **options):
         calls.append(payload); assert set(payload) == {'request', 'max_tokens'} and 'solutions' not in json.dumps(payload)

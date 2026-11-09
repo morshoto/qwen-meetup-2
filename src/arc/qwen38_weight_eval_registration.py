@@ -86,7 +86,9 @@ def build_evaluation_descriptor(comparison, execution, training, evidence, chall
               'seed_rule': f'{SEED} + candidate_index', 'candidate_count': 2, 'temperature': .6,
               'max_tokens': 4096, 'max_context': 18432, 'format_recovery': True,
               'reserved_completion_tokens': expected_count * 2 * 4096, 'wall_seconds_limit': 12 * 3600,
-              'per_attempt_seconds': 600, 'run_dir': str((Path(execution['run_dir']) / 'evaluation/adapter-v1').resolve()),
+              'per_attempt_seconds': 600,
+              'supervision': {'minimum_free_percent': 10, 'maximum_swap_bytes': 16 * 1024**3, 'max_output_bytes': 2 * 1024**2},
+              'run_dir': str((Path(execution['run_dir']) / 'evaluation/adapter-v1').resolve()),
               'source_files_sha256': {name: _hash((repo / name).read_bytes()) for name in EVALUATION_SOURCES},
               'limitations': ['Previously evaluated 50 tasks; exploratory only.',
                               'Recorded candidates are not assumed independent.']}
