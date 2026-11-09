@@ -107,3 +107,27 @@ def test_prepare_and_replay_bundle_use_fixed_private_path(tmp_path, monkeypatch)
     (root / 'training/sft-v1/train.jsonl').write_text('{}\n')
     import pytest
     with pytest.raises(ValueError): prepare.replay_bundle(**kwargs)
+
+
+def test_prepare_cli_reads_only_public_evaluation_challenges(tmp_path, monkeypatch, capsys):
+    from zipfile import ZipFile
+    repo, manifest, proposal, review, challenges, solutions, official, fresh, history = fixture(tmp_path, monkeypatch)
+    for name, payload in [('manifest.json', json.dumps(manifest).encode()), ('proposal.json', json.dumps(proposal).encode()),
+                          ('review.json', json.dumps(review).encode()), ('challenges.json', challenges), ('solutions.json', solutions)]:
+        (tmp_path / name).write_bytes(payload)
+    with ZipFile(tmp_path / 'archive.zip', 'w') as archive:
+        archive.writestr('arc-agi_evaluation_challenges.json', official)
+    calls = []
+    def fake_bundle(**kwargs):
+        calls.append(kwargs)
+        return {'status': 'insufficient_verified_data', 'mode': 'none', 'counts': {'unique_parents': 0}, 'sha256': 'a' * 64}
+    monkeypatch.setattr(prepare, 'prepare_bundle', fake_bundle)
+    args = ['--manifest', str(tmp_path / 'manifest.json'), '--proposal', str(tmp_path / 'proposal.json'),
+            '--review', str(tmp_path / 'review.json'), '--repo', str(repo), '--model-path', str(tmp_path),
+            '--challenges', str(tmp_path / 'challenges.json'), '--solutions', str(tmp_path / 'solutions.json'),
+            '--archive', str(tmp_path / 'archive.zip'), '--canary-dir', str(tmp_path), '--run-dir', str(tmp_path / 'run'),
+            '--history-dir', str(tmp_path / 'history')]
+    assert prepare.main(args) == 0
+    assert calls[0]['official_bytes'] == official
+    output = capsys.readouterr().out
+    assert 'insufficient_verified_data' in output and '[[[3' not in output
