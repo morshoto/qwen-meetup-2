@@ -194,6 +194,11 @@ def report_evaluation(**kwargs):
                 isinstance(wall, bool) or not isinstance(wall, (int, float)) or not math.isfinite(wall) or wall < 0):
                 raise ValueError('evaluation termination evidence mismatch')
         assembly = assemble_rows(descriptor, json.loads(kwargs['challenges']), rows)
+        if termination is not None:
+            status = termination.get('status')
+            if (status != assembly['schedule_status'] and not (status == 'time_budget_exhausted' and
+                assembly['schedule_status'] == 'ready' and termination['wall_seconds'] >= descriptor['wall_seconds_limit'])):
+                raise ValueError('evaluation termination differs from journal state')
         baseline = [json.loads(baseline_files[task_id]) for task_id in descriptor['task_ids']]
         scores = paired_report(descriptor['task_ids'], baseline, assembly['rows'], Verifier(json.loads(kwargs['solutions'])),
                                manifest_sha256=descriptor['comparison_sha256'], prompt_sha256=descriptor['prompt_sha256'],
