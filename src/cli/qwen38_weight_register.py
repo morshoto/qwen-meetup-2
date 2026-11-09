@@ -20,6 +20,10 @@ def _hash(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
+def source_inventory(repo, names):
+    return {name: _hash((Path(repo) / name).read_bytes()) for name in names}
+
+
 def load_sources(repo, data_repo, baseline_path, lineage_path, phase_b_comparison_path):
     repo, data_repo = Path(repo), Path(data_repo)
     sources = {
@@ -74,6 +78,11 @@ def propose(repo, data_repo, baseline_path, lineage_path, phase_b_comparison_pat
     source['expected_comparison_sha256'] = COMPARISON_SHA256
     source['prompt'] = PROMPT
     result = audited_registration(**source)
+    result['source_files_sha256'] = source_inventory(repo, [
+        'src/arc/qwen38_weight_register.py', 'src/arc/qwen38_weight_allocation.py',
+        'src/cli/qwen38_weight_register.py', 'src/arc/qwen38_rsi_comparison.py',
+        'src/arc/qwen38_local_runner.py', 'src/arc/lt_live_backend.py',
+        'src/arc/rsi_task_generation.py'])
     result['status'] = 'proposal_not_authorization'
     result['limitations'] = ['Lineage register and historical exposure require independent review.',
                              'No collection or evaluation is authorized by this proposal.']
