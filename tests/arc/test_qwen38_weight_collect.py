@@ -114,3 +114,22 @@ def test_worker_command_must_match_registered_dispatch(tmp_path, monkeypatch):
     kwargs = dict(manifest=manifest, proposal={}, review={}, repo=tmp_path, model_path=tmp_path,
                   challenges=challenges, solutions=solutions, canary_dir=tmp_path, run_dir=tmp_path / 'run')
     with pytest.raises(ValueError): collect.collect_step(**kwargs)
+
+
+def test_collection_cli_loops_until_terminal_without_printing_labels(tmp_path, monkeypatch, capsys):
+    manifest, challenges, solutions = fixture(tmp_path, monkeypatch)
+    for name, content in [('manifest.json', json.dumps(manifest).encode()), ('proposal.json', b'{}'),
+                          ('review.json', b'{}'), ('challenges.json', challenges), ('solutions.json', solutions)]:
+        (tmp_path / name).write_bytes(content)
+    calls = []
+    def fake_step(**kwargs):
+        calls.append(kwargs)
+        return {'status': 'attempt_recorded', 'task_id': 'a', 'candidate_index': 0} if len(calls) == 1 else {'status': 'complete'}
+    monkeypatch.setattr(collect, 'collect_step', fake_step)
+    args = ['--manifest', str(tmp_path / 'manifest.json'), '--proposal', str(tmp_path / 'proposal.json'),
+            '--review', str(tmp_path / 'review.json'), '--repo', str(tmp_path), '--model-path', str(tmp_path),
+            '--challenges', str(tmp_path / 'challenges.json'), '--solutions', str(tmp_path / 'solutions.json'),
+            '--canary-dir', str(tmp_path), '--run-dir', str(tmp_path / 'run')]
+    assert collect.main(args) == 0
+    output = capsys.readouterr().out
+    assert len(calls) == 2 and 'complete' in output and '[[[4]]]' not in output
