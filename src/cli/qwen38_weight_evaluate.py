@@ -213,3 +213,40 @@ def report_evaluation(**kwargs):
                   'limitations': ['Previously evaluated tasks are exploratory, not an official ARC score.',
                                   'A parameter update and one generation do not establish recursive improvement.']}
         return freeze_registration(eval_root / ('report-' + digest(result) + '.json'), result)
+
+
+def main(argv=None):
+    import argparse
+    from zipfile import ZipFile
+    parser = argparse.ArgumentParser()
+    parser.add_argument('action', choices=('prepare', 'run', 'report'))
+    for flag in ('manifest', 'proposal', 'review', 'repo', 'model-path', 'challenges', 'solutions',
+                 'archive', 'canary-dir', 'run-dir', 'history-dir', 'comparison-dir'):
+        parser.add_argument('--' + flag, required=True)
+    parser.add_argument('--once', action='store_true')
+    args = parser.parse_args(argv)
+    with ZipFile(args.archive) as archive:
+        official_bytes = archive.read('arc-agi_evaluation_challenges.json')
+    inputs = {'manifest': json.loads(Path(args.manifest).read_bytes()),
+              'proposal': json.loads(Path(args.proposal).read_bytes()), 'review': json.loads(Path(args.review).read_bytes()),
+              'repo': Path(args.repo).resolve(), 'model_path': Path(args.model_path).resolve(),
+              'challenges': Path(args.challenges).read_bytes(), 'solutions': Path(args.solutions).read_bytes(),
+              'official_bytes': official_bytes, 'canary_dir': Path(args.canary_dir).resolve(),
+              'run_dir': Path(args.run_dir).resolve(), 'history_dir': Path(args.history_dir).resolve(),
+              'comparison_dir': Path(args.comparison_dir).resolve()}
+    if args.action == 'prepare':
+        result = freeze_evaluation(**inputs)
+        print(json.dumps({'status': result['status'], 'sha256': result['sha256']}, sort_keys=True), flush=True)
+        return 0
+    if args.action == 'report':
+        print(json.dumps(report_evaluation(**inputs), sort_keys=True), flush=True)
+        return 0
+    while True:
+        result = evaluate_step(**inputs)
+        print(json.dumps(result, sort_keys=True), flush=True)
+        if result['status'] != 'attempt_recorded' or args.once:
+            return 2 if result['status'] in ('requires_reconciliation', 'resource_stop') else 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
