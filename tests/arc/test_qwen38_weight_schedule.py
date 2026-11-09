@@ -61,3 +61,9 @@ def test_replay_rejects_overspent_tokens_and_attempts_after_success():
     journal = [row(t, i) for i in range(2) for t in ('a', 'b')] + [row('a', 2)]
     results = {('a', 0): True, ('a', 1): False, ('b', 0): False, ('b', 1): False, ('a', 2): False}
     with pytest.raises(ValueError): next_action(m, journal, results)
+
+
+@pytest.mark.parametrize('reason', ['low_free_memory', 'swap_limit', 'memory_probe_failed', 'remaining_process_group'])
+def test_resource_failures_stop_the_collection(reason):
+    m = manifest(); failed = {**row('a', 0, 'error'), 'error': reason}
+    assert next_action(m, [failed], {})['status'] == 'resource_stop'
