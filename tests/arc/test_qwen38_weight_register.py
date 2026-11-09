@@ -88,6 +88,7 @@ def test_load_sources_hashes_actual_files_and_public_evaluation(tmp_path):
         'configs/lt.phase-a.comparison-proposal.json': json.dumps(args['proposal']).encode(),
         'configs/lt.phase-b.training-pool.json': json.dumps(args['phase_b']).encode(),
         'research/rsi/exploratory-split-proposal.json': json.dumps(args['prior']).encode(),
+        'research/rsi/provisional-split.json': b'{}',
         'research/rsi/extended-exposure-review.json': json.dumps(args['exposure']).encode(),
         'lineage.json': b'{}', 'baseline.json': json.dumps(args['baseline']).encode(),
     }
