@@ -37,7 +37,8 @@ def fixture():
                 phase_b=proposal['training_exclusions'][:],
                 prior={'confirmatory_task_ids': proposal['protected_exclusions'][:], 'exploratory_task_ids': []},
                 exposure={'matched_task_ids': proposal['known_exposure_exclusions'][:]},
-                lineage={}, prompt=prompt, source_hashes={'official_challenges': 'd' * 64})
+                lineage={}, prompt=prompt, source_hashes={'official_challenges': digest(official)},
+                expected_comparison_sha256=baseline['sha256'])
 
 
 def test_registration_binds_inputs_and_preserves_protected_tasks():
@@ -62,4 +63,16 @@ def test_registration_rejects_untrusted_inputs(change):
     elif change == 'phase_b': args['phase_b'] = []
     elif change == 'prompt': args['prompt'] += '!'
     else: args['official'] = {}
+    with pytest.raises(ValueError): audited_registration(**args)
+
+
+def test_registration_checks_official_content_hash():
+    args = fixture()
+    args['source_hashes']['official_challenges'] = 'f' * 64
+    with pytest.raises(ValueError): audited_registration(**args)
+
+
+def test_expected_comparison_identity_cannot_be_replaced():
+    args = fixture()
+    args['expected_comparison_sha256'] = 'f' * 64
     with pytest.raises(ValueError): audited_registration(**args)
