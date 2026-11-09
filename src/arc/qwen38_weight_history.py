@@ -6,7 +6,26 @@ import json
 from collections import Counter
 
 from src.arc.qwen38_local_runner import parse_prediction
+from src.arc.qwen38_weight_allocation import input_fingerprints
 from src.arc.qwen38_rsi_comparison import digest
+
+
+def historical_blocked_ids(tasks, official, excluded_ids, lineage):
+    """Propagate known exclusions through identical inputs and declared families."""
+    if not set(excluded_ids) <= tasks.keys() or not set(lineage) <= tasks.keys():
+        raise ValueError('unknown blocked task or lineage')
+    inputs = {key: input_fingerprints(task) for key, task in tasks.items()}
+    blocked = set(excluded_ids) | (set(tasks) & set(official))
+    official_inputs = set().union(*(input_fingerprints(t) for t in official.values())) if official else set()
+    blocked.update(key for key, values in inputs.items() if values & official_inputs)
+    while True:
+        shared_inputs = set().union(*(inputs[key] for key in blocked)) if blocked else set()
+        shared_families = {lineage[key] for key in blocked if key in lineage}
+        expanded = blocked | {key for key, values in inputs.items() if values & shared_inputs} | {
+            key for key, family in lineage.items() if family in shared_families}
+        if expanded == blocked:
+            return blocked
+        blocked = expanded
 
 
 def audit_history(*, tasks, solutions, manifest, aggregate_bytes, checkpoints, blocked_ids,
@@ -30,7 +49,7 @@ def audit_history(*, tasks, solutions, manifest, aggregate_bytes, checkpoints, b
         len(ids) != len(set(ids)) or set(rows) != set(ids) or set(checkpoints) != set(ids) or
         not set(ids) <= tasks.keys() or not set(ids) <= solutions.keys() or not isinstance(blocked_ids, set)):
         raise ValueError('incomplete historical source inventory')
-    counts = Counter(); eligible = []
+    counts = Counter(); eligible = []; seen_answers = set()
     for task_id in ids:
         row = rows[task_id]
         if (row != checkpoints[task_id] or row.get('status') != 'complete' or row.get('task_id') != task_id or
@@ -40,7 +59,7 @@ def audit_history(*, tasks, solutions, manifest, aggregate_bytes, checkpoints, b
         counts['parents'] += 1
         blocked = task_id in blocked_ids
         counts['blocked_parents'] += int(blocked)
-        chosen = False
+        chosen = False; accepted = False
         for index, candidate in enumerate(row['candidates']):
             counts['candidates'] += 1
             raw = candidate.get('raw')
@@ -62,14 +81,20 @@ def audit_history(*, tasks, solutions, manifest, aggregate_bytes, checkpoints, b
                     counts['duplicate_parent_candidates'] += 1
                 else:
                     chosen = True
+                    answer_lineage = digest(parsed)
+                    if answer_lineage in seen_answers:
+                        counts['duplicate_answer_lineage'] += 1
+                        continue
+                    seen_answers.add(answer_lineage)
+                    accepted = True
                     eligible.append({'source': 'historical_fp8', 'task_id': task_id,
                                      'candidate_index': index, 'raw': raw,
                                      'raw_sha256': hashlib.sha256(raw.encode()).hexdigest(),
                                      'checkpoint_sha256': digest(row), 'manifest_sha256': expected_manifest_sha256})
-        if chosen:
+        if accepted:
             counts['eligible_unique_parents'] += 1
     for key in ('parents', 'blocked_parents', 'candidates', 'blocked_candidates', 'invalid_candidates',
-                'incorrect_candidates', 'verified_correct_candidates', 'duplicate_parent_candidates', 'eligible_unique_parents'):
+                'incorrect_candidates', 'verified_correct_candidates', 'duplicate_parent_candidates', 'duplicate_answer_lineage', 'eligible_unique_parents'):
         counts.setdefault(key, 0)
     return {'source': 'historical_fp8', 'counts': dict(counts), 'eligible': eligible,
             'limitations': ['FP8 cross-run distillation; not current 4-bit self-generation',
