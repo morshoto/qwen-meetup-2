@@ -20,3 +20,9 @@ def test_count_fails_if_completion_mask_is_missing_or_unsafe(mask):
     item = {'input_ids': np.array([[1, 2, 3, 4, 5]]), 'attention_mask': np.ones((1, 5), dtype=int)}
     if mask is not None: item['completion_mask'] = np.array(mask)
     with pytest.raises(ValueError): trainer_token_count([], lambda _: FakeDataset(item))
+
+
+def test_unsigned_mask_cannot_hide_unmasked_prompt():
+    item = {'input_ids': np.array([[1, 2, 3, 4, 5]]), 'attention_mask': np.ones((1, 5), dtype=int),
+            'completion_mask': np.array([[0, 1, 0, 1, 1]], dtype=np.uint8)}
+    with pytest.raises(ValueError): trainer_token_count([], lambda _: FakeDataset(item))
