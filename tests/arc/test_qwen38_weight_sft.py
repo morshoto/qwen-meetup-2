@@ -25,7 +25,7 @@ def fixture():
 def test_sft_targets_are_original_verified_responses_without_test_answers_in_prompt():
     tasks, solutions, records = fixture()
     result = prepare_examples(tasks, solutions, records, blocked_ids={'5'}, token_counter=lambda messages: 10)
-    assert result['status'] == 'eligible_for_training'
+    assert result['status'] == 'requires_source_replay'
     assert result['counts']['unique_parents'] == 5
     assert result['counts']['excluded_blocked'] == 1
     for item in result['examples']:
