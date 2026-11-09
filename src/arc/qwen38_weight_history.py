@@ -30,7 +30,7 @@ def historical_blocked_ids(tasks, official, excluded_ids, lineage):
 
 def audit_history(*, tasks, solutions, manifest, aggregate_bytes, checkpoints, blocked_ids,
                   expected_aggregate_sha256, expected_manifest_sha256, expected_challenge_sha256,
-                  expected_prompt_sha256):
+                  expected_prompt_sha256, forbidden_answer_fingerprints):
     if hashlib.sha256(aggregate_bytes).hexdigest() != expected_aggregate_sha256:
         raise ValueError('historical aggregate hash mismatch')
     if (manifest.get('sha256') != expected_manifest_sha256 or
@@ -47,7 +47,8 @@ def audit_history(*, tasks, solutions, manifest, aggregate_bytes, checkpoints, b
     ids = manifest['phase_a_task_ids']
     if (aggregate.get('manifest') != manifest or aggregate.get('complete') is not True or
         len(ids) != len(set(ids)) or set(rows) != set(ids) or set(checkpoints) != set(ids) or
-        not set(ids) <= tasks.keys() or not set(ids) <= solutions.keys() or not isinstance(blocked_ids, set)):
+        not set(ids) <= tasks.keys() or not set(ids) <= solutions.keys() or not isinstance(blocked_ids, set) or
+        not isinstance(forbidden_answer_fingerprints, set)):
         raise ValueError('incomplete historical source inventory')
     counts = Counter(); eligible = []; seen_answers = set()
     for task_id in ids:
@@ -82,6 +83,9 @@ def audit_history(*, tasks, solutions, manifest, aggregate_bytes, checkpoints, b
                 else:
                     chosen = True
                     answer_lineage = digest(parsed)
+                    if answer_lineage in forbidden_answer_fingerprints:
+                        counts['protected_answer_lineage'] += 1
+                        continue
                     if answer_lineage in seen_answers:
                         counts['duplicate_answer_lineage'] += 1
                         continue
@@ -94,7 +98,7 @@ def audit_history(*, tasks, solutions, manifest, aggregate_bytes, checkpoints, b
         if accepted:
             counts['eligible_unique_parents'] += 1
     for key in ('parents', 'blocked_parents', 'candidates', 'blocked_candidates', 'invalid_candidates',
-                'incorrect_candidates', 'verified_correct_candidates', 'duplicate_parent_candidates', 'duplicate_answer_lineage', 'eligible_unique_parents'):
+                'incorrect_candidates', 'verified_correct_candidates', 'duplicate_parent_candidates', 'duplicate_answer_lineage', 'protected_answer_lineage', 'eligible_unique_parents'):
         counts.setdefault(key, 0)
     return {'source': 'historical_fp8', 'counts': dict(counts), 'eligible': eligible,
             'limitations': ['FP8 cross-run distillation; not current 4-bit self-generation',
