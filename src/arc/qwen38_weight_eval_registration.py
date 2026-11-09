@@ -47,6 +47,16 @@ def build_evaluation_descriptor(comparison, execution, training, evidence, chall
         comparison.get('format_recovery') is not True or _hash(challenges) != comparison.get('challenge_sha256') or
         execution['input_hashes'].get('challenges') != comparison['challenge_sha256']):
         raise ValueError('baseline generation settings differ')
+    if comparison.get('model_files_sha256') != execution['model'].get('files_sha256'):
+        raise ValueError('baseline model snapshot differs')
+    repo = Path(repo).resolve()
+    baseline_sources = comparison.get('source_files_sha256')
+    if not isinstance(baseline_sources, dict) or not baseline_sources:
+        raise ValueError('baseline source inventory missing')
+    for name, expected in baseline_sources.items():
+        path = (repo / name).resolve()
+        if not path.is_relative_to(repo) or _hash(path.read_bytes()) != expected:
+            raise ValueError('baseline source inventory changed')
     tasks = json.loads(challenges); ids = comparison['allocation']['evaluation']
     if len(ids) != expected_count or len(set(ids)) != expected_count or set(baseline_files) != set(ids) or not set(ids) <= tasks.keys():
         raise ValueError('baseline comparison task inventory mismatch')
