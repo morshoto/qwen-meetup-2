@@ -76,6 +76,10 @@ def audited_registration(*, challenges_bytes, solutions_bytes, official, baselin
     selected = result['allocation']['fresh'] + result['allocation']['validation']
     result['solution_fingerprints'] = {k: digest(solutions[k]) for k in selected}
     result['training_gate'] = {'minimum_unique_verified_parents': 5, 'validation_success_required': False,
-                               'validation_targets_allowed': False, 'fallback': 'audit historical verified Qwen outputs if fresh parents under five',
+                               'validation_targets_allowed': False, 'fresh_only_first': True,
+                               'mixed_source_label': 'mixed-source verified-sample fine-tuning', 'fallback': 'audit historical verified Qwen outputs if fresh parents under five',
                                'insufficient_status': 'insufficient_verified_data'}
+    result['training_settings'] = {'rank': 8, 'batch_size': 1, 'learning_rate': 2e-5,
+                                   'max_steps': 20, 'seed': 20261111, 'max_sequence_length': 2048,
+                                   'gradient_checkpointing': True, 'completion_only_loss': True}
     return result
