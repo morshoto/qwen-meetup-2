@@ -55,6 +55,7 @@ def test_bounded_review_binds_replayed_sources_and_historical_run(monkeypatch):
                                  review.PHASE_B_HEAD)
     assert receipt['status'] == 'reviewed_bounded' and receipt['unresolved_exposure'] is True
     assert receipt['proposal_sha256'] == proposal['sha256']
+    assert any('lineage register' in note.lower() for note in receipt['limitations'])
     with pytest.raises(ValueError):
         review.bind_review(proposal, observed, {'challenges': 'd' * 64}, 'c' * 64,
                            review.HISTORY_MANIFEST_SHA256, review.HISTORY_AGGREGATE_SHA256, review.PHASE_B_HEAD)
