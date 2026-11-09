@@ -134,3 +134,12 @@ def test_registration_declares_real_training_gate_and_settings():
                                            'max_steps': 20, 'seed': 20261111,
                                            'max_sequence_length': 2048, 'gradient_checkpointing': True,
                                            'completion_only_loss': True}
+
+
+def test_source_inventory_detects_changes_and_missing_files(tmp_path):
+    from src.cli.qwen38_weight_register import source_inventory
+    path = tmp_path / 'logic.py'; path.write_text('first')
+    before = source_inventory(tmp_path, ['logic.py'])
+    path.write_text('second')
+    assert source_inventory(tmp_path, ['logic.py']) != before
+    with pytest.raises(FileNotFoundError): source_inventory(tmp_path, ['missing.py'])
