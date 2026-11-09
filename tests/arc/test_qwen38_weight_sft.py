@@ -24,7 +24,7 @@ def fixture():
 
 def test_sft_targets_are_original_verified_responses_without_test_answers_in_prompt():
     tasks, solutions, records = fixture()
-    result = prepare_examples(tasks, solutions, records, blocked_ids={'5'}, token_counter=lambda messages: 10)
+    result = prepare_examples(tasks, solutions, records, blocked_ids={'5'}, forbidden_answer_fingerprints=set(), token_counter=lambda messages: 10)
     assert result['status'] == 'requires_source_replay'
     assert result['counts']['unique_parents'] == 5
     assert result['counts']['excluded_blocked'] == 1
@@ -38,12 +38,12 @@ def test_sft_targets_are_original_verified_responses_without_test_answers_in_pro
 
 def test_training_gate_uses_distinct_parents_after_length_filtering():
     tasks, solutions, records = fixture()
-    report = prepare_examples(tasks, solutions, records, blocked_ids=set(), token_counter=lambda messages: 2049)
+    report = prepare_examples(tasks, solutions, records, blocked_ids=set(), forbidden_answer_fingerprints=set(), token_counter=lambda messages: 2049)
     assert report['status'] == 'insufficient_verified_data'
     assert report['counts']['length_excluded'] == 6
     assert report['examples'] == []
     duplicated = records[:4] + [copy.deepcopy(records[0])]
-    report = prepare_examples(tasks, solutions, duplicated, blocked_ids=set(), token_counter=lambda messages: 1)
+    report = prepare_examples(tasks, solutions, duplicated, blocked_ids=set(), forbidden_answer_fingerprints=set(), token_counter=lambda messages: 1)
     assert report['status'] == 'insufficient_verified_data'
     assert report['counts']['unique_parents'] == 4
 
@@ -59,4 +59,13 @@ def test_sft_rejects_forged_or_unverified_targets(change):
     elif change == 'source': records[0]['source'] = 'ground_truth'
     else: records[0]['checkpoint_sha256'] = ''
     with pytest.raises(ValueError):
-        prepare_examples(tasks, solutions, records, blocked_ids=set(), token_counter=lambda messages: 1)
+        prepare_examples(tasks, solutions, records, blocked_ids=set(), forbidden_answer_fingerprints=set(), token_counter=lambda messages: 1)
+
+
+def test_sft_excludes_protected_answer_lineage():
+    from src.arc.qwen38_rsi_comparison import digest
+    tasks, solutions, records = fixture()
+    report = prepare_examples(tasks, solutions, records, blocked_ids=set(),
+                              forbidden_answer_fingerprints={digest(solutions['0'])}, token_counter=lambda messages: 1)
+    assert report['counts']['protected_answer_lineage'] == 1
+    assert all(item['task_id'] != '0' for item in report['examples'])
