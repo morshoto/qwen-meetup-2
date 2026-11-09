@@ -47,3 +47,14 @@ def test_paired_report_rejects_changed_identity_duplicates_and_forged_parse():
         else: g[0]['variant_sha256'] = None
         with pytest.raises(ValueError):
             paired_report(['a'], b, g, verifier, manifest_sha256='a' * 64, prompt_sha256='b' * 64, adapter_sha256=adapter)
+
+
+def test_paired_report_retains_task_level_changes_without_answers():
+    adapter = 'c' * 64; verifier = Verifier({'a': [[[1]]], 'b': [[[1]]]})
+    base = [row('a', [[[1]], [[0]]]), row('b', [[[0]], [[0]]])]
+    other = [row('a', [[[0]], [[0]]], variant=adapter, label='evaluation/weights'),
+             row('b', [[[1]], [[0]]], variant=adapter, label='evaluation/weights')]
+    report = paired_report(['a', 'b'], base, other, verifier, manifest_sha256='a' * 64,
+                           prompt_sha256='b' * 64, adapter_sha256=adapter)
+    assert report['paired_tasks']['gained'] == ['b'] and report['paired_tasks']['lost'] == ['a']
+    assert '[[[1]]]' not in repr(report)
