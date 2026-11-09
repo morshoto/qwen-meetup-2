@@ -83,6 +83,6 @@ def test_historical_source_review_reparses_all_checkpoint_outputs(tmp_path, monk
     (root / 'phase_a/a.json').write_text(json.dumps(row))
     monkeypatch.setattr(review, 'HISTORY_MANIFEST_SHA256', manifest['sha256'])
     monkeypatch.setattr(review, 'HISTORY_AGGREGATE_SHA256', hashlib.sha256((root / 'phase_a_results.json').read_bytes()).hexdigest())
-    assert inspect_history(root, 'a' * 64, 'b' * 64, {'a'})['candidates'] == 2
+    assert inspect_history(root, 'a' * 64, 'b' * 64, {'a': {'test': [{}]}})['candidates'] == 2
     row['candidates'][0]['raw'] = '[[[2]]]'; (root / 'phase_a/a.json').write_text(json.dumps(row))
-    with pytest.raises(ValueError): inspect_history(root, 'a' * 64, 'b' * 64, {'a'})
+    with pytest.raises(ValueError): inspect_history(root, 'a' * 64, 'b' * 64, {'a': {'test': [{}]}})
