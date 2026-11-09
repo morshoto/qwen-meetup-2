@@ -69,3 +69,27 @@ def test_sft_excludes_protected_answer_lineage():
                               forbidden_answer_fingerprints={digest(solutions['0'])}, token_counter=lambda messages: 1)
     assert report['counts']['protected_answer_lineage'] == 1
     assert all(item['task_id'] != '0' for item in report['examples'])
+
+
+def test_training_selection_prefers_fresh_and_labels_historical_fallback():
+    from src.arc.qwen38_weight_sft import select_training_examples
+    tasks, solutions, fresh = fixture()
+    history = []
+    for i in range(6, 9):
+        task_id = str(i)
+        tasks[task_id] = {'train': [{'input': [[0]], 'output': [[1]]}], 'test': [{'input': [[2, i]]}]}
+        solutions[task_id] = [[[3, i, 4]]]
+        raw = json.dumps(solutions[task_id], separators=(',', ':'))
+        history.append({'task_id': task_id, 'raw': raw, 'raw_sha256': hashlib.sha256(raw.encode()).hexdigest(),
+                        'source': 'historical_fp8', 'candidate_index': 0, 'checkpoint_sha256': 'a' * 64,
+                        'manifest_sha256': 'b' * 64})
+    for record in fresh: record['source'] = 'current_gen0_self_generated'
+    kwargs = dict(blocked_ids=set(), forbidden_answer_fingerprints=set(), token_counter=lambda messages: 1)
+    clean = select_training_examples(tasks, solutions, fresh, history, **kwargs)
+    assert clean['mode'] == 'fresh_only' and clean['counts']['historical_fp8'] == 0
+    mixed = select_training_examples(tasks, solutions, fresh[:3], history, **kwargs)
+    assert mixed['mode'] == 'mixed_source' and mixed['counts']['unique_parents'] == 6
+    assert mixed['status'] == 'eligible_pending_source_replay'
+    low = select_training_examples(tasks, solutions, fresh[:1], history[:2], **kwargs)
+    assert low['status'] == 'insufficient_verified_data' and low['mode'] == 'mixed_source'
+    assert 'score' not in low
