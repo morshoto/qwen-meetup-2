@@ -123,3 +123,11 @@ def test_training_failure_is_recorded_without_a_score_or_retry(tmp_path, monkeyp
     assert failure['status'] == 'training_failed' and 'score' not in failure
     with pytest.raises(FileExistsError): train.execute_training(**kwargs)
     assert len(calls) == 1
+
+
+def test_logit_probe_rejects_nonfinite_or_unchanged_outputs():
+    import numpy as np
+    from src.cli.qwen38_weight_probe import max_logit_delta
+    assert max_logit_delta(np.array([1.0, 2.0]), np.array([1.0, 2.5])) == .5
+    for other in (np.array([1.0, 2.0]), np.array([1.0, np.nan]), np.array([1.0, np.inf]), np.array([1.0])):
+        with pytest.raises(ValueError): max_logit_delta(np.array([1.0, 2.0]), other)
