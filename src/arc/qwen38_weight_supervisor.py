@@ -98,7 +98,7 @@ def run_supervised(command, request, directory, *, timeout_seconds, probe=system
     if child is not None and time.monotonic() - start > timeout_seconds and reason is None:
         reason = 'timeout'
     gone = child is None or not _group_exists(child.pid)
-    result = {'status': 'complete' if child is not None and child.returncode == 0 and reason is None and gone else 'error',
+    result = {'command': command, 'pid': child.pid if child else None, 'status': 'complete' if child is not None and child.returncode == 0 and reason is None and gone else 'error',
               'reason': reason if reason is not None else (None if child and child.returncode == 0 and gone else 'worker_failed'),
               'exit_code': child.returncode if child else None, 'process_group_gone': gone,
               'elapsed_seconds': time.monotonic() - start, 'samples': samples}
