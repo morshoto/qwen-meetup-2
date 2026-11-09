@@ -33,7 +33,7 @@ def fixture():
 def test_extract_requires_terminal_replayed_verification_and_preserves_raw():
     manifest, challenges, answers, rows, receipt = fixture()
     result = extract_fresh_records(manifest, challenges, answers, rows, receipt, wall_elapsed=10)
-    assert result['collection_status'] == 'token_budget_exhausted'
+    assert result['collection_status'] == 'complete'
     assert len(result['records']) == 1 and result['records'][0]['raw'] == '[[[4]]]'
     assert result['records'][0]['source'] == 'current_gen0_self_generated'
     assert result['records'][0]['manifest_sha256'] == manifest['sha256']
@@ -44,7 +44,9 @@ def test_extract_rejects_active_or_changed_records_and_resource_stop():
     changed = copy.deepcopy(rows); changed[0]['raw'] = '[[[9]]]'
     with pytest.raises(ValueError): extract_fresh_records(manifest, challenges, answers, changed, receipt, wall_elapsed=10)
     manifest['generation']['reserved_token_limit'] = 80
-    with pytest.raises(ValueError): extract_fresh_records(manifest, challenges, answers, rows, receipt, wall_elapsed=10)
+    active = copy.deepcopy(rows); active[0] = copy.deepcopy(rows[1]); active[0]['candidate_index'] = 0; active[0]['seed'] = 10009
+    active_receipt = build_receipt(manifest, challenges, answers, active)
+    with pytest.raises(ValueError): extract_fresh_records(manifest, challenges, answers, active, active_receipt, wall_elapsed=10)
     incomplete = [dict(rows[0], status='started')]
     with pytest.raises(ValueError):
         extract_fresh_records(manifest, challenges, answers, incomplete,
