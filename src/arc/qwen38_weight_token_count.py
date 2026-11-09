@@ -29,9 +29,14 @@ def make_trainer_counter(model_path):
     if not model_path.is_dir() or model_path.name != MODEL_REVISION:
         raise ValueError('expected pinned local model snapshot')
     from mlx_vlm.trainer.datasets import VisionDataset
-    from mlx_vlm.utils import load_processor
+    from mlx_vlm.utils import load_image_processor, load_processor
     config = json.loads((model_path / 'config.json').read_bytes())
+    # Match mlx_vlm.utils.load: model-specific processor registration occurs
+    # while resolving the image processor, including for text-only examples.
+    image_processor = load_image_processor(model_path)
     processor = load_processor(model_path, True)
+    if image_processor is not None:
+        processor.image_processor = image_processor
     def count(messages):
         return trainer_token_count(messages, lambda value: VisionDataset(
             [{'messages': value}], config, processor, train_on_completions=True))
