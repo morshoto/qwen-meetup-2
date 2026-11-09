@@ -49,6 +49,8 @@ def test_evaluation_descriptor_binds_baseline_adapter_and_matched_settings(tmp_p
     assert result['status'] == 'evaluation_ready'
     assert result['task_ids'] == ['a', 'b'] and result['adapter_sha256'] == training['adapter_sha256']
     assert result['seed_rule'] == '20261111 + candidate_index'
+    assert result['supervision']['minimum_free_percent'] == 10
+    assert result['supervision']['maximum_swap_bytes'] == 16 * 1024**3
     assert result['baseline_checkpoint_sha256']['a'] == hashlib.sha256(rows['a']).hexdigest()
     assert result['run_dir'] == str((tmp_path / 'run/evaluation/adapter-v1').resolve())
     assert '[[[1]]]' not in json.dumps(result)
