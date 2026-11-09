@@ -131,3 +131,27 @@ def test_logit_probe_rejects_nonfinite_or_unchanged_outputs():
     assert max_logit_delta(np.array([1.0, 2.0]), np.array([1.0, 2.5])) == .5
     for other in (np.array([1.0, 2.0]), np.array([1.0, np.nan]), np.array([1.0, np.inf]), np.array([1.0])):
         with pytest.raises(ValueError): max_logit_delta(np.array([1.0, 2.0]), other)
+
+
+def test_training_cli_reports_summary_without_answers(tmp_path, monkeypatch, capsys):
+    import json
+    from zipfile import ZipFile
+    import src.cli.qwen38_weight_train as train
+    for name, content in [('manifest.json', b'{}'), ('proposal.json', b'{}'), ('review.json', b'{}'),
+                          ('challenges.json', b'{}'), ('solutions.json', b'{}')]:
+        (tmp_path / name).write_bytes(content)
+    with ZipFile(tmp_path / 'archive.zip', 'w') as archive:
+        archive.writestr('arc-agi_evaluation_challenges.json', '{}')
+    calls = []
+    def fake_execute(**kwargs):
+        calls.append(kwargs)
+        return {'status': 'insufficient_verified_data', 'mode': 'none', 'counts': {'unique_parents': 0}, 'sha256': 'a' * 64}
+    monkeypatch.setattr(train, 'execute_training', fake_execute)
+    args = ['--manifest', str(tmp_path / 'manifest.json'), '--proposal', str(tmp_path / 'proposal.json'),
+            '--review', str(tmp_path / 'review.json'), '--repo', str(tmp_path), '--model-path', str(tmp_path),
+            '--challenges', str(tmp_path / 'challenges.json'), '--solutions', str(tmp_path / 'solutions.json'),
+            '--archive', str(tmp_path / 'archive.zip'), '--canary-dir', str(tmp_path), '--run-dir', str(tmp_path / 'run'),
+            '--history-dir', str(tmp_path / 'history')]
+    assert train.main(args) == 0
+    assert calls[0]['official_bytes'] == b'{}'
+    assert json.loads(capsys.readouterr().out)['status'] == 'insufficient_verified_data'
