@@ -155,3 +155,16 @@ def test_training_cli_reports_summary_without_answers(tmp_path, monkeypatch, cap
     assert train.main(args) == 0
     assert calls[0]['official_bytes'] == b'{}'
     assert json.loads(capsys.readouterr().out)['status'] == 'insufficient_verified_data'
+
+
+def test_training_evidence_replay_rejects_adapter_tampering(tmp_path, monkeypatch):
+    from src.arc.qwen38_weight_training_receipt import verify_training_evidence
+    train, kwargs, _ = _training_fixture(tmp_path, monkeypatch)
+    result = train.execute_training(**kwargs)
+    _, registration, replay = train.replay_bundle(**kwargs)
+    checked = verify_training_evidence(result, kwargs['run_dir'], kwargs['model_path'], registration, replay['manifest_sha256'])
+    assert checked['status'] == 'source_evidence_matches'
+    adapter = kwargs['run_dir'] / 'training/adapter-run-v1/adapter/adapters.safetensors'
+    adapter.write_bytes(b'tampered')
+    with pytest.raises(ValueError):
+        verify_training_evidence(result, kwargs['run_dir'], kwargs['model_path'], registration, replay['manifest_sha256'])
