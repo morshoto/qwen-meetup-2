@@ -133,3 +133,22 @@ def test_collection_cli_loops_until_terminal_without_printing_labels(tmp_path, m
     assert collect.main(args) == 0
     output = capsys.readouterr().out
     assert len(calls) == 2 and 'complete' in output and '[[[4]]]' not in output
+
+
+def test_resource_failure_is_recorded_and_prevents_further_dispatch(tmp_path, monkeypatch):
+    manifest, challenges, solutions = fixture(tmp_path, monkeypatch); calls = []
+    def resource_failure(command, payload, directory, **kwargs):
+        calls.append(1); directory = Path(directory); directory.mkdir()
+        (directory / 'request.json').write_text(json.dumps(payload))
+        for name in ('stdout.log', 'stderr.log'): (directory / name).write_text('')
+        execution = {'status': 'error', 'reason': 'low_free_memory', 'exit_code': -15,
+                     'process_group_gone': True, 'elapsed_seconds': 1, 'command': command,
+                     'pid': 123, 'samples': [{'free_percent': 4, 'swap_bytes': 0}]}
+        (directory / 'execution.json').write_text(json.dumps(execution))
+        return execution
+    monkeypatch.setattr(collect, 'run_supervised', resource_failure)
+    kwargs = dict(manifest=manifest, proposal={}, review={}, repo=tmp_path, model_path=tmp_path,
+                  challenges=challenges, solutions=solutions, canary_dir=tmp_path, run_dir=tmp_path / 'run')
+    assert collect.collect_step(**kwargs)['attempt_status'] == 'error'
+    assert collect.collect_step(**kwargs)['status'] == 'resource_stop'
+    assert len(calls) == 1
