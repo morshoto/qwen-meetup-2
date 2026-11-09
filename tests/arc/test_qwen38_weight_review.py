@@ -40,3 +40,25 @@ def test_review_rejects_overlap_or_drift(change):
     elif change == 'answers': solutions[selected] = [[[999]]]
     else: official = {}
     with pytest.raises(ValueError): review_selection(proposal, tasks, solutions, official)
+
+
+def test_bounded_review_binds_replayed_sources_and_historical_run(monkeypatch):
+    import src.arc.qwen38_weight_review as review
+    proposal, tasks, solutions, official = fixture()
+    proposal['input_hashes'] = {'challenges': 'a' * 64, 'solutions': 'b' * 64}
+    proposal['sha256'] = digest(proposal)
+    monkeypatch.setattr(review, 'PROPOSAL_SHA256', proposal['sha256'])
+    observed = review_selection(proposal, tasks, solutions, official)
+    observed['official_challenges'] = 120
+    receipt = review.bind_review(proposal, observed, proposal['input_hashes'], 'c' * 64,
+                                 review.HISTORY_MANIFEST_SHA256, review.HISTORY_AGGREGATE_SHA256,
+                                 review.PHASE_B_HEAD)
+    assert receipt['status'] == 'reviewed_bounded' and receipt['unresolved_exposure'] is True
+    assert receipt['proposal_sha256'] == proposal['sha256']
+    with pytest.raises(ValueError):
+        review.bind_review(proposal, observed, {'challenges': 'd' * 64}, 'c' * 64,
+                           review.HISTORY_MANIFEST_SHA256, review.HISTORY_AGGREGATE_SHA256, review.PHASE_B_HEAD)
+    observed['selected_input_overlap'] = 1
+    with pytest.raises(ValueError):
+        review.bind_review(proposal, observed, proposal['input_hashes'], 'c' * 64,
+                           review.HISTORY_MANIFEST_SHA256, review.HISTORY_AGGREGATE_SHA256, review.PHASE_B_HEAD)
