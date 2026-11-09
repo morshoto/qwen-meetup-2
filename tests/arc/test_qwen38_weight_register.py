@@ -76,3 +76,27 @@ def test_expected_comparison_identity_cannot_be_replaced():
     args = fixture()
     args['expected_comparison_sha256'] = 'f' * 64
     with pytest.raises(ValueError): audited_registration(**args)
+
+
+def test_load_sources_hashes_actual_files_and_public_evaluation(tmp_path):
+    from zipfile import ZipFile
+    from src.cli.qwen38_weight_register import load_sources
+    args = fixture()
+    paths = {
+        'data/raw/arc-agi_training_challenges.json': args['challenges_bytes'],
+        'data/raw/arc-agi_training_solutions.json': args['solutions_bytes'],
+        'configs/lt.phase-a.comparison-proposal.json': json.dumps(args['proposal']).encode(),
+        'configs/lt.phase-b.training-pool.json': json.dumps(args['phase_b']).encode(),
+        'research/rsi/exploratory-split-proposal.json': json.dumps(args['prior']).encode(),
+        'research/rsi/extended-exposure-review.json': json.dumps(args['exposure']).encode(),
+        'lineage.json': b'{}', 'baseline.json': json.dumps(args['baseline']).encode(),
+    }
+    for name, content in paths.items():
+        path = tmp_path / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(content)
+    with ZipFile(tmp_path / 'arc-prize-2025.zip', 'w') as archive:
+        archive.writestr('arc-agi_evaluation_challenges.json', json.dumps(args['official']))
+    result = load_sources(tmp_path, tmp_path, tmp_path / 'baseline.json', tmp_path / 'lineage.json')
+    assert result['source_hashes']['official_challenges'] == digest(args['official'])
+    assert result['source_hashes']['phase_a_proposal'] == hashlib.sha256(paths['configs/lt.phase-a.comparison-proposal.json']).hexdigest()
+    assert result['baseline'] == args['baseline']
+    assert result['lineage'] == {}
