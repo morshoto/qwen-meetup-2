@@ -31,6 +31,8 @@ def next_action(manifest, journal, verifications):
             raise ValueError('invalid collection journal')
         seen[(task_id, index)] = record
         elapsed += seconds
+    if len(journal) * max_tokens > token_limit:
+        raise ValueError('journal exceeds reserved token budget')
     for key, value in verifications.items():
         if key not in seen or seen[key]['status'] != 'complete' or type(value) is not bool:
             raise ValueError('invalid offline verification')
