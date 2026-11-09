@@ -52,3 +52,12 @@ def test_invalid_or_forged_journal_entries_fail_closed():
                               ([row('a', 0)], {('a', 0): 'correct'}),
                               ([row('a', 0, 'error')], {('a', 0): True})]:
         with pytest.raises(ValueError): next_action(m, journal, verified)
+
+
+def test_replay_rejects_overspent_tokens_and_attempts_after_success():
+    m = manifest(); m['generation']['reserved_token_limit'] = 10
+    with pytest.raises(ValueError): next_action(m, [row('a', 0), row('b', 0)], {})
+    m['generation']['reserved_token_limit'] = 1000
+    journal = [row(t, i) for i in range(2) for t in ('a', 'b')] + [row('a', 2)]
+    results = {('a', 0): True, ('a', 1): False, ('b', 0): False, ('b', 1): False, ('a', 2): False}
+    with pytest.raises(ValueError): next_action(m, journal, results)
