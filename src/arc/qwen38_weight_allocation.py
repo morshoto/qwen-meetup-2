@@ -96,3 +96,28 @@ def freeze_registration(path, value):
         if path.read_text(encoding='utf-8') != payload:
             raise ValueError('registration changed')
     return registration
+
+
+def build_registration(tasks, official_evaluation, exclusions, lineage, *, input_hashes, comparison_sha256,
+                       prompt, seed=20261111, pool_size=200, validation_size=25):
+    from src.arc.qwen38_local_runner import MODEL_ID, MODEL_REVISION, MAX_CONTEXT, MAX_TOKENS, TEMPERATURE
+    required = {'challenges', 'solutions'}
+    if not required <= input_hashes.keys() or not all(isinstance(v, str) and len(v) == 64 and all(c in '0123456789abcdef' for c in v) for v in list(input_hashes.values()) + [comparison_sha256]):
+        raise ValueError('invalid source hashes')
+    if not isinstance(prompt, str) or not prompt:
+        raise ValueError('missing prompt')
+    allocation = allocate_weight_pool(tasks, official_evaluation, exclusions, lineage, seed=seed,
+                                      pool_size=pool_size, validation_size=validation_size)
+    return {'protocol': 'qwen38-weight-exploratory-v1', 'comparison_sha256': comparison_sha256,
+            'input_hashes': input_hashes, 'exclusions': exclusions, 'known_lineage': lineage,
+            'official_evaluation_ids': sorted(official_evaluation), 'allocation': allocation,
+            'model': {'id': MODEL_ID, 'revision': MODEL_REVISION, 'quantization': '4-bit MLX'},
+            'generation': {'prompt': prompt, 'prompt_sha256': hashlib.sha256(prompt.encode()).hexdigest(),
+                           'temperature': TEMPERATURE, 'max_tokens_per_candidate': MAX_TOKENS,
+                           'max_context': MAX_CONTEXT, 'initial_candidates': 2, 'additional_candidates': 6,
+                           'order': 'breadth_first', 'extra_only_after_no_verified_success': True,
+                           'seed_rule': '20261111 + 10000 + fresh_index * 8 + candidate_index',
+                           'wall_seconds_limit': 86400, 'reserved_token_limit': 6553600,
+                           'stop_rule': 'all attempts completed or first budget exhaustion; retain incomplete tasks'},
+            'validation_policy': 'reserved parents; no answers in generation or training targets',
+            'exposure_limitations': 'Known registers checked; historical and model-pretraining exposure unresolved.'}
