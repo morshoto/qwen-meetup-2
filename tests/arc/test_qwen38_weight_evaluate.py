@@ -12,7 +12,7 @@ def fixture(tmp_path, monkeypatch):
     comparison = {'allocation': {'evaluation': ['a']}}; (baseline / 'manifest.json').write_text(json.dumps(comparison))
     (baseline / 'evaluation/baseline/a.json').write_text('{}')
     result = {'status': 'trained', 'sha256': 'a' * 64}; (root / 'training/training-result-v1.json').write_text(json.dumps(result))
-    selection = {'mode': 'fresh_only', 'counts': {'unique_parents': 5}}
+    selection = {'status': 'eligible_pending_source_replay', 'mode': 'fresh_only', 'counts': {'unique_parents': 5}}
     registration = {'execution_sha256': 'b' * 64}; receipt = {'status': 'matches_supplied_replay', 'manifest_sha256': 'c' * 64}
     monkeypatch.setattr(evaluate, 'replay_bundle', lambda **kwargs: (selection, registration, receipt))
     monkeypatch.setattr(evaluate, 'verify_training_evidence', lambda *args: {'status': 'source_evidence_matches', 'adapter_sha256': 'd' * 64})
