@@ -27,3 +27,39 @@ def materialize_trainer_dataset(bundle, training_root, expected_sha256):
     try: os.fsync(dir_fd)
     finally: os.close(dir_fd)
     return target
+
+
+from src.arc.qwen38_rsi_comparison import digest
+from src.arc.qwen38_weight_supervisor import run_supervised
+from src.cli.qwen38_weight_prepare_sft import replay_bundle
+
+
+def _write_decision(path, value):
+    import json
+    payload = (json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode()
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, 'wb') as stream:
+        stream.write(payload); stream.flush(); os.fsync(stream.fileno())
+    fd = os.open(Path(path).parent, os.O_RDONLY)
+    try: os.fsync(fd)
+    finally: os.close(fd)
+
+
+def execute_training(**kwargs):
+    root = Path(kwargs['run_dir']).resolve()
+    manifest = kwargs['manifest']
+    if manifest.get('run_dir') != str(root):
+        raise ValueError('training run does not match the frozen collection')
+    selection, registration, replay = replay_bundle(**kwargs)
+    if replay.get('status') != 'matches_supplied_replay':
+        raise ValueError('SFT source replay failed')
+    training = root / 'training'
+    if not training.is_dir() or training.is_symlink() or training.stat().st_mode & 0o077:
+        raise ValueError('training directory is not private')
+    if selection['status'] == 'insufficient_verified_data':
+        result = {'status': 'insufficient_verified_data', 'mode': selection['mode'], 'counts': selection['counts'],
+                  'execution_sha256': manifest['sha256'], 'sft_manifest_sha256': replay['manifest_sha256']}
+        result['sha256'] = digest(result)
+        _write_decision(training / 'training-decision-v1.json', result)
+        return result
+    raise NotImplementedError('source-replayed real training controller is not complete')
