@@ -32,7 +32,7 @@ def test_bundle_is_private_immutable_and_requires_source_replay(tmp_path):
     assert (root / 'train.jsonl').stat().st_mode & 0o077 == 0
     lines = [json.loads(line) for line in (root / 'train.jsonl').read_text().splitlines()]
     assert len(lines) == 5 and all(set(row) == {'messages'} for row in lines)
-    assert verify_bundle(root, selection, registration)['status'] == 'source_replay_verified'
+    assert verify_bundle(root, selection, registration)['status'] == 'matches_supplied_replay'
     with pytest.raises(FileExistsError): write_bundle(root, selection, registration)
     (root / 'train.jsonl').write_text('{}\n')
     with pytest.raises(ValueError): verify_bundle(root, selection, registration)
