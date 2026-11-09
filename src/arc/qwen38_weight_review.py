@@ -90,7 +90,8 @@ def bind_review(proposal, observed, source_hashes, review_source_sha256,
               'selection': observed, 'input_hashes': source_hashes, 'review_source_sha256': review_source_sha256,
               'history_manifest_sha256': history_manifest_sha256, 'history_aggregate_sha256': history_aggregate_sha256,
               'phase_b_head': phase_b_head,
-              'limitations': ['No complete semantic lineage or model-pretraining exposure inventory exists.',
+              'limitations': ['The supplied lineage register may omit unknown family relationships.',
+                              'No complete semantic lineage or model-pretraining exposure inventory exists.',
                               'The Phase B comparison set is a proposal, not a frozen registration.']}
     result['sha256'] = _hash(result)
     return result
