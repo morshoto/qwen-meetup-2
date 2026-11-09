@@ -50,7 +50,7 @@ def _write_decision(path, value):
     finally: os.close(fd)
 
 
-def execute_training(**kwargs):
+def _execute_training(**kwargs):
     root = Path(kwargs['run_dir']).resolve()
     manifest = kwargs['manifest']
     if manifest.get('run_dir') != str(root):
@@ -139,3 +139,23 @@ def execute_training(**kwargs):
     result['sha256'] = digest(result)
     _write_decision(training / 'training-result-v1.json', result)
     return result
+
+
+def execute_training(**kwargs):
+    """Retain a score-free failure receipt if a real attempt has been prepared."""
+    try:
+        return _execute_training(**kwargs)
+    except Exception as error:
+        root = Path(kwargs['run_dir']).resolve()
+        training = root / 'training'
+        failed = training / 'training-failed-v1.json'
+        if (kwargs['manifest'].get('run_dir') == str(root) and training.is_dir() and
+            not training.is_symlink() and not training.stat().st_mode & 0o077 and
+            ((training / 'trainer-data-v1').exists() or (training / 'adapter-run-v1').exists()) and
+            not failed.exists() and not (training / 'training-result-v1.json').exists()):
+            result = {'status': 'training_failed', 'execution_sha256': kwargs['manifest'].get('sha256'),
+                      'error_type': type(error).__name__, 'evidence_directory': 'adapter-run-v1'}
+            result['sha256'] = digest(result)
+            try: _write_decision(failed, result)
+            except OSError: pass  # Preserve the original failure and the underlying artifacts.
+        raise
