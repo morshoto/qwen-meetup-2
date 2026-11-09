@@ -108,6 +108,8 @@ def _replay_artifacts(rows, workers, max_tokens, limits):
 
 
 def collect_step(*, manifest, proposal, review, repo, model_path, challenges, solutions, canary_dir, run_dir):
+    if manifest.get('run_dir') != str(Path(run_dir).resolve()):
+        raise ValueError('run directory differs from frozen execution registration')
     if manifest.get('status') != 'execution_ready':
         raise ValueError('collection requires an execution registration')
     if verify_preflight(manifest, proposal, review, repo, model_path, challenges, solutions, canary_dir=canary_dir).get('status') != 'passed':

@@ -55,6 +55,10 @@ def verify_preflight(manifest, proposal, review, repo, model_path, challenges, s
         proposal.get('sha256') != PROPOSAL_SHA256 or proposal.get('status') != 'proposal_not_authorization' or
         manifest.get('proposal_sha256') != PROPOSAL_SHA256):
         raise ValueError('execution or proposal identity mismatch')
+    registered_run = manifest.get('run_dir')
+    if (not isinstance(registered_run, str) or not Path(registered_run).is_absolute() or
+        str(Path(registered_run).resolve()) != registered_run or Path(registered_run) == Path('/')):
+        raise ValueError('invalid registered run directory')
     for key in ('allocation', 'generation', 'model', 'input_hashes', 'comparison_sha256', 'training_gate', 'training_settings'):
         if manifest.get(key) != proposal.get(key):
             raise ValueError(f'execution differs from proposal: {key}')

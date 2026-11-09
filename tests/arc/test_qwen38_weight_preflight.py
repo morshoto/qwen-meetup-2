@@ -39,6 +39,7 @@ def fixture(tmp_path, monkeypatch):
     review['sha256'] = digest(review)
     manifest = {'protocol': 'qwen38-weight-execution-v1', 'status': 'execution_ready',
                 'proposal_sha256': proposal['sha256'], 'comparison_sha256': proposal['comparison_sha256'],
+                'run_dir': str((tmp_path / 'run').resolve()),
                 'allocation': proposal['allocation'], 'generation': proposal['generation'], 'model': proposal['model'],
                 'input_hashes': proposal['input_hashes'], 'training_gate': copy.deepcopy(proposal['training_gate']),
                 'training_settings': copy.deepcopy(proposal['training_settings']), 'lineage_review_sha256': review['sha256'],

@@ -19,7 +19,7 @@ def _sha(path):
     return h.hexdigest()
 
 
-def make_descriptor(repo, proposal, review):
+def make_descriptor(repo, proposal, review, run_dir):
     if (proposal.get('sha256') != preflight.PROPOSAL_SHA256 or
         digest({k: v for k, v in proposal.items() if k != 'sha256'}) != preflight.PROPOSAL_SHA256 or
         proposal.get('status') != 'proposal_not_authorization' or review.get('status') != 'reviewed_bounded' or
@@ -29,6 +29,7 @@ def make_descriptor(repo, proposal, review):
     repo = Path(repo)
     result = {'protocol': 'qwen38-weight-execution-v1', 'status': 'execution_ready',
               'proposal_sha256': proposal['sha256'], 'lineage_review_sha256': review['sha256'],
+              'run_dir': str(Path(run_dir).resolve()),
               **{k: proposal[k] for k in ('allocation', 'generation', 'model', 'input_hashes', 'comparison_sha256')},
               'training_gate': proposal.get('training_gate'), 'training_settings': proposal.get('training_settings'),
               'packages': preflight.PACKAGES, 'supervision': preflight.SUPERVISION,
@@ -38,8 +39,8 @@ def make_descriptor(repo, proposal, review):
     return result
 
 
-def freeze_execution(repo, proposal, review, model_path, challenges, solutions, canary_dir, output):
-    descriptor = make_descriptor(repo, proposal, review)
+def freeze_execution(repo, proposal, review, model_path, challenges, solutions, canary_dir, run_dir, output):
+    descriptor = make_descriptor(repo, proposal, review, run_dir)
     result = preflight.verify_preflight(descriptor, proposal, review, repo, model_path, challenges, solutions,
                                         canary_dir=canary_dir)
     if result.get('status') != 'passed':
@@ -49,13 +50,13 @@ def freeze_execution(repo, proposal, review, model_path, challenges, solutions, 
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
-    for flag in ('repo', 'proposal', 'review', 'model-path', 'challenges', 'solutions', 'canary-dir', 'output'):
+    for flag in ('repo', 'proposal', 'review', 'model-path', 'challenges', 'solutions', 'canary-dir', 'run-dir', 'output'):
         parser.add_argument('--' + flag, required=True)
     args = parser.parse_args(argv)
     result = freeze_execution(Path(args.repo).resolve(), json.loads(Path(args.proposal).read_bytes()),
                               json.loads(Path(args.review).read_bytes()), Path(args.model_path).resolve(),
                               Path(args.challenges).read_bytes(), Path(args.solutions).read_bytes(),
-                              Path(args.canary_dir).resolve(), Path(args.output))
+                              Path(args.canary_dir).resolve(), Path(args.run_dir).resolve(), Path(args.output))
     print(json.dumps({'status': result['status'], 'sha256': result['sha256']}, sort_keys=True))
 
 
