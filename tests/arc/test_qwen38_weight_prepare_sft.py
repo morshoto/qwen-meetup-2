@@ -79,3 +79,30 @@ def test_sft_inventory_includes_training_worker_and_its_instrumentation():
     assert 'src/cli/qwen38_weight_train_worker.py' in prepare.SFT_SOURCES
     assert 'src/cli/qwen38_canary_worker.py' in prepare.SFT_SOURCES
     assert 'src/arc/qwen38_weight_train.py' in prepare.SFT_SOURCES
+
+
+def test_prepare_and_replay_bundle_use_fixed_private_path(tmp_path, monkeypatch):
+    from src.arc.qwen38_weight_sft import select_training_examples
+    repo, manifest, proposal, review, challenges, solutions, official, fresh, history = fixture(tmp_path, monkeypatch)
+    tasks, answers = json.loads(challenges), json.loads(solutions)
+    selection = select_training_examples(tasks, answers, fresh, [], blocked_ids={'9'},
+                                          forbidden_answer_fingerprints=set(), token_counter=lambda _: 1)
+    files = {'logic.py': hashlib.sha256(b'source').hexdigest()}
+    registration = {'execution_sha256': manifest['sha256'], 'fresh_journal_sha256': 'e' * 64,
+                    'fresh_verification_sha256': 'f' * 64, 'challenge_sha256': proposal['input_hashes']['challenges'],
+                    'solution_sha256': proposal['input_hashes']['solutions'], 'source_files_sha256': files,
+                    'training_code_sha256': digest(files), 'historical_aggregate_sha256': None,
+                    'historical_checkpoint_inventory_sha256': None, 'packages': PACKAGES,
+                    'model_files_sha256': manifest['model']['files_sha256'], 'training_settings': manifest['training_settings']}
+    monkeypatch.setattr(prepare, 'prepare_selection', lambda *a, **k: (selection, registration))
+    root = tmp_path / 'run'; root.mkdir(mode=0o700)
+    kwargs = dict(manifest=manifest, proposal=proposal, review=review, repo=repo, model_path=tmp_path,
+                  challenges=challenges, solutions=solutions, official_bytes=official, canary_dir=tmp_path,
+                  run_dir=root, history_dir=tmp_path, token_counter=lambda _: 1)
+    result = prepare.prepare_bundle(**kwargs)
+    assert result['status'] == 'prepared_pending_source_replay'
+    assert (root / 'training/sft-v1/train.jsonl').is_file()
+    assert prepare.replay_bundle(**kwargs)[2]['status'] == 'matches_supplied_replay'
+    (root / 'training/sft-v1/train.jsonl').write_text('{}\n')
+    import pytest
+    with pytest.raises(ValueError): prepare.replay_bundle(**kwargs)
