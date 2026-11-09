@@ -30,7 +30,9 @@ def fixture(tmp_path, monkeypatch):
               'phase_b_head': preflight.PHASE_B_HEAD,
               'history_manifest_sha256': preflight.HISTORY_MANIFEST_SHA256,
               'history_aggregate_sha256': preflight.HISTORY_AGGREGATE_SHA256,
-              'history_inspection': {'parents': 200, 'candidates': 400},
+              'history_inspection': {'parents': 200, 'candidates': 400, 'manifest_sha256': preflight.HISTORY_MANIFEST_SHA256,
+                                     'aggregate_sha256': preflight.HISTORY_AGGREGATE_SHA256,
+                                     'checkpoint_inventory_sha256': 'd' * 64},
               'selection': {'fresh_parents': 1, 'validation_parents': 1, 'official_challenges': 120,
                             'selected_parent_overlap': 0, 'selected_input_overlap': 0, 'unresolved_semantic_exposure': True}}
     review['sha256'] = digest(review)
