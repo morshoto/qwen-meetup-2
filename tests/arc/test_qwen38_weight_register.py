@@ -90,6 +90,8 @@ def test_load_sources_hashes_actual_files_and_public_evaluation(tmp_path):
         'configs/lt.phase-b.training-pool.json': json.dumps(args['phase_b']).encode(),
         'research/rsi/exploratory-split-proposal.json': json.dumps(args['prior']).encode(),
         'research/rsi/provisional-split.json': b'{}',
+        'research/rsi/bounded-exposure-proposal.json': json.dumps({'partitions': {'generation': args['scheduled']}}).encode(),
+        'phase-b-proposal.json': json.dumps({'task_ids': args['phase_b_comparison']}).encode(),
         'research/rsi/extended-exposure-review.json': json.dumps(args['exposure']).encode(),
         'lineage.json': b'{}', 'baseline.json': json.dumps(args['baseline']).encode(),
     }
@@ -97,7 +99,7 @@ def test_load_sources_hashes_actual_files_and_public_evaluation(tmp_path):
         path = tmp_path / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(content)
     with ZipFile(tmp_path / 'arc-prize-2025.zip', 'w') as archive:
         archive.writestr('arc-agi_evaluation_challenges.json', json.dumps(args['official']))
-    result = load_sources(tmp_path, tmp_path, tmp_path / 'baseline.json', tmp_path / 'lineage.json')
+    result = load_sources(tmp_path, tmp_path, tmp_path / 'baseline.json', tmp_path / 'lineage.json', tmp_path / 'phase-b-proposal.json')
     assert result['source_hashes']['official_challenges'] == digest(args['official'])
     assert result['source_hashes']['phase_a_proposal'] == hashlib.sha256(paths['configs/lt.phase-a.comparison-proposal.json']).hexdigest()
     assert result['baseline'] == args['baseline']

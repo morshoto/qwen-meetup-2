@@ -19,7 +19,7 @@ def _valid_hash(value):
 
 
 def audited_registration(*, challenges_bytes, solutions_bytes, official, baseline, proposal,
-                         phase_b, prior, exposure, lineage, prompt, source_hashes, expected_comparison_sha256):
+                         phase_b, scheduled, phase_b_comparison, prior, exposure, lineage, prompt, source_hashes, expected_comparison_sha256):
     """Return a proposed registration; caller must authenticate source files too.
 
     The solution file is used solely for identity and per-task fingerprints. No
@@ -50,6 +50,8 @@ def audited_registration(*, challenges_bytes, solutions_bytes, official, baselin
         raise ValueError('invalid Phase A comparison allocation')
     if len(set(phase_b)) != len(phase_b) or set(phase_b) != set(proposal['training_exclusions']):
         raise ValueError('Phase B reservations disagree')
+    if len(scheduled) != 20 or len(set(scheduled)) != 20 or len(phase_b_comparison) != 50 or len(set(phase_b_comparison)) != 50:
+        raise ValueError('invalid scheduled or proposed Phase B comparison reservations')
     if (baseline['protocol'] != 'qwen38-local-exploratory-v1' or baseline['model_id'] != MODEL_ID or
         baseline['model_revision'] != MODEL_REVISION or baseline['prompt_sha256'] != _sha(prompt.encode()) or
         baseline['candidate_count'] != 2 or baseline['temperature'] != TEMPERATURE or
@@ -62,6 +64,7 @@ def audited_registration(*, challenges_bytes, solutions_bytes, official, baselin
     exclusions = {'prior_phase_a': phase_a, 'phase_b': phase_b,
                   'protected_rsi': prior['confirmatory_task_ids'] + prior['exploratory_task_ids'],
                   'proposal_protected': proposal['protected_exclusions'],
+                  'strict_scheduled': scheduled, 'phase_b_comparison_proposed': phase_b_comparison,
                   'known_exposure': sorted(set(proposal['known_exposure_exclusions']) | set(exposure['matched_task_ids'])),
                   'prior_development': proposal['development_exclusions'],
                   'local_evaluation': evaluation, 'local_development': allocation['development'],
