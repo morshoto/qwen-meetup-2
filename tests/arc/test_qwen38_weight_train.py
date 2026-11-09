@@ -65,7 +65,10 @@ def _training_fixture(tmp_path, monkeypatch, *, bad_loss=False):
     manifest = {'sha256': 'a' * 64, 'run_dir': str(root.resolve())}
     selection = {'status': 'eligible_pending_source_replay', 'mode': 'fresh_only',
                  'counts': {'unique_parents': 5, 'current_gen0_self_generated': 5, 'historical_fp8': 0}}
-    registration = {'execution_sha256': manifest['sha256']}
+    registration = {'execution_sha256': manifest['sha256'], 'model_files_sha256': {'model.safetensors': 'c' * 64},
+                    'training_settings': {'rank': 8, 'batch_size': 1, 'learning_rate': 2e-5, 'max_steps': 20,
+                                          'seed': 20261111, 'max_sequence_length': 2048,
+                                          'gradient_checkpointing': True, 'completion_only_loss': True}}
     monkeypatch.setattr(train, 'replay_bundle', lambda **kwargs: (selection, registration,
                         {'status': 'matches_supplied_replay', 'manifest_sha256': bundle_manifest['sha256']}))
     model = tmp_path / 'model'; model.mkdir(); repo = tmp_path / 'repo'; repo.mkdir()
