@@ -9,7 +9,7 @@ from src.cli.qwen38_weight_train_worker import run_training
 
 def fixture(tmp_path):
     model = tmp_path / MODEL_REVISION; model.mkdir()
-    dataset = tmp_path / 'dataset'; dataset.mkdir(); (dataset / 'train.jsonl').write_text('{}\n')
+    dataset = tmp_path / 'dataset'; dataset.mkdir(mode=0o700); (dataset / 'train.jsonl').write_text('{}\n')
     root = tmp_path / 'training'; root.mkdir(mode=0o700)
     return model, dataset, root, hashlib.sha256((dataset / 'train.jsonl').read_bytes()).hexdigest()
 
