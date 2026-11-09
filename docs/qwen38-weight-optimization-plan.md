@@ -10,7 +10,7 @@ After the canary, freeze the small-data gate and training configuration. Train o
 
 ## Collection implementation status
 
-The new path includes full-task request/capture, breadth-first scheduling, a private append-only attempt journal, a supervised one-request worker, offline verification receipts, and pinned-canary bundle replay. Synthetic tests exercise their data flow, timeouts, resource stops and orphan cleanup without ARC examples or model inference. The collection command requires the separately frozen [execution descriptor](../research/rsi/qwen38-weight-execution-v1.json) and [bounded lineage review](../research/rsi/qwen38-weight-bounded-review.json); both were prepared before collection. The empty supplied lineage register and unknown semantic and pretraining exposure remain explicit limitations. No fresh model collection has yet been dispatched. Reconciliation of an interrupted live worker, source-bound historical import and SFT replay, real-data training, and paired evaluation remain unfinished. The previously scored comparison and historical proxy collector remain unchanged.
+The new path includes full-task request/capture, breadth-first scheduling, a private append-only attempt journal, a supervised one-request worker, offline verification receipts, and pinned-canary bundle replay. Synthetic tests exercise their data flow, timeouts, resource stops and orphan cleanup without ARC examples or model inference. The collection command requires the separately frozen [execution descriptor](../research/rsi/qwen38-weight-execution-v1.json) and [bounded lineage review](../research/rsi/qwen38-weight-bounded-review.json); both were prepared before collection. The empty supplied lineage register and unknown semantic and pretraining exposure remain explicit limitations. Fresh model collection has been dispatched in the registered private run directory. Source-bound historical replay, SFT preparation, real-data training and paired evaluation have been implemented; the latter stages still require a terminal real collection and their own evidence. Reconciliation of an interrupted live worker remains a manual process. The previously scored comparison and historical proxy collector remain unchanged.
 
 ## Frozen collection policy
 
@@ -18,4 +18,52 @@ The reviewed proposal predeclares 40 fresh parents and 25 separate validation pa
 
 The separate validation parents are never LoRA targets, and their Gen 0 success is not required. After collection and token-length filtering, at least five independently verified unique training parents are needed for the exploratory adapter. If fresh data are too sparse, the predeclared fallback audits eligible original FP8 outputs, retaining their distinct `historical_fp8` identity; a mixed adapter is cross-run verified-sample fine-tuning. Fewer than five qualifying parents yields `insufficient_verified_data`, without an invented score. The previously evaluated 50 remain exploratory paired comparison tasks, not independent validation or official evaluation.
 
-The real-data trainer is predeclared with a 3600-second training limit and a separate 900-second adapter-reload probe, using the same sampled 10% free-memory and 16 GiB swap limits as collection. Training requires replay of the terminal fresh journal and verifier receipt, any needed historical source, the private SFT bundle, its source inventory, and the exact trainer tokenization and completion mask. It saves initialized and trained LoRA tensors, requires finite reports for all 20 steps, and only records a parameter update after a separate finite-logit reload probe and a final source replay. An interrupted or failed training attempt keeps its evidence and is not automatically repeated. These controls have synthetic tests only; no real-data adapter has been trained, and the actual trainer tokenizer and adapter probe still need real-environment verification after collection.
+The real-data trainer is predeclared with a 3600-second training limit and a separate 900-second adapter-reload probe, using the same sampled 10% free-memory and 16 GiB swap limits as collection. Training requires replay of the terminal fresh journal and verifier receipt, any needed historical source, the private SFT bundle, its source inventory, and the exact trainer tokenization and completion mask. It saves initialized and trained LoRA tensors, requires finite reports for all 20 steps, and only records a parameter update after a separate finite-logit reload probe and a final source replay. An interrupted or failed training attempt keeps its evidence and is not automatically repeated. These controls have synthetic tests. The actual trainer processor has also produced a completion-masked synthetic example; real-data length filtering and the adapter probe still need verification after collection. No real-data adapter has been trained.
+
+
+## Running the post-collection stages
+
+Run these commands from the issue worktree with the pinned Python environment. The private run directory is fixed by the execution descriptor; moving or changing it requires a new registration. `ARC_ARCHIVE` must point to the original ARC-AGI-2 competition ZIP containing `arc-agi_evaluation_challenges.json`. The CLI reads that challenge file for exclusion checks; it does not read official evaluation solutions. The following local paths show the registered environment and may be adjusted only where identities still match the frozen inputs.
+
+```bash
+TASK_REPO="$(git rev-parse --show-toplevel)"
+TASK_MAIN="/Users/shotomorisaki/Engineering/qwen-meetup-2"
+TASK_PYTHON="$TASK_MAIN/artifacts/qwen38-local-env/venv/bin/python"
+TASK_MODEL="$HOME/.cache/huggingface/hub/models--mlx-community--Qwen3.8-27B-4bit/snapshots/10c35caafbb80f7dc6a7a432cdd11af10a6d4818"
+TASK_RUN="$TASK_REPO/artifacts/qwen38-weight-exploratory-20261109-v1"
+TASK_HISTORY="$TASK_MAIN/artifacts/qwen38-quick-20261108/qwen38-quick-phasea-v1-fp8-hopper"
+TASK_COMPARISON="$TASK_MAIN/artifacts/qwen38-local-20261109"
+# Set ARC_ARCHIVE to the original competition ZIP before continuing.
+: "${ARC_ARCHIVE:?Set ARC_ARCHIVE to the ARC-AGI-2 competition ZIP}"
+TASK_ARGS=(
+  --manifest "$TASK_REPO/research/rsi/qwen38-weight-execution-v1.json"
+  --proposal "$TASK_REPO/research/rsi/qwen38-weight-allocation-proposal.json"
+  --review "$TASK_REPO/research/rsi/qwen38-weight-bounded-review.json"
+  --repo "$TASK_REPO" --model-path "$TASK_MODEL"
+  --challenges "$TASK_MAIN/data/raw/arc-agi_training_challenges.json"
+  --solutions "$TASK_MAIN/data/raw/arc-agi_training_solutions.json"
+  --archive "$ARC_ARCHIVE"
+  --canary-dir "$TASK_MAIN/artifacts/qwen38-issue16-canary-capture-20261109"
+  --run-dir "$TASK_RUN" --history-dir "$TASK_HISTORY"
+)
+```
+
+Wait for collection to finish or exhaust its predeclared budget. The fresh replay rejects a live, interrupted, or resource-stopped collection; inspect the original worker and journal rather than retrying an ambiguous started attempt. Then prepare the private bundle and independently replay it:
+
+```bash
+"$TASK_PYTHON" -m src.cli.qwen38_weight_prepare_sft "${TASK_ARGS[@]}"
+"$TASK_PYTHON" -m src.cli.qwen38_weight_prepare_sft "${TASK_ARGS[@]}" --verify-only
+"$TASK_PYTHON" -m src.cli.qwen38_weight_train "${TASK_ARGS[@]}"
+```
+
+Preparation selects only independently verified, length-eligible outputs. It consults historical FP8 records only when fresh examples do not meet the five-parent gate. The training command records `insufficient_verified_data` instead of training when that gate fails. If training fails or is interrupted, preserve its private artifacts and investigate rather than automatically rerunning.
+
+Only after the training result reports `trained` and its adapter evidence replays, freeze and run the paired evaluation, then create the offline report:
+
+```bash
+"$TASK_PYTHON" -m src.cli.qwen38_weight_evaluate prepare "${TASK_ARGS[@]}" --comparison-dir "$TASK_COMPARISON"
+"$TASK_PYTHON" -m src.cli.qwen38_weight_evaluate run "${TASK_ARGS[@]}" --comparison-dir "$TASK_COMPARISON"
+"$TASK_PYTHON" -m src.cli.qwen38_weight_evaluate report "${TASK_ARGS[@]}" --comparison-dir "$TASK_COMPARISON"
+```
+
+The evaluation journal and report retain incomplete runs and errors. Open [the results notebook](../nb/results/17_qwen38_weight_optimization.ipynb) from this worktree to display the available receipts without exposing candidate responses. Report creation, evaluation and training are not implied by a successful synthetic canary.
