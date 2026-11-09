@@ -99,11 +99,16 @@ def test_load_sources_hashes_actual_files_and_public_evaluation(tmp_path):
         path = tmp_path / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(content)
     with ZipFile(tmp_path / 'arc-prize-2025.zip', 'w') as archive:
         archive.writestr('arc-agi_evaluation_challenges.json', json.dumps(args['official']))
+        archive.writestr('arc-agi_training_challenges.json', args['challenges_bytes'])
+        archive.writestr('arc-agi_training_solutions.json', args['solutions_bytes'])
     result = load_sources(tmp_path, tmp_path, tmp_path / 'baseline.json', tmp_path / 'lineage.json', tmp_path / 'phase-b-proposal.json')
     assert result['source_hashes']['official_challenges'] == digest(args['official'])
     assert result['source_hashes']['phase_a_proposal'] == hashlib.sha256(paths['configs/lt.phase-a.comparison-proposal.json']).hexdigest()
     assert result['baseline'] == args['baseline']
     assert result['lineage'] == {}
+    (tmp_path / 'data/raw/arc-agi_training_solutions.json').write_bytes(b'{}')
+    with pytest.raises(ValueError):
+        load_sources(tmp_path, tmp_path, tmp_path / 'baseline.json', tmp_path / 'lineage.json', tmp_path / 'phase-b-proposal.json')
 
 
 def test_prior_scheduled_and_proposed_comparison_are_excluded():
