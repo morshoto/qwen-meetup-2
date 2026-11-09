@@ -67,6 +67,8 @@ def paired_report(ids, baseline_rows, gen1_rows, verifier, *, manifest_sha256, p
             summary['runtime_seconds'] += elapsed
             scored[task_id] = {'first': first, 'either': either}
         summary['incomplete_tasks'] = len(ids) - summary['complete_tasks']
+        if summary['complete_tasks'] == 0:
+            summary['first_correct'] = None; summary['either_correct'] = None
         return summary, scored
 
     baseline, base_scores = summarize(baseline_rows, 'evaluation/baseline', None)
