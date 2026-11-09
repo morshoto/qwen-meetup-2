@@ -7,7 +7,8 @@ import os
 import re
 from pathlib import Path
 
-from src.arc.qwen38_local_runner import parse_prediction
+from src.arc.lt_live_backend import PROMPT
+from src.arc.qwen38_local_runner import clean_task, parse_prediction
 from src.arc.qwen38_rsi_comparison import digest
 
 
@@ -27,6 +28,11 @@ def _contents(selection, registration):
         counts['historical_fp8'] != sum(e['source'] == 'historical_fp8' for e in examples) or
         counts['current_gen0_self_generated'] != sum(e['source'] == 'current_gen0_self_generated' for e in examples)):
         raise ValueError('SFT selection count mismatch')
+    expected_mode = ('mixed_source' if counts['historical_fp8'] and counts['current_gen0_self_generated'] else
+                     'historical_fp8_distillation' if counts['historical_fp8'] else
+                     'fresh_only' if counts['current_gen0_self_generated'] else 'none')
+    if mode != expected_mode:
+        raise ValueError('SFT source mode mismatch')
     if counts['historical_fp8'] and registration['historical_aggregate_sha256'] is None:
         raise ValueError('missing historical source registration')
     parents = []; output_hashes = set(); data = []
@@ -39,7 +45,8 @@ def _contents(selection, registration):
             type(item['token_count']) is not int or not 0 <= item['token_count'] <= 2048):
             raise ValueError('invalid SFT example provenance')
         prompt = json.loads(messages[0]['content'])
-        if any(set(test) != {'input'} for test in prompt['task']['test']):
+        if (set(prompt) != {'instruction', 'task'} or prompt['instruction'] != PROMPT or
+            clean_task(prompt['task']) != prompt['task'] or any(set(test) != {'input'} for test in prompt['task']['test'])):
             raise ValueError('held-out answers in SFT prompt')
         parsed, _ = parse_prediction(messages[1]['content'], len(prompt['task']['test']))
         if parsed is None or digest(parsed) in output_hashes:
@@ -49,7 +56,7 @@ def _contents(selection, registration):
                                                    'manifest_sha256', 'candidate_index', 'token_count')})
         data.append(json.dumps({'messages': messages}, ensure_ascii=False, separators=(',', ':')) + '\n')
     enough = counts['unique_parents'] >= 5
-    if (selection['status'] == 'eligible_pending_source_replay') != enough:
+    if selection['status'] != ('eligible_pending_source_replay' if enough else 'insufficient_verified_data'):
         raise ValueError('SFT gate status mismatch')
     data_bytes = ''.join(data).encode() if enough else None
     manifest = {'status': 'prepared_pending_source_replay' if enough else 'insufficient_verified_data',
