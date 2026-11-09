@@ -128,6 +128,11 @@ def test_paired_report_uses_offline_answers_and_keeps_raw_outputs_private(tmp_pa
     assert report['status'] == 'complete' and report['paired']['paired']['both_correct'] == 1
     assert '[[[4]]]' not in json.dumps(report)
     assert evaluate.report_evaluation(**kwargs) == report
+    termination_path = Path(descriptor['run_dir']) / 'termination.json'
+    termination = json.loads(termination_path.read_text()); termination['status'] = 'resource_stop'
+    termination['sha256'] = digest({k: v for k, v in termination.items() if k != 'sha256'})
+    termination_path.write_text(json.dumps(termination))
+    with pytest.raises(ValueError): evaluate.report_evaluation(**kwargs)
 
 
 def test_evaluation_termination_must_match_journal(tmp_path, monkeypatch):
