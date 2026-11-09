@@ -58,3 +58,19 @@ def test_preflight_rejects_identity_drift(tmp_path, monkeypatch, change):
     else: monkeypatch.setattr(preflight, 'verify_canary_bundle', lambda *args: {'status': 'failed'})
     with pytest.raises(ValueError):
         preflight.verify_preflight(manifest, proposal, review, repo, model, challenge, solutions, canary_dir=tmp_path / 'canary')
+
+
+def test_source_inventory_includes_transitive_project_imports():
+    import ast
+    from pathlib import Path
+    repo = Path(__file__).resolve().parents[2]
+    inventory = set(preflight.EXECUTION_SOURCES)
+    for name in inventory:
+        path = repo / name
+        if not path.exists():
+            continue  # The supervised collection entrypoint is still under construction.
+        for node in ast.walk(ast.parse(path.read_text())):
+            if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith('src.'):
+                target = node.module.replace('.', '/') + '.py'
+                if (repo / target).is_file():
+                    assert target in inventory, (name, target)
