@@ -40,6 +40,10 @@ def next_action(manifest, journal, verifications):
     def decide(prefix):
         if any(r['status'] == 'started' for r in prefix.values()):
             return {'status': 'requires_reconciliation'}
+        stop_reasons = {'low_free_memory', 'swap_limit', 'memory_probe_failed', 'remaining_process_group',
+                        'output_limit', 'worker_failed', 'worker_output_invalid'}
+        if any(r['status'] == 'error' and (r.get('error') in stop_reasons or str(r.get('error', '')).startswith('supervisor_error:')) for r in prefix.values()):
+            return {'status': 'resource_stop'}
         for index in range(initial):
             for task_id in ids:
                 if (task_id, index) not in prefix:
