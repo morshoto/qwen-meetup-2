@@ -16,7 +16,7 @@ PACKAGES = {'mlx': '0.32.4', 'mlx-vlm': '0.6.8', 'mlx-lm': '0.32.2', 'transforme
 SUPERVISION = {'per_attempt_seconds': 600, 'minimum_free_percent': 10,
                'maximum_swap_bytes': 16 * 1024**3, 'max_output_bytes': 2 * 1024**2}
 EXECUTION_SOURCES = (
-    'src/arc/data.py', 'src/arc/lt_direct_format.py', 'src/arc/lt_live_backend.py',
+    'src/arc/__init__.py', 'src/arc/data.py', 'src/arc/scoring.py', 'src/arc/lt_direct_format.py', 'src/arc/lt_live_backend.py',
     'src/arc/qwen38_local_runner.py', 'src/arc/qwen38_rsi_comparison.py',
     'src/arc/qwen38_weight_generation.py', 'src/arc/qwen38_weight_schedule.py',
     'src/arc/qwen38_weight_journal.py', 'src/arc/qwen38_weight_supervisor.py',
