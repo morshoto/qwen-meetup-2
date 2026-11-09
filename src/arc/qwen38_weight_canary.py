@@ -31,3 +31,17 @@ def validate_evidence(record):
     if isinstance(changes, bool) or not isinstance(changes, int) or changes < 1:
         raise ValueError('no measured LoRA tensor changes')
     return 'passed'
+
+
+def parse_loss(log):
+    clean = re.sub(r'\x1b\[[0-9;]*m', '', log)
+    matches = re.findall(r'Iter\s+1:\s*Train loss\s+([^,\s]+)', clean)
+    if len(matches) != 1:
+        raise ValueError('expected one step loss')
+    try:
+        value = float(matches[0])
+    except ValueError as exc:
+        raise ValueError('invalid step loss') from exc
+    if not math.isfinite(value):
+        raise ValueError('invalid step loss')
+    return value
