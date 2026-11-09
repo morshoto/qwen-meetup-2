@@ -55,7 +55,7 @@ def verify_preflight(manifest, proposal, review, repo, model_path, challenges, s
         proposal.get('sha256') != PROPOSAL_SHA256 or proposal.get('status') != 'proposal_not_authorization' or
         manifest.get('proposal_sha256') != PROPOSAL_SHA256):
         raise ValueError('execution or proposal identity mismatch')
-    for key in ('allocation', 'generation', 'model', 'input_hashes', 'comparison_sha256'):
+    for key in ('allocation', 'generation', 'model', 'input_hashes', 'comparison_sha256', 'training_gate', 'training_settings'):
         if manifest.get(key) != proposal.get(key):
             raise ValueError(f'execution differs from proposal: {key}')
     if (not _valid_digest(review) or review.get('status') != 'reviewed_bounded' or
