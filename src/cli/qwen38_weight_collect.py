@@ -59,7 +59,26 @@ def _artifact_hashes(directory):
     return {name: _sha(directory / name) for name in names}
 
 
-def _replay_artifacts(rows, workers, max_tokens):
+def _validate_worker_execution(execution, command, limits):
+    if (execution.get('command') != command or execution.get('status') not in ('complete', 'error') or
+        execution.get('process_group_gone') is not True or not isinstance(execution.get('samples'), list) or
+        not execution['samples'] or isinstance(execution.get('elapsed_seconds'), bool) or
+        not isinstance(execution.get('elapsed_seconds'), (int, float)) or
+        not math.isfinite(execution['elapsed_seconds']) or execution['elapsed_seconds'] < 0):
+        raise ValueError('invalid worker execution evidence')
+    if execution['status'] == 'complete':
+        if (execution.get('exit_code') != 0 or execution.get('reason') is not None or
+            type(execution.get('pid')) is not int or execution['pid'] <= 0):
+            raise ValueError('invalid successful worker evidence')
+        for sample in execution['samples']:
+            free, swap = sample.get('free_percent'), sample.get('swap_bytes')
+            if type(free) is not int or free < limits['minimum_free_percent'] or type(swap) is not int or not 0 <= swap <= limits['maximum_swap_bytes']:
+                raise ValueError('successful worker resource limit violated')
+    elif not isinstance(execution.get('reason'), str) or not execution['reason']:
+        raise ValueError('worker error lacks reason')
+
+
+def _replay_artifacts(rows, workers, max_tokens, limits):
     for index, row in enumerate(rows):
         if row['status'] == 'started':
             continue
@@ -69,6 +88,7 @@ def _replay_artifacts(rows, workers, max_tokens):
             raise ValueError('worker artifact changed')
         execution = json.loads((directory / 'execution.json').read_bytes())
         payload = json.loads((directory / 'request.json').read_bytes())
+        _validate_worker_execution(execution, row['worker_command'], limits)
         request = payload.get('request', {})
         if (set(payload) != {'request', 'max_tokens'} or payload['max_tokens'] != max_tokens or
             execution.get('process_group_gone') is not True or execution.get('elapsed_seconds') != row['elapsed_seconds'] or
@@ -102,7 +122,7 @@ def collect_step(*, manifest, proposal, review, repo, model_path, challenges, so
     with AttemptJournal(root / 'journal') as journal:
         wall_elapsed = _run_start(root, manifest['sha256'])
         rows = journal.read(); max_tokens = manifest['generation']['max_tokens_per_candidate']
-        _replay_artifacts(rows, workers, max_tokens)
+        _replay_artifacts(rows, workers, max_tokens, manifest['supervision'])
         receipt = build_receipt(manifest, challenges, solutions, rows)
         receipt_path = receipts / (receipt['journal_sha256'] + '.json')
         if receipt_path.exists():
@@ -124,10 +144,11 @@ def collect_step(*, manifest, proposal, review, repo, model_path, challenges, so
         directory = workers / f'{len(rows):06}'
         if directory.exists():
             raise ValueError('worker evidence exists without journal start')
-        journal.start(identity)
         limits = manifest['supervision']
         command = [sys.executable, '-u', '-m', 'src.cli.qwen38_weight_worker', '--model-path', str(model_path),
                    '--output', str(directory / 'response.json')]
+        identity['worker_command'] = command
+        journal.start(identity)
         execution = run_supervised(command, {'request': request, 'max_tokens': max_tokens}, directory,
                                    timeout_seconds=min(remaining, limits['per_attempt_seconds']),
                                    min_free=limits['minimum_free_percent'], max_swap=limits['maximum_swap_bytes'],
@@ -136,6 +157,7 @@ def collect_step(*, manifest, proposal, review, repo, model_path, challenges, so
             raise ValueError('worker execution receipt mismatch')
         if execution.get('process_group_gone') is not True:
             return {'status': 'requires_reconciliation'}
+        _validate_worker_execution(execution, command, limits)
         if verify_preflight(manifest, proposal, review, repo, model_path, challenges, solutions, canary_dir=canary_dir).get('status') != 'passed':
             raise ValueError('postflight failed')
         artifact_hashes = _artifact_hashes(directory)
