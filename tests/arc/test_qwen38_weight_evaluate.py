@@ -114,6 +114,7 @@ def test_paired_report_uses_offline_answers_and_keeps_raw_outputs_private(tmp_pa
     monkeypatch.setattr(evaluate, 'run_supervised', worker)
     assert evaluate.evaluate_step(**kwargs)['status'] == 'attempt_recorded'
     assert evaluate.evaluate_step(**kwargs)['status'] == 'attempt_recorded'
+    assert evaluate.evaluate_step(**kwargs)['status'] == 'complete'
     baseline = {'task_id': 'a', 'status': 'complete', 'manifest_sha256': descriptor['comparison_sha256'],
                 'prompt_sha256': descriptor['prompt_sha256'], 'variant_sha256': None,
                 'runtime_seconds': 2, 'candidates': [{'candidate_index': i, 'raw': '[[[4]]]',
@@ -126,3 +127,4 @@ def test_paired_report_uses_offline_answers_and_keeps_raw_outputs_private(tmp_pa
     report = evaluate.report_evaluation(**kwargs)
     assert report['status'] == 'complete' and report['paired']['paired']['both_correct'] == 1
     assert '[[[4]]]' not in json.dumps(report)
+    assert evaluate.report_evaluation(**kwargs) == report
