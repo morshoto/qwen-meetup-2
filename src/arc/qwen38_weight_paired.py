@@ -73,10 +73,12 @@ def paired_report(ids, baseline_rows, gen1_rows, verifier, *, manifest_sha256, p
     gen1, gen1_scores = summarize(gen1_rows, 'evaluation/weights', adapter_sha256)
     common = base_scores.keys() & gen1_scores.keys()
     pairs = {'complete': len(common), 'gained': 0, 'lost': 0, 'both_correct': 0, 'both_incorrect': 0}
-    for task_id in common:
+    task_groups = {name: [] for name in ('gained', 'lost', 'both_correct', 'both_incorrect')}
+    for task_id in sorted(common):
         before, after = base_scores[task_id]['either'], gen1_scores[task_id]['either']
         key = 'both_correct' if before and after else 'lost' if before else 'gained' if after else 'both_incorrect'
         pairs[key] += 1
-    return {'baseline': baseline, 'gen1': gen1, 'paired': pairs,
+        task_groups[key].append(task_id)
+    return {'baseline': baseline, 'gen1': gen1, 'paired': pairs, 'paired_tasks': task_groups,
             'adapter_sha256': adapter_sha256, 'comparison': 'exploratory previously evaluated tasks',
             'two_candidate_metric': 'either recorded candidate; independence not assumed'}
