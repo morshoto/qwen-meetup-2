@@ -136,3 +136,46 @@ def evaluate_step(**kwargs):
         journal.finish(len(rows), outcome)
         return {'status': 'attempt_recorded', 'task_id': action['task_id'], 'candidate_index': action['candidate_index'],
                 'attempt_status': outcome['status']}
+
+
+def report_evaluation(**kwargs):
+    """Score saved paired rows offline without passing solutions to a worker."""
+    import hashlib
+    import math
+    import time
+    from src.arc.data import Verifier
+    from src.arc.qwen38_rsi_comparison import digest
+    from src.arc.qwen38_weight_eval_rows import assemble_rows
+    from src.arc.qwen38_weight_paired import paired_report
+
+    descriptor = verify_evaluation_descriptor(**kwargs)
+    rebuilt, _, training, selection, baseline_files = _context(**kwargs)
+    if rebuilt != descriptor or hashlib.sha256(kwargs['solutions']).hexdigest() != descriptor['solution_sha256']:
+        raise ValueError('evaluation source or solution identity mismatch')
+    root = Path(kwargs['run_dir']).resolve(); eval_root = Path(descriptor['run_dir'])
+    if not eval_root.is_dir() or not (eval_root / 'journal').is_dir():
+        raise ValueError('evaluation has not started')
+    with AttemptJournal(eval_root / 'journal') as journal:
+        start = json.loads((eval_root / 'run-start.json').read_bytes())
+        if (start.get('manifest_sha256') != descriptor['sha256'] or
+            start.get('sha256') != digest({k: v for k, v in start.items() if k != 'sha256'}) or
+            isinstance(start.get('started_epoch'), bool) or not isinstance(start.get('started_epoch'), (int, float)) or
+            not math.isfinite(start['started_epoch'])):
+            raise ValueError('invalid evaluation start identity')
+        elapsed = time.time() - start['started_epoch']
+        if elapsed < 0: raise ValueError('system clock precedes evaluation start')
+        rows = journal.read(); _replay_evaluation(rows, descriptor, root, kwargs['model_path'])
+        assembly = assemble_rows(descriptor, json.loads(kwargs['challenges']), rows)
+        baseline = [json.loads(baseline_files[task_id]) for task_id in descriptor['task_ids']]
+        scores = paired_report(descriptor['task_ids'], baseline, assembly['rows'], Verifier(json.loads(kwargs['solutions'])),
+                               manifest_sha256=descriptor['comparison_sha256'], prompt_sha256=descriptor['prompt_sha256'],
+                               adapter_sha256=descriptor['adapter_sha256'])
+        result = {'status': assembly['status'], 'schedule_status': assembly['schedule_status'],
+                  'journal_sha256': digest(rows), 'evaluation_sha256': descriptor['sha256'],
+                  'comparison_sha256': descriptor['comparison_sha256'], 'training_result_sha256': training['sha256'],
+                  'adapter_sha256': descriptor['adapter_sha256'], 'training_mode': selection['mode'],
+                  'training_source_counts': selection['counts'], 'evaluation_errors': assembly['errors'],
+                  'wall_seconds': elapsed, 'paired': scores,
+                  'limitations': ['Previously evaluated tasks are exploratory, not an official ARC score.',
+                                  'A parameter update and one generation do not establish recursive improvement.']}
+        return freeze_registration(eval_root / ('report-' + result['journal_sha256'] + '.json'), result)
