@@ -31,7 +31,7 @@ EXECUTION_SOURCES = (
     'src/arc/qwen38_weight_allocation.py', 'src/arc/qwen38_weight_register.py',
     'src/arc/rsi_task_generation.py', 'src/arc/e5_selfplay.py',
     'src/cli/qwen38_weight_review.py', 'src/cli/qwen38_weight_register.py', 'src/cli/qwen38_canary.py',
-    'src/cli/qwen38_weight_worker.py', 'src/cli/qwen38_weight_collect.py',
+    'src/cli/qwen38_weight_worker.py', 'src/cli/qwen38_weight_collect.py', 'src/cli/qwen38_weight_execution.py',
 )
 
 
