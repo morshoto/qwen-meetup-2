@@ -74,3 +74,30 @@ def prepare_selection(manifest, proposal, review, repo, model_path, challenges, 
                     'packages': manifest['packages'], 'model_files_sha256': manifest['model']['files_sha256'],
                     'training_settings': manifest['training_settings']}
     return selection, registration
+
+
+def _bundle_path(manifest, run_dir, *, create_parent):
+    root = Path(run_dir).resolve()
+    if manifest.get('run_dir') != str(root) or not root.is_dir() or root.stat().st_mode & 0o077:
+        raise ValueError('SFT destination differs from the registered private run')
+    parent = root / 'training'
+    if create_parent:
+        parent.mkdir(mode=0o700, exist_ok=True)
+    if not parent.is_dir() or parent.is_symlink() or parent.stat().st_mode & 0o077:
+        raise ValueError('training directory is not private')
+    return parent / 'sft-v1'
+
+
+def prepare_bundle(**kwargs):
+    from src.arc.qwen38_weight_sft_bundle import write_bundle
+    selection, registration = prepare_selection(**kwargs)
+    path = _bundle_path(kwargs['manifest'], kwargs['run_dir'], create_parent=True)
+    return write_bundle(path, selection, registration)
+
+
+def replay_bundle(**kwargs):
+    from src.arc.qwen38_weight_sft_bundle import verify_bundle
+    selection, registration = prepare_selection(**kwargs)
+    path = _bundle_path(kwargs['manifest'], kwargs['run_dir'], create_parent=False)
+    result = verify_bundle(path, selection, registration)
+    return selection, registration, result

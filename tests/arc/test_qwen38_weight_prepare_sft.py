@@ -96,6 +96,7 @@ def test_prepare_and_replay_bundle_use_fixed_private_path(tmp_path, monkeypatch)
                     'model_files_sha256': manifest['model']['files_sha256'], 'training_settings': manifest['training_settings']}
     monkeypatch.setattr(prepare, 'prepare_selection', lambda *a, **k: (selection, registration))
     root = tmp_path / 'run'; root.mkdir(mode=0o700)
+    manifest['run_dir'] = str(root.resolve())
     kwargs = dict(manifest=manifest, proposal=proposal, review=review, repo=repo, model_path=tmp_path,
                   challenges=challenges, solutions=solutions, official_bytes=official, canary_dir=tmp_path,
                   run_dir=root, history_dir=tmp_path, token_counter=lambda _: 1)
