@@ -19,7 +19,7 @@ def _valid_hash(value):
 
 
 def audited_registration(*, challenges_bytes, solutions_bytes, official, baseline, proposal,
-                         phase_b, prior, exposure, lineage, prompt, source_hashes):
+                         phase_b, prior, exposure, lineage, prompt, source_hashes, expected_comparison_sha256):
     """Return a proposed registration; caller must authenticate source files too.
 
     The solution file is used solely for identity and per-task fingerprints. No
@@ -32,12 +32,12 @@ def audited_registration(*, challenges_bytes, solutions_bytes, official, baselin
         raise ValueError('training challenge and solution IDs differ')
     if any(not isinstance(solutions[k], list) or len(solutions[k]) != len(task['test']) for k, task in tasks.items()):
         raise ValueError('training solution count differs from test inputs')
-    if not isinstance(official, dict) or len(official) != 120:
+    if not isinstance(official, dict) or len(official) != 120 or source_hashes.get('official_challenges') != digest(official):
         raise ValueError('expected 120 official evaluation challenges')
     challenge_hash = _sha(challenges_bytes)
     if challenge_hash != proposal['dataset_sha256'] or challenge_hash != baseline['challenge_sha256']:
         raise ValueError('training challenges differ from frozen comparison')
-    if not _valid_hash(baseline.get('sha256')) or digest({k: v for k, v in baseline.items() if k != 'sha256'}) != baseline['sha256']:
+    if baseline.get('sha256') != expected_comparison_sha256 or not _valid_hash(expected_comparison_sha256) or digest({k: v for k, v in baseline.items() if k != 'sha256'}) != baseline['sha256']:
         raise ValueError('comparison manifest digest mismatch')
     allocation = baseline['allocation']
     if allocation.get('sha256') != digest({k: v for k, v in allocation.items() if k != 'sha256'}):
