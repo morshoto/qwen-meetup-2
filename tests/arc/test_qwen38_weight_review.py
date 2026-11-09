@@ -62,3 +62,27 @@ def test_bounded_review_binds_replayed_sources_and_historical_run(monkeypatch):
     with pytest.raises(ValueError):
         review.bind_review(proposal, observed, proposal['input_hashes'], 'c' * 64,
                            review.HISTORY_MANIFEST_SHA256, review.HISTORY_AGGREGATE_SHA256, review.PHASE_B_HEAD)
+
+
+def test_historical_source_review_reparses_all_checkpoint_outputs(tmp_path, monkeypatch):
+    import hashlib
+    import json
+    from src.arc import qwen38_weight_review as review
+    from src.cli.qwen38_weight_review import inspect_history
+    root = tmp_path / 'history'; root.mkdir(); (root / 'phase_a').mkdir()
+    manifest = {'protocol': 'qwen38-quick-exploratory-v1', 'model_id': 'Qwen/Qwen3.8-27B-FP8',
+                'model_revision': 'c3a462cc3d38cf351f3b26cbd763469eeb74ef81', 'precision': 'fp8',
+                'challenge_sha256': 'a' * 64, 'prompt_sha256': 'b' * 64,
+                'candidate_count': 2, 'phase_a_task_ids': ['a']}
+    manifest['sha256'] = digest(manifest)
+    candidates = [{'candidate_index': i, 'raw': '[[[1]]]', 'outputs': [[[1]]], 'valid': True,
+                   'parse_mode': 'strict'} for i in range(2)]
+    row = {'task_id': 'a', 'test_count': 1, 'candidates': candidates, 'status': 'complete', 'manifest_sha256': manifest['sha256']}
+    aggregate = {'complete': True, 'manifest': manifest, 'task_results': {'a': row}}
+    (root / 'manifest.json').write_text(json.dumps(manifest)); (root / 'phase_a_results.json').write_text(json.dumps(aggregate))
+    (root / 'phase_a/a.json').write_text(json.dumps(row))
+    monkeypatch.setattr(review, 'HISTORY_MANIFEST_SHA256', manifest['sha256'])
+    monkeypatch.setattr(review, 'HISTORY_AGGREGATE_SHA256', hashlib.sha256((root / 'phase_a_results.json').read_bytes()).hexdigest())
+    assert inspect_history(root, 'a' * 64, 'b' * 64, {'a'})['candidates'] == 2
+    row['candidates'][0]['raw'] = '[[[2]]]'; (root / 'phase_a/a.json').write_text(json.dumps(row))
+    with pytest.raises(ValueError): inspect_history(root, 'a' * 64, 'b' * 64, {'a'})
