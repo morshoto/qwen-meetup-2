@@ -1,9 +1,8 @@
 # Qwen3.8 weight optimization: exploratory results
 
-The paired evaluation is **in progress**. The training result below establishes
-a parameter update; it does not yet establish any change in ARC accuracy.
-This is a single mixed-source fine-tuning round, not demonstrated recursive
-improvement or a pure 4-bit self-training result.
+The mixed-source adapter produced a parameter update and an exploratory gain
+on the previously examined comparison set. This single fine-tuning round is
+not demonstrated recursive improvement or a pure 4-bit self-training result.
 
 ## Registered data and collection
 
@@ -58,9 +57,33 @@ measurements establish an actual adapter update, not generalization.
 
 ## Paired evaluation
 
-Pending completion and offline scoring. The first evaluation attempt stopped
+The first evaluation attempt stopped
 before model loading because the adapter directory permissions failed the
 private-directory check; its failure evidence was retained. A separately
 registered recovery uses the same adapter bytes and matched evaluation
-settings after correcting directory permissions. No accuracy is inferred from
-either the failure or the running recovery.
+settings after correcting directory permissions. The recovery finished all
+100 attempts; all 100 worker receipts report successful exit and cleaned-up
+process groups. Its termination receipt reports 13,317.38 seconds wall time.
+
+| Measure | Gen 0, adapter off | Gen 1, adapter on |
+| --- | ---: | ---: |
+| First recorded candidate correct | 2/50 | 3/50 |
+| Either recorded candidate correct | 2/50 | 5/50 |
+| Valid candidate grids | 67/100 | 95/100 |
+| Invalid candidate grids | 33/100 | 5/100 |
+| Duplicate raw candidate pairs | 3/50 | 5/50 |
+| Sum of recorded candidate runtimes | 6,001.76 s | 10,285.96 s |
+
+All 50 task pairs were complete: four tasks gained, one was lost, one was
+correct in both arms, and 44 were incorrect in both, using the either-candidate
+criterion. There were no failed, partial, missing or incomplete tasks and no
+evaluation errors. The two-candidate measure describes recorded attempts;
+duplicate pairs and shared conditions preclude assuming independent samples.
+
+The recovery descriptor SHA-256 is
+`70fec8e84c0bf03e4bcc524399cd7551405b0708eb4ee9fffa2d2b8a746f3277`,
+and the offline report SHA-256 is
+`023ac3d4afa8982d43a24e2b328f4471e127a7c2f9a24109d582d9e89d193b70`.
+The comparison suggests a gain on these already examined tasks, but does not
+establish a generalization improvement, an official ARC score, or recursive
+self-improvement. The historical component makes it cross-run distillation.
