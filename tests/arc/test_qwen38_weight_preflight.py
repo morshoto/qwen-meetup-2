@@ -20,7 +20,8 @@ def fixture(tmp_path, monkeypatch):
     proposal = {'status': 'proposal_not_authorization', 'comparison_sha256': 'c' * 64,
                 'model': {'id': MODEL_ID, 'revision': MODEL_REVISION, 'quantization': '4-bit MLX', 'files_sha256': base},
                 'allocation': {'fresh': ['a'], 'validation': ['v']}, 'generation': {'order': 'breadth_first'},
-                'known_lineage': {}, 'input_hashes': {'challenges': hashlib.sha256(challenge).hexdigest(),
+                'known_lineage': {}, 'training_gate': {'minimum_unique_verified_parents': 5},
+                'training_settings': {'rank': 8}, 'input_hashes': {'challenges': hashlib.sha256(challenge).hexdigest(),
                                                       'solutions': hashlib.sha256(solutions).hexdigest()}}
     proposal['sha256'] = digest(proposal)
     review = {'status': 'reviewed_bounded', 'proposal_sha256': proposal['sha256'],
@@ -39,7 +40,8 @@ def fixture(tmp_path, monkeypatch):
     manifest = {'protocol': 'qwen38-weight-execution-v1', 'status': 'execution_ready',
                 'proposal_sha256': proposal['sha256'], 'comparison_sha256': proposal['comparison_sha256'],
                 'allocation': proposal['allocation'], 'generation': proposal['generation'], 'model': proposal['model'],
-                'input_hashes': proposal['input_hashes'], 'lineage_review_sha256': review['sha256'],
+                'input_hashes': proposal['input_hashes'], 'training_gate': copy.deepcopy(proposal['training_gate']),
+                'training_settings': copy.deepcopy(proposal['training_settings']), 'lineage_review_sha256': review['sha256'],
                 'source_files_sha256': {'logic.py': hashlib.sha256(b'source').hexdigest()},
                 'canary_pins_sha256': hashlib.sha256(pins_path.read_bytes()).hexdigest(),
                 'packages': preflight.PACKAGES, 'supervision': preflight.SUPERVISION}
@@ -93,6 +95,14 @@ def test_preflight_rejects_rehashed_unsubstantiated_review(tmp_path, monkeypatch
     review['selection']['selected_input_overlap'] = 1
     review['sha256'] = digest({k: v for k, v in review.items() if k != 'sha256'})
     manifest['lineage_review_sha256'] = review['sha256']
+    manifest['sha256'] = digest({k: v for k, v in manifest.items() if k != 'sha256'})
+    with pytest.raises(ValueError):
+        preflight.verify_preflight(manifest, proposal, review, repo, model, challenge, solutions, canary_dir=tmp_path / 'canary')
+
+
+def test_preflight_rejects_rehashed_training_policy_drift(tmp_path, monkeypatch):
+    manifest, proposal, review, repo, model, challenge, solutions = fixture(tmp_path, monkeypatch)
+    manifest['training_gate']['minimum_unique_verified_parents'] = 1
     manifest['sha256'] = digest({k: v for k, v in manifest.items() if k != 'sha256'})
     with pytest.raises(ValueError):
         preflight.verify_preflight(manifest, proposal, review, repo, model, challenge, solutions, canary_dir=tmp_path / 'canary')
