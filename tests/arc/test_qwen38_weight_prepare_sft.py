@@ -70,3 +70,12 @@ def test_sft_source_inventory_covers_project_imports():
             if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith('src.'):
                 target = node.module.replace('.', '/') + '.py'
                 if (repo / target).is_file(): assert target in sources, (name, target)
+                for alias in node.names:
+                    child = node.module.replace('.', '/') + '/' + alias.name + '.py'
+                    if (repo / child).is_file(): assert child in sources, (name, child)
+
+
+def test_sft_inventory_includes_training_worker_and_its_instrumentation():
+    assert 'src/cli/qwen38_weight_train_worker.py' in prepare.SFT_SOURCES
+    assert 'src/cli/qwen38_canary_worker.py' in prepare.SFT_SOURCES
+    assert 'src/arc/qwen38_weight_train.py' in prepare.SFT_SOURCES
