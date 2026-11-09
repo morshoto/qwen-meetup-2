@@ -132,8 +132,12 @@ def collect_step(*, manifest, proposal, review, repo, model_path, challenges, so
                                    timeout_seconds=min(remaining, limits['per_attempt_seconds']),
                                    min_free=limits['minimum_free_percent'], max_swap=limits['maximum_swap_bytes'],
                                    max_output_bytes=limits['max_output_bytes'], cwd=repo)
+        if json.loads((directory / 'execution.json').read_bytes()) != execution:
+            raise ValueError('worker execution receipt mismatch')
         if execution.get('process_group_gone') is not True:
             return {'status': 'requires_reconciliation'}
+        if verify_preflight(manifest, proposal, review, repo, model_path, challenges, solutions, canary_dir=canary_dir).get('status') != 'passed':
+            raise ValueError('postflight failed')
         artifact_hashes = _artifact_hashes(directory)
         if execution['status'] == 'complete':
             try:
