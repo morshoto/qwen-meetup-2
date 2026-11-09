@@ -177,3 +177,27 @@ def collect_step(*, manifest, proposal, review, repo, model_path, challenges, so
         journal.finish(len(rows), outcome)
         return {'status': 'attempt_recorded', 'task_id': action['task_id'], 'candidate_index': action['candidate_index'],
                 'attempt_status': outcome['status']}
+
+
+def main(argv=None):
+    import argparse
+    parser = argparse.ArgumentParser()
+    for flag in ('manifest', 'proposal', 'review', 'repo', 'model-path', 'challenges', 'solutions', 'canary-dir', 'run-dir'):
+        parser.add_argument('--' + flag, required=True)
+    parser.add_argument('--once', action='store_true')
+    args = parser.parse_args(argv)
+    inputs = {'manifest': json.loads(Path(args.manifest).read_bytes()),
+              'proposal': json.loads(Path(args.proposal).read_bytes()),
+              'review': json.loads(Path(args.review).read_bytes()),
+              'repo': Path(args.repo).resolve(), 'model_path': Path(args.model_path).resolve(),
+              'challenges': Path(args.challenges).read_bytes(), 'solutions': Path(args.solutions).read_bytes(),
+              'canary_dir': Path(args.canary_dir).resolve(), 'run_dir': Path(args.run_dir).resolve()}
+    while True:
+        result = collect_step(**inputs)
+        print(json.dumps(result, sort_keys=True), flush=True)
+        if result['status'] != 'attempt_recorded' or args.once:
+            return 2 if result['status'] in ('requires_reconciliation', 'resource_stop') else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
