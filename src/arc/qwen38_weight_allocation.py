@@ -116,7 +116,7 @@ def build_registration(tasks, official_evaluation, exclusions, lineage, *, input
                            'temperature': TEMPERATURE, 'max_tokens_per_candidate': MAX_TOKENS,
                            'max_context': MAX_CONTEXT, 'initial_candidates': 2, 'additional_candidates': 6,
                            'order': 'breadth_first', 'extra_only_after_no_verified_success': True,
-                           'seed_rule': '20261111 + 10000 + fresh_index * 8 + candidate_index',
+                           'seed_rule': f'{seed} + 10000 + fresh_index * 8 + candidate_index',
                            'wall_seconds_limit': 86400, 'reserved_token_limit': 6553600,
                            'stop_rule': 'all attempts completed or first budget exhaustion; retain incomplete tasks'},
             'validation_policy': 'reserved parents; no answers in generation or training targets',
