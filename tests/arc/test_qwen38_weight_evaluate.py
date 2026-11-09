@@ -79,3 +79,50 @@ def test_evaluation_steps_never_receive_solutions_and_replay_pairs(tmp_path, mon
     assert evaluate.evaluate_step(**kwargs)['status'] == 'attempt_recorded'
     assert evaluate.evaluate_step(**kwargs)['status'] == 'complete'
     assert [call['request']['seed'] for call in calls] == [20261111, 20261112]
+
+
+def test_paired_report_uses_offline_answers_and_keeps_raw_outputs_private(tmp_path, monkeypatch):
+    import hashlib
+    from pathlib import Path
+    from src.arc.lt_live_backend import PROMPT
+    from src.arc.qwen38_weight_generation import capture_response
+    kwargs, descriptor = fixture(tmp_path, monkeypatch)
+    task = {'train': [{'input': [[1]], 'output': [[2]]}], 'test': [{'input': [[3]]}]}
+    kwargs['challenges'] = json.dumps({'a': task}).encode(); kwargs['solutions'] = json.dumps({'a': [[[4]]]}).encode()
+    kwargs['manifest']['model'] = {'id': 'model'}
+    descriptor.update({'candidate_count': 2, 'max_tokens': 4096, 'reserved_completion_tokens': 8192,
+                       'wall_seconds_limit': 100, 'per_attempt_seconds': 10,
+                       'adapter_sha256': 'd' * 64, 'adapter_config_sha256': 'e' * 64,
+                       'comparison_sha256': 'f' * 64, 'prompt_sha256': hashlib.sha256(PROMPT.encode()).hexdigest(),
+                       'solution_sha256': hashlib.sha256(kwargs['solutions']).hexdigest(),
+                       'supervision': {'minimum_free_percent': 10, 'maximum_swap_bytes': 100, 'max_output_bytes': 10000}})
+    descriptor['sha256'] = digest({k: v for k, v in descriptor.items() if k != 'sha256'})
+    monkeypatch.setattr(evaluate, 'verify_evaluation_descriptor', lambda **kwargs: descriptor)
+    (kwargs['run_dir'] / 'evaluation').mkdir(mode=0o700)
+    def worker(command, payload, directory, **options):
+        directory = Path(directory); directory.mkdir()
+        for name in ('stdout.log', 'stderr.log'): (directory / name).write_text('')
+        (directory / 'request.json').write_text(json.dumps(payload))
+        execution = {'status': 'complete', 'reason': None, 'exit_code': 0, 'process_group_gone': True,
+                     'elapsed_seconds': 1, 'command': command, 'pid': 123,
+                     'samples': [{'free_percent': 80, 'swap_bytes': 0}]}
+        (directory / 'execution.json').write_text(json.dumps(execution))
+        response = {'raw': '[[[4]]]', 'prompt_tokens': 5, 'completion_tokens': 1,
+                    'finish_reason': 'stop', 'seconds': 1, 'peak_memory_gb': 1}
+        (directory / 'response.json').write_text(json.dumps(capture_response(payload['request'], response, payload['max_tokens'])))
+        return execution
+    monkeypatch.setattr(evaluate, 'run_supervised', worker)
+    assert evaluate.evaluate_step(**kwargs)['status'] == 'attempt_recorded'
+    assert evaluate.evaluate_step(**kwargs)['status'] == 'attempt_recorded'
+    baseline = {'task_id': 'a', 'status': 'complete', 'manifest_sha256': descriptor['comparison_sha256'],
+                'prompt_sha256': descriptor['prompt_sha256'], 'variant_sha256': None,
+                'runtime_seconds': 2, 'candidates': [{'candidate_index': i, 'raw': '[[[4]]]',
+                  'outputs': [[[4]]], 'valid': True, 'parse_mode': 'strict'} for i in range(2)]}
+    baseline['identity'] = digest({'manifest': descriptor['comparison_sha256'], 'label': 'evaluation/baseline',
+                                   'task_id': 'a', 'prompt_sha256': descriptor['prompt_sha256'], 'variant_sha256': None})
+    selection = {'mode': 'fresh_only', 'counts': {'unique_parents': 5}}
+    training = {'sha256': 'a' * 64, 'adapter_sha256': descriptor['adapter_sha256']}
+    monkeypatch.setattr(evaluate, '_context', lambda **kwargs: (descriptor, {}, training, selection, {'a': json.dumps(baseline).encode()}))
+    report = evaluate.report_evaluation(**kwargs)
+    assert report['status'] == 'complete' and report['paired']['paired']['both_correct'] == 1
+    assert '[[[4]]]' not in json.dumps(report)
