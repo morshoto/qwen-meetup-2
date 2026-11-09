@@ -3,6 +3,7 @@ import json
 
 import pytest
 
+from src.arc.qwen38_rsi_comparison import digest
 from src.arc.qwen38_weight_sft import select_training_examples
 from src.arc.qwen38_weight_sft_bundle import write_bundle, verify_bundle
 
@@ -19,8 +20,13 @@ def fixture(count):
                                          forbidden_answer_fingerprints=set(), token_counter=lambda _: 10)
     registration = {'execution_sha256': 'b' * 64, 'fresh_journal_sha256': 'c' * 64,
                     'fresh_verification_sha256': 'd' * 64, 'challenge_sha256': 'e' * 64,
-                    'solution_sha256': 'f' * 64, 'training_code_sha256': '1' * 64,
-                    'historical_aggregate_sha256': None}
+                    'solution_sha256': 'f' * 64, 'source_files_sha256': {'training.py': '1' * 64},
+                    'historical_aggregate_sha256': None, 'historical_checkpoint_inventory_sha256': None,
+                    'packages': {'mlx-vlm': '0.6.8'}, 'model_files_sha256': {'model.safetensors': '2' * 64},
+                    'training_settings': {'rank': 8, 'batch_size': 1, 'learning_rate': 2e-5, 'max_steps': 20,
+                                          'seed': 20261111, 'max_sequence_length': 2048,
+                                          'gradient_checkpointing': True, 'completion_only_loss': True}}
+    registration['training_code_sha256'] = digest(registration['source_files_sha256'])
     return selection, registration
 
 
@@ -57,3 +63,12 @@ def test_bundle_rejects_forged_gate_or_prompt(tmp_path, change):
         prompt['task']['test'][0]['output'] = [[9]]
         selection['examples'][0]['messages'][0]['content'] = json.dumps(prompt)
     with pytest.raises(ValueError): write_bundle(tmp_path / 'forged', selection, registration)
+
+
+@pytest.mark.parametrize('change', ['source', 'settings', 'model'])
+def test_bundle_rejects_changed_training_registration(tmp_path, change):
+    selection, registration = fixture(5)
+    if change == 'source': registration['source_files_sha256']['training.py'] = '3' * 64
+    elif change == 'settings': registration['training_settings']['max_steps'] = 21
+    else: registration['model_files_sha256'] = {}
+    with pytest.raises(ValueError): write_bundle(tmp_path / 'wrong', selection, registration)
