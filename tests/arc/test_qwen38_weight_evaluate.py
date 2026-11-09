@@ -144,3 +144,21 @@ def test_evaluation_termination_must_match_journal(tmp_path, monkeypatch):
     altered['sha256'] = digest({k: v for k, v in altered.items() if k != 'sha256'})
     (root / 'termination.json').write_text(json.dumps(altered))
     with pytest.raises(ValueError): evaluate._finalize_evaluation(root, descriptor, rows, 'complete', 3)
+
+
+def test_evaluation_command_reads_only_official_challenges(tmp_path, monkeypatch, capsys):
+    from zipfile import ZipFile
+    kwargs, descriptor = fixture(tmp_path, monkeypatch)
+    for name in ('manifest', 'proposal', 'review', 'challenges', 'solutions'):
+        (tmp_path / (name + '.json')).write_text('{}')
+    with ZipFile(tmp_path / 'archive.zip', 'w') as archive:
+        archive.writestr('arc-agi_evaluation_challenges.json', '{}')
+    calls = []
+    monkeypatch.setattr(evaluate, 'freeze_evaluation', lambda **values: calls.append(values) or {'status': 'evaluation_ready', 'sha256': 'a' * 64})
+    args = ['prepare', '--manifest', str(tmp_path / 'manifest.json'), '--proposal', str(tmp_path / 'proposal.json'),
+            '--review', str(tmp_path / 'review.json'), '--repo', str(tmp_path), '--model-path', str(tmp_path),
+            '--challenges', str(tmp_path / 'challenges.json'), '--solutions', str(tmp_path / 'solutions.json'),
+            '--archive', str(tmp_path / 'archive.zip'), '--canary-dir', str(tmp_path), '--run-dir', str(kwargs['run_dir']),
+            '--history-dir', str(tmp_path / 'history'), '--comparison-dir', str(kwargs['comparison_dir'])]
+    assert evaluate.main(args) == 0 and calls[0]['official_bytes'] == b'{}'
+    assert json.loads(capsys.readouterr().out)['status'] == 'evaluation_ready'
