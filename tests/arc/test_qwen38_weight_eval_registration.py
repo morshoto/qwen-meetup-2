@@ -62,3 +62,8 @@ def test_evaluation_descriptor_rejects_changed_inputs(tmp_path, monkeypatch, cha
     else: training['weights_updated'] = False
     with pytest.raises(ValueError):
         evaluation.build_evaluation_descriptor(comparison, execution, training, evidence, challenges, rows, repo, expected_count=2)
+
+
+def test_evaluation_source_inventory_includes_scheduler_and_worker():
+    assert 'src/arc/qwen38_weight_eval_schedule.py' in evaluation.EVALUATION_SOURCES
+    assert 'src/cli/qwen38_weight_eval_worker.py' in evaluation.EVALUATION_SOURCES
