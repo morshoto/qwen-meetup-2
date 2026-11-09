@@ -1,7 +1,9 @@
 import copy
+import hashlib
 
 import pytest
 
+from src.arc.lt_live_backend import PROMPT
 from src.arc.qwen38_weight_eval_rows import assemble_rows
 from src.arc.qwen38_weight_generation import capture_response, create_request
 
@@ -9,7 +11,7 @@ from src.arc.qwen38_weight_generation import capture_response, create_request
 def fixture():
     tasks = {'a': {'train': [{'input': [[1]], 'output': [[2]]}], 'test': [{'input': [[3]]}]},
              'b': {'train': [{'input': [[2]], 'output': [[1]]}], 'test': [{'input': [[4]]}]}}
-    descriptor = {'sha256': 'a' * 64, 'comparison_sha256': 'b' * 64, 'prompt_sha256': 'c' * 64,
+    descriptor = {'sha256': 'a' * 64, 'comparison_sha256': 'b' * 64, 'prompt_sha256': hashlib.sha256(PROMPT.encode()).hexdigest(),
                   'adapter_sha256': 'd' * 64, 'task_ids': ['a', 'b'], 'candidate_count': 2, 'max_tokens': 4096,
                   'reserved_completion_tokens': 16384, 'wall_seconds_limit': 100}
     rows = []
