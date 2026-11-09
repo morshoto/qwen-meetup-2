@@ -1,0 +1,57 @@
+import hashlib
+import json
+
+from src.arc.qwen38_rsi_comparison import digest
+from src.arc.qwen38_weight_preflight import PACKAGES
+import src.cli.qwen38_weight_prepare_sft as prepare
+
+
+def fixture(tmp_path, monkeypatch):
+    tasks = {}; answers = {}; fresh = []; history = []
+    for i in range(10):
+        task = str(i); tasks[task] = {'train': [{'input': [[0, i]], 'output': [[1]]}], 'test': [{'input': [[2, i]]}]}
+        answers[task] = [[[3, i, 4]]]; raw = json.dumps(answers[task], separators=(',', ':'))
+        record = {'task_id': task, 'raw': raw, 'raw_sha256': hashlib.sha256(raw.encode()).hexdigest(),
+                  'source': 'current_gen0_self_generated' if i < 6 else 'historical_fp8', 'candidate_index': 0,
+                  'checkpoint_sha256': 'a' * 64, 'manifest_sha256': 'b' * 64}
+        (fresh if i < 6 else history).append(record)
+    challenges = json.dumps(tasks, sort_keys=True).encode(); solutions = json.dumps(answers, sort_keys=True).encode()
+    official = {'official': {'train': [{'input': [[9, 9]], 'output': [[1]]}], 'test': [{'input': [[9, 8]]}]}}
+    official_bytes = json.dumps(official, sort_keys=True).encode()
+    proposal = {'allocation': {'fresh': list(tasks)[:6], 'validation': ['9']},
+                'exclusions': {'prior_phase_a': ['6', '7', '8'], 'protected': ['9']}, 'known_lineage': {},
+                'input_hashes': {'challenges': hashlib.sha256(challenges).hexdigest(),
+                                 'solutions': hashlib.sha256(solutions).hexdigest(),
+                                 'official_challenges': digest(official), 'official_challenges_file': hashlib.sha256(official_bytes).hexdigest()}}
+    settings = {'rank': 8, 'batch_size': 1, 'learning_rate': 2e-5, 'max_steps': 20, 'seed': 20261111,
+                'max_sequence_length': 2048, 'gradient_checkpointing': True, 'completion_only_loss': True}
+    manifest = {'sha256': 'b' * 64, 'input_hashes': proposal['input_hashes'], 'model': {'files_sha256': {'model': 'c' * 64}},
+                'packages': PACKAGES.copy(), 'training_settings': settings}
+    review = {'history_inspection': {'checkpoint_inventory_sha256': 'd' * 64}}
+    repo = tmp_path / 'repo'; repo.mkdir(); (repo / 'logic.py').write_text('source')
+    monkeypatch.setattr(prepare, 'SFT_SOURCES', ('logic.py',))
+    monkeypatch.setattr(prepare, 'replay_fresh', lambda *a, **k: {'records': fresh, 'journal_sha256': 'e' * 64,
+                                                                'verification_sha256': 'f' * 64})
+    return repo, manifest, proposal, review, challenges, solutions, official_bytes, fresh, history
+
+
+def test_sft_preparation_prefers_fresh_without_opening_history(tmp_path, monkeypatch):
+    repo, manifest, proposal, review, challenges, solutions, official, fresh, history = fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(prepare, 'load_history', lambda *a: (_ for _ in ()).throw(AssertionError('history opened')))
+    selection, registration = prepare.prepare_selection(manifest, proposal, review, repo, tmp_path, challenges, solutions,
+                                                         official, tmp_path, tmp_path, tmp_path / 'missing', token_counter=lambda _: 1)
+    assert selection['mode'] == 'fresh_only' and selection['counts']['unique_parents'] == 6
+    assert registration['historical_aggregate_sha256'] is None
+    assert registration['training_code_sha256'] == digest(registration['source_files_sha256'])
+
+
+def test_sft_preparation_uses_history_only_after_fresh_gate_fails(tmp_path, monkeypatch):
+    repo, manifest, proposal, review, challenges, solutions, official, fresh, history = fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(prepare, 'replay_fresh', lambda *a, **k: {'records': fresh[:3], 'journal_sha256': 'e' * 64,
+                                                                'verification_sha256': 'f' * 64})
+    monkeypatch.setattr(prepare, 'load_history', lambda *a: {'history_manifest': {}, 'aggregate_bytes': b'', 'checkpoint_bytes': {}})
+    monkeypatch.setattr(prepare, 'replay_history', lambda **kwargs: {'records': history[:3]})
+    selection, registration = prepare.prepare_selection(manifest, proposal, review, repo, tmp_path, challenges, solutions,
+                                                         official, tmp_path, tmp_path, tmp_path / 'history', token_counter=lambda _: 1)
+    assert selection['mode'] == 'mixed_source' and selection['counts']['unique_parents'] == 6
+    assert registration['historical_aggregate_sha256'] == prepare.HISTORY_AGGREGATE_SHA256
