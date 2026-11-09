@@ -24,7 +24,15 @@ def fixture(tmp_path, monkeypatch):
                                                       'solutions': hashlib.sha256(solutions).hexdigest()}}
     proposal['sha256'] = digest(proposal)
     review = {'status': 'reviewed_bounded', 'proposal_sha256': proposal['sha256'],
-              'known_lineage_sha256': digest(proposal['known_lineage']), 'unresolved_exposure': True}
+              'known_lineage_sha256': digest(proposal['known_lineage']), 'unresolved_exposure': True,
+              'input_hashes': proposal['input_hashes'], 'review_source_sha256': hashlib.sha256(b'source').hexdigest(),
+              'review_cli_sha256': hashlib.sha256(b'source').hexdigest(),
+              'phase_b_head': preflight.PHASE_B_HEAD,
+              'history_manifest_sha256': preflight.HISTORY_MANIFEST_SHA256,
+              'history_aggregate_sha256': preflight.HISTORY_AGGREGATE_SHA256,
+              'history_inspection': {'parents': 200, 'candidates': 400},
+              'selection': {'fresh_parents': 1, 'validation_parents': 1, 'official_challenges': 120,
+                            'selected_parent_overlap': 0, 'selected_input_overlap': 0, 'unresolved_semantic_exposure': True}}
     review['sha256'] = digest(review)
     manifest = {'protocol': 'qwen38-weight-execution-v1', 'status': 'execution_ready',
                 'proposal_sha256': proposal['sha256'], 'comparison_sha256': proposal['comparison_sha256'],
@@ -36,6 +44,8 @@ def fixture(tmp_path, monkeypatch):
     manifest['sha256'] = digest(manifest)
     monkeypatch.setattr(preflight, 'EXECUTION_SOURCES', ('logic.py',))
     monkeypatch.setattr(preflight, 'PINS_PATH', 'pins.json')
+    monkeypatch.setattr(preflight, 'REVIEW_SOURCE_PATH', 'logic.py')
+    monkeypatch.setattr(preflight, 'REVIEW_CLI_PATH', 'logic.py')
     monkeypatch.setattr(preflight, 'PROPOSAL_SHA256', proposal['sha256'])
     monkeypatch.setattr(preflight.metadata, 'version', lambda name: preflight.PACKAGES[name])
     monkeypatch.setattr(preflight, 'verify_canary_bundle', lambda *args: {'status': 'passed'})
@@ -74,3 +84,13 @@ def test_source_inventory_includes_transitive_project_imports():
                 target = node.module.replace('.', '/') + '.py'
                 if (repo / target).is_file():
                     assert target in inventory, (name, target)
+
+
+def test_preflight_rejects_rehashed_unsubstantiated_review(tmp_path, monkeypatch):
+    manifest, proposal, review, repo, model, challenge, solutions = fixture(tmp_path, monkeypatch)
+    review['selection']['selected_input_overlap'] = 1
+    review['sha256'] = digest({k: v for k, v in review.items() if k != 'sha256'})
+    manifest['lineage_review_sha256'] = review['sha256']
+    manifest['sha256'] = digest({k: v for k, v in manifest.items() if k != 'sha256'})
+    with pytest.raises(ValueError):
+        preflight.verify_preflight(manifest, proposal, review, repo, model, challenge, solutions, canary_dir=tmp_path / 'canary')
