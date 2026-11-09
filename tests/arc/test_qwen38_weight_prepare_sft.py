@@ -55,3 +55,18 @@ def test_sft_preparation_uses_history_only_after_fresh_gate_fails(tmp_path, monk
                                                          official, tmp_path, tmp_path, tmp_path / 'history', token_counter=lambda _: 1)
     assert selection['mode'] == 'mixed_source' and selection['counts']['unique_parents'] == 6
     assert registration['historical_aggregate_sha256'] == prepare.HISTORY_AGGREGATE_SHA256
+
+
+def test_sft_source_inventory_covers_project_imports():
+    import ast
+    from pathlib import Path
+    repo = Path(__file__).resolve().parents[2]
+    sources = set(prepare.SFT_SOURCES)
+    for name in sources:
+        path = repo / name
+        if not path.exists():
+            continue  # The training entrypoint is under construction.
+        for node in ast.walk(ast.parse(path.read_text())):
+            if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith('src.'):
+                target = node.module.replace('.', '/') + '.py'
+                if (repo / target).is_file(): assert target in sources, (name, target)
