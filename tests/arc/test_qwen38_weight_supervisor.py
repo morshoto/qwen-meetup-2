@@ -53,3 +53,11 @@ def test_supervisor_cleans_descendants_when_leader_exits(tmp_path):
                             timeout_seconds=5, probe=good_probe, poll_seconds=.02)
     assert result['status'] == 'error' and result['reason'] == 'remaining_process_group'
     assert result['process_group_gone'] is True
+
+
+def test_worker_receipt_records_exact_command_and_process_identity(tmp_path):
+    command = [sys.executable, '-c', 'print("done")']
+    result = run_supervised(command, {}, tmp_path / 'identified', timeout_seconds=5, probe=good_probe, poll_seconds=.02)
+    assert result['command'] == command
+    assert type(result['pid']) is int and result['pid'] > 0
+    assert json.loads((tmp_path / 'identified/execution.json').read_text()) == result
