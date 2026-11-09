@@ -13,6 +13,7 @@ Evidence remains in the Git-ignored local directory `artifacts/qwen38-issue16-ca
 | registration.json | `9f8fbb1895ea9e10ada57c661c98f6edc5a074b385983248f48c45e83f08d85b` |
 | train.log | `c1ae6bdbd756cde386440e2e71c275e20fbef3b17c627ce449e7a3bf67a2149b` |
 | execution.json | `c46d6e6f2184102bd6b09665b1bd2922908855c415441654a76bf7337c7b1e33` |
+| data/train.jsonl | `7e988e4a700f8545af175597eab8e3bbbd09405e2ee693879e79fedbda2e5410` |
 | initial.safetensors | `5918c5ca9a48e73630a1043e47994f61e911938919d7725be0778c5c511ba981` |
 | adapter/adapters.safetensors | `a7fb4e68dcab6998982f1487ad582700f13207d186b64afb6e8486309a57c6fe` |
 | adapter/adapter_config.json | `8c58de57198438da131ccb7ad55db5a4a2dac90c74e32cc30fc763dfdd503ce0` |
@@ -21,3 +22,5 @@ Evidence remains in the Git-ignored local directory `artifacts/qwen38-issue16-ca
 | probe-execution.json | `c32f9914cae915846f2513713cfdec4e792f4e1a90a7294e79bac2dc34d4881a` |
 
 An earlier uninstrumented execution is retained separately at `artifacts/qwen38-issue16-canary-20261109/`; its nonzero adapter alone cannot establish a tensor update. No fresh collection, real-data adapter, or paired Gen 1 score has been produced by this canary.
+
+The pinned bundle was replayed against these hashes and the current base shards using `verify_canary_bundle`; it passed. Resource checks remain sampled observations and the replay does not independently attest operating-system process ownership beyond the recorded cleanup evidence.
