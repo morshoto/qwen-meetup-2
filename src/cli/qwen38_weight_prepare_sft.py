@@ -19,7 +19,10 @@ SFT_SOURCES = tuple(dict.fromkeys(EXECUTION_SOURCES + (
     'src/arc/qwen38_weight_history_replay.py', 'src/arc/qwen38_weight_sft.py',
     'src/arc/qwen38_weight_sft_bundle.py', 'src/arc/qwen38_weight_token_count.py',
     'src/cli/qwen38_weight_fresh_replay.py', 'src/cli/qwen38_weight_prepare_sft.py',
-    'src/cli/qwen38_weight_train.py',
+    'src/arc/qwen38_weight_train.py', 'src/cli/qwen38_weight_train_worker.py',
+    'src/cli/qwen38_canary_worker.py', 'src/cli/qwen38_canary_verify.py',
+    'src/cli/qwen38_local_train.py', 'src/cli/qwen38_training_data.py',
+    'src/cli/qwen38_expand_training.py', 'src/cli/qwen38_weight_train.py',
 )))
 
 
