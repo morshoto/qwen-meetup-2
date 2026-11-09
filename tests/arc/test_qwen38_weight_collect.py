@@ -34,13 +34,16 @@ def test_collect_step_saves_evidence_and_replays_verifier(tmp_path, monkeypatch)
         calls.append(payload)
         assert set(payload) == {'request', 'max_tokens'} and 'solutions' not in json.dumps(payload)
         directory = Path(directory); directory.mkdir()
-        for name in ('stdout.log', 'stderr.log', 'request.json', 'execution.json'):
-            (directory / name).write_text('{}')
+        for name in ('stdout.log', 'stderr.log'):
+            (directory / name).write_text('')
+        (directory / 'request.json').write_text(json.dumps(payload))
+        execution = {'status': 'complete', 'reason': None, 'exit_code': 0, 'process_group_gone': True, 'elapsed_seconds': 1}
+        (directory / 'execution.json').write_text(json.dumps(execution))
         response = {'raw': '[[[4]]]', 'prompt_tokens': 5, 'completion_tokens': 1,
                     'finish_reason': 'stop', 'seconds': 1, 'peak_memory_gb': 1}
         captured = capture_response(payload['request'], response, payload['max_tokens'])
         (directory / 'response.json').write_text(json.dumps(captured))
-        return {'status': 'complete', 'reason': None, 'exit_code': 0, 'process_group_gone': True, 'elapsed_seconds': 1}
+        return execution
     monkeypatch.setattr(collect, 'run_supervised', fake_supervisor)
     kwargs = dict(manifest=manifest, proposal={}, review={}, repo=tmp_path, model_path=tmp_path,
                   challenges=challenges, solutions=solutions, canary_dir=tmp_path, run_dir=tmp_path / 'run')
