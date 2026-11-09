@@ -74,3 +74,25 @@ def allocate_weight_pool(tasks, official_evaluation, exclusions, lineage, *, see
             'excluded_parent_count': sum(find(k) in blocked_groups for k in ids),
             'eligible_lineage_groups': len(representatives),
             'challenge_fingerprints': {k: fingerprints[k] for k in sorted(ids)}}
+
+
+def freeze_registration(path, value):
+    """Create an immutable registration or require the exact existing bytes."""
+    import os
+    from pathlib import Path
+    if 'sha256' in value:
+        raise ValueError('registration digest is derived')
+    encoded = json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode()
+    registration = dict(value, sha256=hashlib.sha256(encoded).hexdigest())
+    payload = json.dumps(registration, sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False) + '\n'
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with path.open('x', encoding='utf-8') as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+    except FileExistsError:
+        if path.read_text(encoding='utf-8') != payload:
+            raise ValueError('registration changed')
+    return registration
