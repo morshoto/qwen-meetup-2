@@ -23,7 +23,7 @@ The real-data trainer is predeclared with a 3600-second training limit and a sep
 
 ## Running the post-collection stages
 
-Run these commands from the issue worktree with the pinned Python environment. The private run directory is fixed by the execution descriptor; moving or changing it requires a new registration. `ARC_ARCHIVE` must point to the original ARC-AGI-2 competition ZIP containing `arc-agi_evaluation_challenges.json`. The CLI reads that challenge file for exclusion checks; it does not read official evaluation solutions. The following local paths show the registered environment and may be adjusted only where identities still match the frozen inputs.
+Run these commands from the issue worktree with the pinned Python environment. The private run directory is fixed by the execution descriptor; moving or changing it requires a new registration. The worktree archive `arc-prize-2025.zip` contains the registered `arc-agi_evaluation_challenges.json`; its challenge-file hash was checked against the frozen proposal. The CLI reads that challenge file for exclusion checks; it does not read official evaluation solutions. The following local paths show the registered environment and may be adjusted only where identities still match the frozen inputs.
 
 ```bash
 TASK_REPO="$(git rev-parse --show-toplevel)"
@@ -33,8 +33,7 @@ TASK_MODEL="$HOME/.cache/huggingface/hub/models--mlx-community--Qwen3.8-27B-4bit
 TASK_RUN="$TASK_REPO/artifacts/qwen38-weight-exploratory-20261109-v1"
 TASK_HISTORY="$TASK_MAIN/artifacts/qwen38-quick-20261108/qwen38-quick-phasea-v1-fp8-hopper"
 TASK_COMPARISON="$TASK_MAIN/artifacts/qwen38-local-20261109"
-# Set ARC_ARCHIVE to the original competition ZIP before continuing.
-: "${ARC_ARCHIVE:?Set ARC_ARCHIVE to the ARC-AGI-2 competition ZIP}"
+TASK_ARCHIVE="$TASK_REPO/arc-prize-2025.zip"
 TASK_ARGS=(
   --manifest "$TASK_REPO/research/rsi/qwen38-weight-execution-v1.json"
   --proposal "$TASK_REPO/research/rsi/qwen38-weight-allocation-proposal.json"
@@ -42,7 +41,7 @@ TASK_ARGS=(
   --repo "$TASK_REPO" --model-path "$TASK_MODEL"
   --challenges "$TASK_MAIN/data/raw/arc-agi_training_challenges.json"
   --solutions "$TASK_MAIN/data/raw/arc-agi_training_solutions.json"
-  --archive "$ARC_ARCHIVE"
+  --archive "$TASK_ARCHIVE"
   --canary-dir "$TASK_MAIN/artifacts/qwen38-issue16-canary-capture-20261109"
   --run-dir "$TASK_RUN" --history-dir "$TASK_HISTORY"
 )
