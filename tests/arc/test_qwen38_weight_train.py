@@ -113,3 +113,13 @@ def test_nonfinite_training_loss_never_writes_success_receipt(tmp_path, monkeypa
     with pytest.raises(ValueError): train.execute_training(**kwargs)
     assert not (kwargs['run_dir'] / 'training/training-result-v1.json').exists()
     assert len(calls) == 1
+
+
+def test_training_failure_is_recorded_without_a_score_or_retry(tmp_path, monkeypatch):
+    import json
+    train, kwargs, calls = _training_fixture(tmp_path, monkeypatch, bad_loss=True)
+    with pytest.raises(ValueError): train.execute_training(**kwargs)
+    failure = json.loads((kwargs['run_dir'] / 'training/training-failed-v1.json').read_text())
+    assert failure['status'] == 'training_failed' and 'score' not in failure
+    with pytest.raises(FileExistsError): train.execute_training(**kwargs)
+    assert len(calls) == 1
