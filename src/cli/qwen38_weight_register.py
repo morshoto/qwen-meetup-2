@@ -34,8 +34,13 @@ def load_sources(repo, data_repo, baseline_path, lineage_path, phase_b_compariso
     }
     raw = {name: path.read_bytes() for name, path in sources.items()}
     decoded = {name: json.loads(content) for name, content in raw.items()}
+    challenges_bytes = (data_repo / 'data/raw/arc-agi_training_challenges.json').read_bytes()
+    solutions_bytes = (data_repo / 'data/raw/arc-agi_training_solutions.json').read_bytes()
     with ZipFile(data_repo / 'arc-prize-2025.zip') as archive:
         official_bytes = archive.read('arc-agi_evaluation_challenges.json')
+        if (archive.read('arc-agi_training_challenges.json') != challenges_bytes or
+            archive.read('arc-agi_training_solutions.json') != solutions_bytes):
+            raise ValueError('training files differ from competition archive')
     official = json.loads(official_bytes)
     hashes = {name: _hash(content) for name, content in raw.items()}
     hashes['official_challenges'] = digest(official)
@@ -44,8 +49,8 @@ def load_sources(repo, data_repo, baseline_path, lineage_path, phase_b_compariso
     scheduled = sorted(slot['task_id'] for index in (0, 1)
                        for slot in generation_slots(registry['partitions']['generation'], index))
     return {'scheduled': scheduled, 'phase_b_comparison': decoded['phase_b_comparison']['task_ids'],
-            'bounded_registry': registry, 'challenges_bytes': (data_repo / 'data/raw/arc-agi_training_challenges.json').read_bytes(),
-            'solutions_bytes': (data_repo / 'data/raw/arc-agi_training_solutions.json').read_bytes(),
+            'bounded_registry': registry, 'challenges_bytes': challenges_bytes,
+            'solutions_bytes': solutions_bytes,
             'official': official, 'baseline': decoded['comparison_manifest'],
             'proposal': decoded['phase_a_proposal'], 'phase_b': decoded['phase_b_reservations'],
             'prior': decoded['prior_rsi_split'], 'exposure': decoded['exposure_review'],
