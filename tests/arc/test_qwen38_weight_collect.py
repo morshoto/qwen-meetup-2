@@ -37,7 +37,8 @@ def test_collect_step_saves_evidence_and_replays_verifier(tmp_path, monkeypatch)
         for name in ('stdout.log', 'stderr.log'):
             (directory / name).write_text('')
         (directory / 'request.json').write_text(json.dumps(payload))
-        execution = {'status': 'complete', 'reason': None, 'exit_code': 0, 'process_group_gone': True, 'elapsed_seconds': 1}
+        execution = {'status': 'complete', 'reason': None, 'exit_code': 0, 'process_group_gone': True, 'elapsed_seconds': 1,
+                     'command': command, 'pid': 123, 'samples': [{'free_percent': 80, 'swap_bytes': 0}]}
         (directory / 'execution.json').write_text(json.dumps(execution))
         response = {'raw': '[[[4]]]', 'prompt_tokens': 5, 'completion_tokens': 1,
                     'finish_reason': 'stop', 'seconds': 1, 'peak_memory_gb': 1}
@@ -92,3 +93,24 @@ def test_worker_cleanup_evidence_must_match_before_commit(tmp_path, monkeypatch)
     from src.arc.qwen38_weight_journal import AttemptJournal
     with AttemptJournal(tmp_path / 'run/journal') as journal:
         assert journal.read()[-1]['status'] == 'started'
+
+
+def test_worker_command_must_match_registered_dispatch(tmp_path, monkeypatch):
+    manifest, challenges, solutions = fixture(tmp_path, monkeypatch)
+    def wrong_command(command, payload, directory, **kwargs):
+        directory = Path(directory); directory.mkdir()
+        for name in ('stdout.log', 'stderr.log'):
+            (directory / name).write_text('')
+        (directory / 'request.json').write_text(json.dumps(payload))
+        execution = {'status': 'complete', 'reason': None, 'exit_code': 0, 'process_group_gone': True,
+                     'elapsed_seconds': 1, 'command': ['unexpected'], 'pid': 123,
+                     'samples': [{'free_percent': 80, 'swap_bytes': 0}]}
+        (directory / 'execution.json').write_text(json.dumps(execution))
+        response = {'raw': '[[[4]]]', 'prompt_tokens': 5, 'completion_tokens': 1,
+                    'finish_reason': 'stop', 'seconds': 1, 'peak_memory_gb': 1}
+        (directory / 'response.json').write_text(json.dumps(capture_response(payload['request'], response, payload['max_tokens'])))
+        return execution
+    monkeypatch.setattr(collect, 'run_supervised', wrong_command)
+    kwargs = dict(manifest=manifest, proposal={}, review={}, repo=tmp_path, model_path=tmp_path,
+                  challenges=challenges, solutions=solutions, canary_dir=tmp_path, run_dir=tmp_path / 'run')
+    with pytest.raises(ValueError): collect.collect_step(**kwargs)
