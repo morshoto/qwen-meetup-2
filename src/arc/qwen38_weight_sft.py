@@ -19,8 +19,8 @@ def _hash(value):
     return isinstance(value, str) and re.fullmatch(r'[0-9a-f]{64}', value) is not None
 
 
-def prepare_examples(tasks, solutions, records, *, blocked_ids, token_counter, max_tokens=2048):
-    if not isinstance(blocked_ids, set) or not callable(token_counter) or max_tokens < 1:
+def prepare_examples(tasks, solutions, records, *, blocked_ids, forbidden_answer_fingerprints, token_counter, max_tokens=2048):
+    if not isinstance(blocked_ids, set) or not isinstance(forbidden_answer_fingerprints, set) or not callable(token_counter) or max_tokens < 1:
         raise ValueError('invalid preparation constraints')
     counts = Counter(); examples = []; parents = set(); answers = set()
     for record in records:
@@ -45,6 +45,9 @@ def prepare_examples(tasks, solutions, records, *, blocked_ids, token_counter, m
             counts['duplicate_parent'] += 1
             continue
         answer_hash = digest(parsed)
+        if answer_hash in forbidden_answer_fingerprints:
+            counts['protected_answer_lineage'] += 1
+            continue
         if answer_hash in answers:
             counts['duplicate_answer_lineage'] += 1
             continue
@@ -63,7 +66,7 @@ def prepare_examples(tasks, solutions, records, *, blocked_ids, token_counter, m
                          'checkpoint_sha256': record['checkpoint_sha256'], 'candidate_index': record['candidate_index'],
                          'token_count': length})
     for key in ('records', 'excluded_blocked', 'duplicate_parent', 'duplicate_answer_lineage',
-                'length_excluded', 'historical_fp8', 'current_gen0_self_generated'):
+                'length_excluded', 'protected_answer_lineage', 'historical_fp8', 'current_gen0_self_generated'):
         counts.setdefault(key, 0)
     counts['unique_parents'] = len(parents)
     return {'status': 'requires_source_replay' if len(parents) >= 5 else 'insufficient_verified_data',
