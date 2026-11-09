@@ -31,3 +31,11 @@ def test_allocation_records_shortfall_and_rejects_unknown_reservations():
     assert a['shortfall'] == 9
     with pytest.raises(ValueError): allocate_weight_pool(tasks, {}, {'protected': ['missing']}, {})
     with pytest.raises(ValueError): allocate_weight_pool(tasks, {}, {}, {'missing': 'family'})
+
+
+def test_derived_task_sharing_an_input_with_protected_task_is_excluded():
+    tasks = {str(i): task(i) for i in range(12)}
+    tasks['variant'] = {'train': [{'input': [[99]], 'output': [[1]]}],
+                        'test': [{'input': tasks['0']['train'][0]['input']}]}
+    allocation = allocate_weight_pool(tasks, {}, {'protected': ['0']}, {}, pool_size=10, validation_size=1)
+    assert 'variant' not in allocation['fresh'] + allocation['validation']
