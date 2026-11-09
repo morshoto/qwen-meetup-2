@@ -105,7 +105,7 @@ def _execute_training(**kwargs):
     if hashlib.sha256((dataset / 'train.jsonl').read_bytes()).hexdigest() != train_sha:
         raise ValueError('trainer dataset changed')
     probe_dir = train_root / 'verification'
-    probe_command = [sys.executable, '-u', '-m', 'src.cli.qwen38_canary_verify',
+    probe_command = [sys.executable, '-u', '-m', 'src.cli.qwen38_weight_probe',
                      '--model-path', str(Path(kwargs['model_path']).resolve()), '--run-dir', str(train_root)]
     probe_execution = run_supervised(probe_command, {}, probe_dir, timeout_seconds=900,
                                      min_free=limits['minimum_free_percent'], max_swap=limits['maximum_swap_bytes'],
