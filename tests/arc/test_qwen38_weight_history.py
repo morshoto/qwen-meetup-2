@@ -32,7 +32,7 @@ def fixture():
     return dict(tasks=tasks, solutions=answers, manifest=manifest, aggregate_bytes=raw,
                 checkpoints=copy.deepcopy(rows), blocked_ids={'c'}, expected_aggregate_sha256=hashlib.sha256(raw).hexdigest(),
                 expected_manifest_sha256=manifest['sha256'], expected_challenge_sha256='a' * 64,
-                expected_prompt_sha256='b' * 64)
+                expected_prompt_sha256='b' * 64, forbidden_answer_fingerprints=set())
 
 
 def test_history_requires_saved_generated_output_and_excludes_protected():
@@ -82,3 +82,11 @@ def test_history_blocks_transitive_input_and_explicit_lineage():
     tasks['c']['test'][0]['input'] = tasks['b']['train'][0]['input']
     assert historical_blocked_ids(tasks, {}, {'a'}, {}) == {'a', 'b', 'c'}
     assert historical_blocked_ids(fixture()['tasks'], {}, {'a'}, {'a': 'family', 'b': 'family'}) == {'a', 'b'}
+
+
+def test_history_excludes_protected_answer_fingerprints():
+    args = fixture()
+    args['forbidden_answer_fingerprints'] = {digest(args['solutions']['a'])}
+    report = audit_history(**args)
+    assert report['counts']['protected_answer_lineage'] == 1
+    assert {row['task_id'] for row in report['eligible']} == {'b'}
