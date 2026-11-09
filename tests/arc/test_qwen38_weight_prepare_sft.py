@@ -79,6 +79,7 @@ def test_sft_inventory_includes_training_worker_and_its_instrumentation():
     assert 'src/cli/qwen38_weight_train_worker.py' in prepare.SFT_SOURCES
     assert 'src/cli/qwen38_canary_worker.py' in prepare.SFT_SOURCES
     assert 'src/arc/qwen38_weight_train.py' in prepare.SFT_SOURCES
+    assert 'src/cli/qwen38_weight_probe.py' in prepare.SFT_SOURCES
 
 
 def test_prepare_and_replay_bundle_use_fixed_private_path(tmp_path, monkeypatch):

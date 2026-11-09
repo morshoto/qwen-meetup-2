@@ -104,7 +104,7 @@ def test_training_requires_losses_changed_tensors_and_reload_probe(tmp_path, mon
     result = train.execute_training(**kwargs)
     assert result['status'] == 'trained' and len(result['losses']) == 20
     assert result['changed_lora_tensors'] == 1 and result['max_abs_logit_delta'] == .25
-    assert len(calls) == 2
+    assert len(calls) == 2 and 'src.cli.qwen38_weight_probe' in calls[1]
     assert json.loads((kwargs['run_dir'] / 'training/training-result-v1.json').read_text()) == result
 
 
