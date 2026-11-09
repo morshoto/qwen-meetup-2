@@ -37,3 +37,11 @@ def test_supervisor_fails_closed_on_resource_probe_failure(tmp_path):
                             timeout_seconds=5, probe=lambda: (None, None), poll_seconds=.02)
     assert result['status'] == 'error' and result['reason'] == 'memory_probe_failed'
     assert result['process_group_gone'] is True
+
+
+def test_supervisor_rejects_fast_oversized_worker_output(tmp_path):
+    result = run_supervised([sys.executable, '-c', 'import sys; sys.stdout.write("x" * 100000)'], {},
+                            tmp_path / 'output', timeout_seconds=5, probe=good_probe,
+                            poll_seconds=.1, max_output_bytes=1024)
+    assert result['status'] == 'error' and result['reason'] == 'output_limit'
+    assert result['process_group_gone'] is True
