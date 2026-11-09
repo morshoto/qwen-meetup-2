@@ -8,7 +8,7 @@ from src.cli.qwen38_canary import MODEL_REVISION, PACKAGES
 
 
 def fixture(tmp_path):
-    root = tmp_path / 'canary'; root.mkdir(); (root / 'adapter').mkdir()
+    root = tmp_path / 'canary'; root.mkdir(); (root / 'adapter').mkdir(); (root / 'data').mkdir()
     model = tmp_path / MODEL_REVISION; model.mkdir(); (model / 'model.safetensors').write_bytes(b'base')
     base = {'model.safetensors': hashlib.sha256(b'base').hexdigest()}
     adapter = b'adapter'; (root / 'adapter/adapters.safetensors').write_bytes(adapter)
@@ -27,9 +27,10 @@ def fixture(tmp_path):
     for name, value in [('registration.json', reg), ('execution.json', run), ('probe-execution.json', probe_run),
                         ('tensor-probe.json', probe)]: (root / name).write_text(json.dumps(value))
     (root / 'train.log').write_text('Iter 1: Train loss 0.25, Learning Rate')
-    (root / 'probe.log').write_text('probe complete')
+    (root / 'probe.log').write_text(json.dumps(probe))
+    (root / 'data/train.jsonl').write_text(json.dumps({'messages': [{'role': 'user', 'content': 'Return one.'}, {'role': 'assistant', 'content': '1'}]}) + '\n')
     names = ['registration.json', 'execution.json', 'probe-execution.json', 'tensor-probe.json', 'train.log',
-             'probe.log', 'initial.safetensors', 'adapter/adapters.safetensors', 'adapter/adapter_config.json']
+             'probe.log', 'initial.safetensors', 'adapter/adapters.safetensors', 'adapter/adapter_config.json', 'data/train.jsonl']
     pins = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names}
     return root, model, pins, base
 
