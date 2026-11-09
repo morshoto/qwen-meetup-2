@@ -93,6 +93,10 @@ def run_supervised(command, request, directory, *, timeout_seconds, probe=system
                 while _group_exists(child.pid) and time.monotonic() < deadline:
                     time.sleep(.02)
                 if _group_exists(child.pid): _signal_group(child.pid, signal.SIGKILL)
+    if (directory / 'stdout.log').stat().st_size + (directory / 'stderr.log').stat().st_size > max_output_bytes:
+        reason = reason or 'output_limit'
+    if child is not None and time.monotonic() - start > timeout_seconds and reason is None:
+        reason = 'timeout'
     gone = child is None or not _group_exists(child.pid)
     result = {'status': 'complete' if child is not None and child.returncode == 0 and reason is None and gone else 'error',
               'reason': reason if reason is not None else (None if child and child.returncode == 0 and gone else 'worker_failed'),
