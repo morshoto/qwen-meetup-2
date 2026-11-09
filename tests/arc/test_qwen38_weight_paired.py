@@ -58,3 +58,12 @@ def test_paired_report_retains_task_level_changes_without_answers():
                            prompt_sha256='b' * 64, adapter_sha256=adapter)
     assert report['paired_tasks']['gained'] == ['b'] and report['paired_tasks']['lost'] == ['a']
     assert '[[[1]]]' not in repr(report)
+
+
+def test_missing_gen1_never_appears_as_a_zero_accuracy():
+    verifier = Verifier({'a': [[[1]]]}); base = [row('a', [[[1]], [[0]]])]
+    report = paired_report(['a'], base, [], verifier, manifest_sha256='a' * 64,
+                           prompt_sha256='b' * 64, adapter_sha256='c' * 64)
+    assert report['gen1']['complete_tasks'] == 0 and report['gen1']['incomplete_tasks'] == 1
+    assert report['gen1']['first_correct'] is None and report['gen1']['either_correct'] is None
+    assert report['paired']['complete'] == 0
