@@ -18,7 +18,7 @@ def trainer_token_count(messages, dataset_factory):
     mask = np.asarray(item['completion_mask'])
     if (ids.ndim != 2 or ids.shape[0] != 1 or ids.shape[1] < 2 or attention.shape != ids.shape or
         mask.shape != ids.shape or not np.all(attention == 1) or not np.all((mask == 0) | (mask == 1)) or
-        mask[0, 0] != 0 or not np.any(mask[0, 1:] == 1) or np.any(np.diff(mask[0]) < 0)):
+        mask[0, 0] != 0 or not np.any(mask[0, 1:] == 1) or np.any(np.diff(mask[0].astype(np.int64)) < 0)):
         raise ValueError('unsafe trainer completion mask')
     return int(ids.shape[1])
 
