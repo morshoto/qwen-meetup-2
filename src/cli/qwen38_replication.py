@@ -119,6 +119,18 @@ def _termination(root, descriptor, rows, status, elapsed):
                                       'journal_sha256': digest(rows), 'wall_seconds': elapsed})
 
 
+def _replay_rows(descriptor, root, rows, tasks, model_path, adapter_path):
+    workers = root / 'workers'
+    _replay_artifacts(rows, workers, descriptor['max_tokens'], descriptor['supervision'])
+    for index, row in enumerate(rows):
+        if row['status'] == 'started': continue
+        request = create_request(row['task_id'], tasks[row['task_id']], candidate_index=row['candidate_index'], seed=row['seed'])
+        if (row.get('manifest_sha256') != descriptor['sha256'] or row.get('model') != descriptor['model'] or
+            row.get('worker_command') != _worker_command(descriptor, root, model_path, adapter_path, index, row['arm']) or
+            any(row.get(k) != v for k, v in request.items() if k not in ('content', 'test_count'))):
+            raise ValueError('replication attempt identity changed')
+
+
 def run_replication_step(*, root, rebuild, challenges, model_path, adapter_path, repo):
     """Run one supervised attempt after replay; never pass answer data to a worker."""
     root = Path(root).resolve()
@@ -133,14 +145,7 @@ def run_replication_step(*, root, rebuild, challenges, model_path, adapter_path,
     with AttemptJournal(root / 'journal') as journal:
         elapsed = _run_start(root, descriptor['sha256'])
         rows = journal.read()
-        _replay_artifacts(rows, workers, descriptor['max_tokens'], descriptor['supervision'])
-        for index, row in enumerate(rows):
-            if row['status'] == 'started': continue
-            request = create_request(row['task_id'], tasks[row['task_id']], candidate_index=row['candidate_index'], seed=row['seed'])
-            if (row.get('manifest_sha256') != descriptor['sha256'] or row.get('model') != descriptor['model'] or
-                row.get('worker_command') != _worker_command(descriptor, root, model_path, adapter_path, index, row['arm']) or
-                any(row.get(k) != v for k, v in request.items() if k not in ('content', 'test_count'))):
-                raise ValueError('replication attempt identity changed')
+        _replay_rows(descriptor, root, rows, tasks, model_path, adapter_path)
         action = next_replication_action(descriptor, rows)
         existing = root / 'termination.json'
         if existing.exists():
@@ -197,3 +202,36 @@ def run_replication_step(*, root, rebuild, challenges, model_path, adapter_path,
         journal.finish(len(rows), outcome)
         return {'status': 'attempt_recorded', 'arm': action['arm'], 'task_id': action['task_id'],
                 'candidate_index': action['candidate_index'], 'attempt_status': outcome['status']}
+
+
+def report_replication(*, root, rebuild, challenges, model_path, adapter_path, repo, solutions_path):
+    """Replay terminal evidence before opening permitted solutions for offline scoring."""
+    from src.arc.data import Verifier
+    from src.arc.qwen38_replication_report import score_replication
+    from src.arc.qwen38_replication_rows import assemble_replication_rows
+
+    root = Path(root).resolve()
+    descriptor = verify_replication(root, rebuild)
+    if hashlib.sha256(challenges).hexdigest() != descriptor['challenge_sha256']:
+        raise ValueError('replication challenges changed')
+    if not (root / 'journal').is_dir() or not (root / 'termination.json').is_file():
+        raise ValueError('replication has not terminated')
+    tasks = json.loads(challenges)
+    with AttemptJournal(root / 'journal') as journal:
+        rows = journal.read()
+        _replay_rows(descriptor, root, rows, tasks, model_path, adapter_path)
+        saved = json.loads((root / 'termination.json').read_bytes())
+        termination = _termination(root, descriptor, rows, saved.get('status'), 0)
+        assembly = assemble_replication_rows(descriptor, tasks, rows)
+        if termination['status'] != assembly['schedule_status']:
+            raise ValueError('termination differs from replayed schedule')
+        raw = Path(solutions_path).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != descriptor['solution_sha256']:
+            raise ValueError('offline solution source changed')
+        scored = score_replication(descriptor, assembly['base'], assembly['adapter'], Verifier(json.loads(raw)),
+                                   journal=rows, termination=termination)
+        value = {k: v for k, v in scored.items() if k != 'sha256'}
+        value.update({'registration_sha256': descriptor['sha256'], 'journal_sha256': digest(rows),
+                      'audit_sha256': descriptor.get('audit_sha256'), 'errors': assembly['errors'],
+                      'wall_seconds': termination['wall_seconds']})
+        return freeze_registration(root / ('report-' + digest(value) + '.json'), value)
