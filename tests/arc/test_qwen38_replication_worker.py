@@ -26,6 +26,7 @@ def fixture():
 def test_worker_matches_both_arms_and_passes_no_answers(monkeypatch):
     import src.cli.qwen38_replication_worker as worker
     d, payload = fixture(); calls = []
+    monkeypatch.setattr(worker, 'ADAPTER_SHA256', 'a' * 64)
     def base(value, path): calls.append(('base', value, path)); return {'raw': 'base'}
     def adapter(value, path, adapter_path, identity):
         calls.append(('adapter', value, path, adapter_path, identity)); return {'raw': 'adapter'}
@@ -41,6 +42,7 @@ def test_worker_matches_both_arms_and_passes_no_answers(monkeypatch):
 def test_worker_rejects_drift_before_loading_model(monkeypatch, change):
     import src.cli.qwen38_replication_worker as worker
     d, payload = fixture(); arm = 'base'; calls = []
+    monkeypatch.setattr(worker, 'ADAPTER_SHA256', 'a' * 64)
     monkeypatch.setattr(worker, 'run_request', lambda *a: calls.append(a))
     if change == 'pending': d['status'] = 'answer_audit_pending'
     elif change == 'arm': arm = 'other'
