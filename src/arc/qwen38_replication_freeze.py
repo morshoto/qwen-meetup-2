@@ -60,6 +60,31 @@ def verify_inventory(root, expected):
     return actual
 
 
+def verify_pinned_files(root, expected):
+    """Verify named regular files under a root without following source links."""
+    root = Path(root)
+    if root.is_symlink() or not root.is_dir() or not isinstance(expected, dict) or not expected:
+        raise ValueError('invalid pinned file inventory')
+    for name, value in expected.items():
+        path = Path(name)
+        if path.is_absolute() or not path.parts or any(part in ('.', '..') for part in path.parts):
+            raise ValueError('unsafe pinned file path')
+        cursor = root
+        for part in path.parts:
+            cursor = cursor / part
+            if cursor.is_symlink():
+                raise ValueError('linked pinned source')
+        if not cursor.is_file():
+            raise ValueError('pinned source missing')
+        actual = hashlib.sha256()
+        with cursor.open('rb') as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b''):
+                actual.update(block)
+        if actual.hexdigest() != value:
+            raise ValueError('pinned source changed')
+    return dict(expected)
+
+
 def freeze_snapshot(root, output, pinned):
     """Write an exclusive private inventory only after the caller's pins match."""
     root = Path(root)
