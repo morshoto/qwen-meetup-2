@@ -11,7 +11,7 @@ REPORT_SHA256 = '023ac3d4afa8982d43a24e2b328f4471e127a7c2f9a24109d582d9e89d193b7
 
 
 def verify_frozen_outcome(adapter_bytes: bytes, report_bytes: bytes) -> dict:
-    """Check the immutable adapter and signed-content report, without changing either."""
+    """Check the immutable adapter and content-digested report, without changing either."""
     try:
         report = json.loads(report_bytes)
         valid = (isinstance(report, dict) and
