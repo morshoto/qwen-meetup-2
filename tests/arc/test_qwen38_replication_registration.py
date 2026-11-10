@@ -70,3 +70,11 @@ def test_registration_binds_exclusion_and_official_evidence(tmp_path, monkeypatc
 def test_source_inventory_includes_offline_report():
     import src.arc.qwen38_replication_registration as registration
     assert 'src/arc/qwen38_replication_report.py' in registration.REPLICATION_SOURCES
+
+
+def test_registration_contains_pinned_visible_task_fingerprints(tmp_path, monkeypatch):
+    from src.arc.qwen38_weight_allocation import fingerprint
+    args = fixture(tmp_path, monkeypatch)
+    result = build_replication_registration(*args, additional_exclusions={}, official={})
+    tasks = json.loads(args[4])
+    assert result['task_fingerprints'] == {key: fingerprint(tasks[key]) for key in ('0', '1')}
