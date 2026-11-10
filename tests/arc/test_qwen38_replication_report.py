@@ -68,3 +68,16 @@ def test_report_verifies_terminal_journal_and_registration():
     assert score_replication(d, base, adapter, verifier, journal=journal, termination=termination)['status'] == 'complete'
     termination['journal_sha256'] = '0' * 64
     with pytest.raises(ValueError): score_replication(d, base, adapter, verifier, journal=journal, termination=termination)
+
+
+def test_report_rejects_rows_not_bound_to_terminal_journal():
+    d, verifier = setup()
+    base = [row(d, task, 'base', [[[1]], [[0]]]) for task in d['task_ids']]
+    adapter = [row(d, task, 'adapter', [[[1]], [[0]]]) for task in d['task_ids']]
+    journal = [{'arm': arm, 'task_id': task, 'candidate_index': i, 'status': 'complete',
+                'elapsed_seconds': 1.0, 'raw_sha256': '0' * 64}
+               for arm in ('base', 'adapter') for task in d['task_ids'] for i in (0, 1)]
+    termination = {'status': 'complete', 'registration_sha256': d['sha256'], 'journal_sha256': digest(journal)}
+    termination['sha256'] = digest(termination)
+    with pytest.raises(ValueError):
+        score_replication(d, base, adapter, verifier, journal=journal, termination=termination)
