@@ -56,3 +56,12 @@ def test_registration_rejects_evidence_drift_or_visible_overlap(tmp_path, monkey
     else: exclusions = {'new_exposure': ['0']}
     with pytest.raises(ValueError):
         build_replication_registration(*args, additional_exclusions=exclusions, official={})
+
+
+def test_registration_binds_exclusion_and_official_evidence(tmp_path, monkeypatch):
+    args = fixture(tmp_path, monkeypatch)
+    first = build_replication_registration(*args, additional_exclusions={}, official={})
+    second = build_replication_registration(*args, additional_exclusions={'repeat': ['2']}, official={})
+    assert first['exclusions_sha256'] != second['exclusions_sha256']
+    assert first['official_challenges_sha256'] == digest({})
+    assert first['exclusions_sha256'] == digest({'prior': ['2']})
