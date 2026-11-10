@@ -44,7 +44,8 @@ def audit_reserved(tasks, selected, exclusions, lineage, answer_fingerprints, of
         if connected({item}) & set(selected[i + 1:]):
             raise ValueError('reserved tasks have shared lineage')
     # Require fingerprints for all transitively blocked tasks, too.
-    if not blocked <= set(answer_fingerprints):
+    if (not blocked <= set(answer_fingerprints) or
+        any(not isinstance(answer_fingerprints[k], str) or not answer_fingerprints[k] for k in blocked)):
         raise ValueError('missing blocked answer fingerprints')
     protected_answers = {answer_fingerprints[k] for k in blocked}
     selected_answers = [answer_fingerprints[k] for k in selected]
