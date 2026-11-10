@@ -79,3 +79,12 @@ def test_snapshot_requires_pinned_files_and_is_write_once(tmp_path):
     (root / 'pinned').write_bytes(b'changed')
     with pytest.raises(ValueError): freeze_snapshot(root, tmp_path / 'bad.json', expected)
     assert not (tmp_path / 'bad.json').exists()
+
+
+def test_snapshot_rejects_symlinked_source_directory(tmp_path):
+    from src.arc.qwen38_replication_freeze import freeze_snapshot
+    root = tmp_path / 'source'; root.mkdir()
+    (root / 'pinned').write_bytes(b'original')
+    link = tmp_path / 'link'; link.symlink_to(root, target_is_directory=True)
+    with pytest.raises(ValueError):
+        freeze_snapshot(link, tmp_path / 'out.json', {'pinned': hashlib.sha256(b'original').hexdigest()})
