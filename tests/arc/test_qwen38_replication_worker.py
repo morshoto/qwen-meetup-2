@@ -54,3 +54,25 @@ def test_worker_rejects_drift_before_loading_model(monkeypatch, change):
     if change in ('pending', 'model'): d['sha256'] = digest({k:v for k,v in d.items() if k != 'sha256'})
     with pytest.raises(ValueError): run_replication_request(d, arm, payload, 'model', 'adapter')
     assert not calls
+
+
+def test_worker_cli_requires_registered_digest_and_writes_once(tmp_path, monkeypatch):
+    import io
+    from types import SimpleNamespace
+    import src.cli.qwen38_replication_worker as worker
+    descriptor, payload = fixture()
+    registration = tmp_path / 'registration.json'; registration.write_text(json.dumps(descriptor))
+    output = tmp_path / 'response.json'
+    calls = []
+    monkeypatch.setattr(worker, 'run_replication_request', lambda *args: calls.append(args) or {'raw': 'result'})
+    monkeypatch.setattr(worker.sys, 'stdin', SimpleNamespace(buffer=io.BytesIO(json.dumps(payload).encode())))
+    args = ['--registration', str(registration), '--registration-sha256', descriptor['sha256'],
+            '--arm', 'base', '--model-path', 'model', '--adapter-path', 'adapter', '--output', str(output)]
+    worker.main(args)
+    assert json.loads(output.read_text()) == {'raw': 'result'} and len(calls) == 1
+    monkeypatch.setattr(worker.sys, 'stdin', SimpleNamespace(buffer=io.BytesIO(json.dumps(payload).encode())))
+    with pytest.raises(FileExistsError): worker.main(args)
+    output.unlink()
+    args[3] = '0' * 64
+    with pytest.raises(ValueError): worker.main(args)
+    assert not output.exists()
