@@ -19,6 +19,7 @@ def fixture(tmp_path, monkeypatch):
     descriptor = {'status': 'evaluation_ready', 'inference_authorized': True, 'run_dir': str(root.resolve()),
                   'task_ids': ['a'], 'task_fingerprints': {'a': fingerprint(task)},
                   'challenge_sha256': hashlib.sha256(challenges).hexdigest(),
+                  'solution_sha256': hashlib.sha256(json.dumps({'a': [[[4]]]}).encode()).hexdigest(),
                   'prompt_sha256': hashlib.sha256(PROMPT.encode()).hexdigest(), 'model': {'id': 'model'},
                   'adapter_sha256': 'a' * 64, 'adapter_config_sha256': 'b' * 64,
                   'candidate_count': 2, 'max_tokens': 4096, 'reserved_completion_tokens': 4 * 4096,
@@ -77,3 +78,22 @@ def test_supervisor_rejects_early_forged_time_termination(tmp_path, monkeypatch)
                         'registration_sha256': descriptor['sha256'], 'journal_sha256': digest([]), 'wall_seconds': 0})
     with pytest.raises(ValueError): run_replication_step(**args)
     assert not calls
+
+
+def test_offline_report_requires_termination_and_replays_worker_evidence(tmp_path, monkeypatch):
+    import src.cli.qwen38_replication as controller
+    args, descriptor, calls = fixture(tmp_path, monkeypatch)
+    answers = tmp_path / 'answers.json'
+    with pytest.raises(ValueError): controller.report_replication(**args, solutions_path=answers)
+    assert not calls
+    for _ in range(4): run_replication_step(**args)
+    run_replication_step(**args)
+    answers.write_text(json.dumps({'a': [[[4]]]}))
+    # The source hash is fixed before the run; the fixture sets it during registration.
+    report = controller.report_replication(**args, solutions_path=answers)
+    assert report['status'] == 'complete'
+    assert report['paired']['paired']['both_correct'] == 1
+    assert report['paired']['baseline']['duplicate_raw_pairs'] == 1
+    assert '[[[4]]]' not in json.dumps(report)
+    (args['root'] / 'workers/000000/response.json').write_text('{}')
+    with pytest.raises(ValueError): controller.report_replication(**args, solutions_path=answers)
