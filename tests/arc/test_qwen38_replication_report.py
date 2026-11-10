@@ -9,7 +9,9 @@ from src.arc.qwen38_replication_report import score_replication
 
 def setup():
     descriptor = {'status': 'evaluation_ready', 'task_ids': ['a', 'b', 'c'],
-                  'prompt_sha256': 'b' * 64, 'adapter_sha256': 'c' * 64}
+                  'prompt_sha256': 'b' * 64, 'adapter_sha256': 'c' * 64,
+                  'candidate_count': 2, 'max_tokens': 4096,
+                  'reserved_completion_tokens': 12 * 4096, 'wall_seconds_limit': 1000}
     descriptor['sha256'] = digest(descriptor)
     return descriptor, Verifier({k: [[[1]]] for k in descriptor['task_ids']})
 
@@ -53,3 +55,16 @@ def test_report_requires_terminal_receipt_for_complete_status():
     report = score_replication(d, base, adapter, verifier)
     assert report['paired']['paired']['complete'] == 3
     assert report['status'] == 'incomplete'
+
+
+def test_report_verifies_terminal_journal_and_registration():
+    d, verifier = setup()
+    base = [row(d, task, 'base', [[[1]], [[0]]]) for task in d['task_ids']]
+    adapter = [row(d, task, 'adapter', [[[1]], [[0]]]) for task in d['task_ids']]
+    journal = [{'arm': arm, 'task_id': task, 'candidate_index': i, 'status': 'complete',
+                'elapsed_seconds': 1.0} for arm in ('base', 'adapter') for task in d['task_ids'] for i in (0, 1)]
+    termination = {'status': 'complete', 'registration_sha256': d['sha256'], 'journal_sha256': digest(journal)}
+    termination['sha256'] = digest(termination)
+    assert score_replication(d, base, adapter, verifier, journal=journal, termination=termination)['status'] == 'complete'
+    termination['journal_sha256'] = '0' * 64
+    with pytest.raises(ValueError): score_replication(d, base, adapter, verifier, journal=journal, termination=termination)
