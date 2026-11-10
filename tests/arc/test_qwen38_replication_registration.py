@@ -125,3 +125,16 @@ def test_ready_registration_requires_exact_bound_exposure_receipt(tmp_path, monk
     assert ready['sha256'] == digest({k: v for k, v in ready.items() if k != 'sha256'})
     receipt['task_ids'] = ['other']
     with pytest.raises(ValueError): r.build_ready_registration(pending, receipt)
+
+
+def test_ready_registration_rejects_mismatched_official_source(tmp_path, monkeypatch):
+    import src.arc.qwen38_replication_registration as r
+    args = fixture(tmp_path, monkeypatch)
+    pending = build_replication_registration(*args, additional_exclusions={}, official={})
+    receipt = signed({'status': 'bounded_disjoint', 'designation': 'exploratory', 'unresolved_exposure': True,
+                      'task_ids': pending['task_ids'], 'proposal_sha256': pending['proposal_sha256'],
+                      'snapshot_sha256': pending['source_inventory_sha256'], 'challenge_sha256': pending['challenge_sha256'],
+                      'solutions_sha256': pending['solution_sha256'], 'exclusions_sha256': pending['exclusions_sha256'],
+                      'official_sha256': 'f' * 64})
+    monkeypatch.setattr(r, 'AUDIT_SHA256', receipt['sha256'])
+    with pytest.raises(ValueError): r.build_ready_registration(pending, receipt)
