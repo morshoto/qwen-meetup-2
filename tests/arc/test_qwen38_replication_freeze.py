@@ -88,3 +88,17 @@ def test_snapshot_rejects_symlinked_source_directory(tmp_path):
     link = tmp_path / 'link'; link.symlink_to(root, target_is_directory=True)
     with pytest.raises(ValueError):
         freeze_snapshot(link, tmp_path / 'out.json', {'pinned': hashlib.sha256(b'original').hexdigest()})
+
+
+def test_pinned_file_verification_rejects_drift_traversal_and_symlinks(tmp_path):
+    from src.arc.qwen38_replication_freeze import verify_pinned_files
+    root = tmp_path / 'root'; root.mkdir()
+    (root / 'model').mkdir()
+    (root / 'model/tokenizer').write_bytes(b'tokenizer')
+    digest_value = hashlib.sha256(b'tokenizer').hexdigest()
+    assert verify_pinned_files(root, {'model/tokenizer': digest_value}) == {'model/tokenizer': digest_value}
+    with pytest.raises(ValueError): verify_pinned_files(root, {'../outside': digest_value})
+    (root / 'alias').symlink_to(root / 'model', target_is_directory=True)
+    with pytest.raises(ValueError): verify_pinned_files(root, {'alias/tokenizer': digest_value})
+    (root / 'model/tokenizer').write_bytes(b'drift')
+    with pytest.raises(ValueError): verify_pinned_files(root, {'model/tokenizer': digest_value})
