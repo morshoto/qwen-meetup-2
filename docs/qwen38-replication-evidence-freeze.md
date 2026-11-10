@@ -1,0 +1,7 @@
+# Qwen3.8 replication evidence freeze: initial inventory
+
+The #16 code revision being replicated is `15ba1ad007ee907c1a7923c8371af0e696f09b7a` (PR #17). The model revision is `10c35caafbb80f7dc6a7a432cdd11af10a6d4818`; the adapter SHA-256 is `b363fd2bd15114577d96141b2e03500e7d3d241a4b4a64b6176f25dbb46ac9f6`. The completed exploratory report has content digest `023ac3d4afa8982d43a24e2b328f4471e127a7c2f9a24109d582d9e89d193b70`.
+
+A private, exclusive inventory of the original #16 run tree was created under `artifacts/qwen38-replication-v1/source-inventory.json`. It contains 3,087 file hashes, including the collection, training and recovered evaluation journals and worker evidence; its content digest is `ea309257ef1e10e081a68ec6878b22b90ef408806c09f0279989d6095483d16e`. Before inventorying, the saved SFT manifest, training result, adapter, adapter configuration, evaluation descriptor, termination receipt and report were checked against their pinned file hashes. The inventory records source bytes without modifying them and contains no response or answer grids.
+
+This is an **initial inventory**, not yet a complete independent replay of all sources, model weights, exposure evidence or a new-task registration. It does not establish that the reserved 25 parents are untouched, and it does not authorize inference. The complete protocol, selected IDs and budget must be frozen before new predictions or inspection of target answers. Unknown semantic and pretraining exposure remain limitations.
