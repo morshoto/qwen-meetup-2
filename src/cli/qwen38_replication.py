@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import sys
 from importlib import metadata
 from pathlib import Path
@@ -108,7 +109,10 @@ def _termination(root, descriptor, rows, status, elapsed):
         saved = json.loads(path.read_bytes())
         if (saved.get('sha256') != digest({k: v for k, v in saved.items() if k != 'sha256'}) or
             saved.get('registration_sha256') != descriptor['sha256'] or saved.get('journal_sha256') != digest(rows) or
-            saved.get('status') != status):
+            saved.get('status') != status or isinstance(saved.get('wall_seconds'), bool) or
+            not isinstance(saved.get('wall_seconds'), (int, float)) or not math.isfinite(saved['wall_seconds']) or
+            saved['wall_seconds'] < 0 or
+            (status == 'time_budget_exhausted' and saved['wall_seconds'] < descriptor['wall_seconds_limit'])):
             raise ValueError('replication termination evidence changed')
         return saved
     return freeze_registration(path, {'status': status, 'registration_sha256': descriptor['sha256'],
