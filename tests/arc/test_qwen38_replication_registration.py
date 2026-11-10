@@ -103,3 +103,8 @@ def test_registration_pins_solution_source_and_fingerprint_auditor(tmp_path, mon
     assert result['solution_sha256'] == 'e' * 64
     monkeypatch.undo()
     assert 'src/arc/qwen38_replication_fingerprints.py' in registration.REPLICATION_SOURCES
+
+
+def test_source_inventory_includes_replayable_exposure_audit():
+    import src.arc.qwen38_replication_registration as registration
+    assert 'src/arc/qwen38_replication_audit.py' in registration.REPLICATION_SOURCES
