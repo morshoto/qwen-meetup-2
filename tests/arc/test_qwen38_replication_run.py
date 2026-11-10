@@ -68,3 +68,12 @@ def test_supervisor_rejects_source_drift_and_retains_unresolved_start(tmp_path, 
                        'manifest_sha256': descriptor['sha256'], 'arm': 'base'})
     assert run_replication_step(**args)['status'] == 'requires_reconciliation'
     assert not calls
+
+
+def test_supervisor_rejects_early_forged_time_termination(tmp_path, monkeypatch):
+    from src.arc.qwen38_weight_allocation import freeze_registration
+    args, descriptor, calls = fixture(tmp_path, monkeypatch)
+    freeze_registration(args['root'] / 'termination.json', {'status': 'time_budget_exhausted',
+                        'registration_sha256': descriptor['sha256'], 'journal_sha256': digest([]), 'wall_seconds': 0})
+    with pytest.raises(ValueError): run_replication_step(**args)
+    assert not calls
