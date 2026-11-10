@@ -223,7 +223,9 @@ def report_replication(*, root, rebuild, challenges, model_path, adapter_path, r
         saved = json.loads((root / 'termination.json').read_bytes())
         termination = _termination(root, descriptor, rows, saved.get('status'), 0)
         assembly = assemble_replication_rows(descriptor, tasks, rows)
-        if termination['status'] != assembly['schedule_status']:
+        if (termination['status'] != assembly['schedule_status'] and not
+            (termination['status'] == 'time_budget_exhausted' and assembly['schedule_status'] == 'ready' and
+             termination['wall_seconds'] >= descriptor['wall_seconds_limit'])):
             raise ValueError('termination differs from replayed schedule')
         raw = Path(solutions_path).read_bytes()
         if hashlib.sha256(raw).hexdigest() != descriptor['solution_sha256']:

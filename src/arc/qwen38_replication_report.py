@@ -1,5 +1,6 @@
 """Offline reporting for a separately registered exploratory replication."""
 import hashlib
+import math
 
 from src.arc.qwen38_replication_statistics import paired_sign_test
 from src.arc.qwen38_replication_schedule import next_replication_action
@@ -22,10 +23,15 @@ def score_replication(descriptor, baseline_rows, adapter_rows, verifier, *, jour
         raise ValueError('journal and termination must be supplied together')
     if termination is not None:
         schedule = next_replication_action(descriptor, journal)
+        wall = termination.get('wall_seconds')
+        wall_stop = (termination.get('status') == 'time_budget_exhausted' and schedule['status'] == 'ready' and
+                     not isinstance(wall, bool) and isinstance(wall, (int, float)) and math.isfinite(wall) and
+                     wall >= descriptor['wall_seconds_limit'])
         if (termination.get('sha256') != digest({k: v for k, v in termination.items() if k != 'sha256'}) or
             termination.get('registration_sha256') != descriptor['sha256'] or
             termination.get('journal_sha256') != digest(journal) or
-            termination.get('status') != schedule['status'] or schedule['status'] in ('ready', 'requires_reconciliation')):
+            (termination.get('status') != schedule['status'] and not wall_stop) or
+            (schedule['status'] in ('ready', 'requires_reconciliation') and not wall_stop)):
             raise ValueError('replication termination evidence mismatch')
         recorded = {(r['arm'], r['task_id'], r['candidate_index']): r for r in journal}
         for arm, rows in (('base', baseline_rows), ('adapter', adapter_rows)):
