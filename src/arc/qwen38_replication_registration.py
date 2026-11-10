@@ -23,6 +23,7 @@ REPLICATION_SOURCES = tuple(dict.fromkeys(EVALUATION_SOURCES + (
     'src/arc/qwen38_replication_fingerprints.py',
     'src/arc/qwen38_replication_registration.py', 'src/arc/qwen38_replication_schedule.py',
     'src/arc/qwen38_replication_statistics.py', 'src/arc/qwen38_replication_report.py',
+    'src/arc/qwen38_replication_rows.py',
     'src/cli/qwen38_weight_worker.py', 'src/cli/qwen38_replication_worker.py', 'src/cli/qwen38_replication.py',
 )))
 
