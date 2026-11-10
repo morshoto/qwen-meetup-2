@@ -58,3 +58,28 @@ def verify_inventory(root, expected):
     if not expected or actual != expected:
         raise ValueError('evidence inventory changed')
     return actual
+
+
+def freeze_snapshot(root, output, pinned):
+    """Write an exclusive private inventory only after the caller's pins match."""
+    root = Path(root).resolve()
+    output = Path(output)
+    if output.resolve().is_relative_to(root) or not pinned:
+        raise ValueError('invalid snapshot destination or pins')
+    files = inventory_tree(root)
+    if any(files.get(name) != value for name, value in pinned.items()):
+        raise ValueError('pinned source evidence changed')
+    snapshot = {'status': 'frozen_inventory', 'source_root': str(root), 'files': files}
+    snapshot['sha256'] = digest(snapshot)
+    raw = (json.dumps(snapshot, sort_keys=True, separators=(',', ':')) + '\n').encode()
+    try:
+        fd = os.open(output, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError:
+        if output.is_symlink() or not output.is_file() or output.read_bytes() != raw:
+            raise ValueError('snapshot changed')
+    else:
+        with os.fdopen(fd, 'wb') as stream:
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+    return snapshot
