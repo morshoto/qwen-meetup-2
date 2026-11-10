@@ -38,3 +38,11 @@ def test_audit_rejects_any_known_exposure_or_missing_evidence(change):
     elif change == 'missing_fingerprint': del answers['2']
     else: official['other'] = copy.deepcopy(tasks['0'])
     with pytest.raises(ValueError): audit_reserved(tasks, selected, excluded, lineage, answers, official)
+
+
+def test_transitively_blocked_parent_requires_valid_answer_fingerprint():
+    tasks, selected, excluded, lineage, answers = fixture()
+    tasks['4']['test'][0]['input'] = tasks['2']['test'][0]['input']
+    answers['4'] = ''
+    with pytest.raises(ValueError):
+        audit_reserved(tasks, selected, excluded, lineage, answers, {})
