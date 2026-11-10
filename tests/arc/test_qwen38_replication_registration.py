@@ -22,7 +22,7 @@ def fixture(tmp_path, monkeypatch):
                         'model': {'id': r.MODEL_ID, 'revision': r.MODEL_REVISION, 'quantization': '4-bit MLX',
                                   'files_sha256': {'weight': 'b' * 64}}})
     proposal = signed({'allocation': {'validation': selected}, 'known_lineage': {}, 'exclusions': {'prior': ['2']}})
-    evaluation = signed({'adapter_sha256': r.ADAPTER_SHA256, 'prompt_sha256': 'a' * 64,
+    evaluation = signed({'adapter_sha256': r.ADAPTER_SHA256, 'adapter_config_sha256': r.ADAPTER_CONFIG_SHA256, 'prompt_sha256': 'a' * 64,
                          'candidate_count': 2, 'temperature': .6, 'max_tokens': 4096,
                          'max_context': 18432, 'format_recovery': True})
     snapshot = signed({'status': 'frozen_inventory', 'files': {'result': 'c' * 64}})
@@ -86,6 +86,7 @@ def test_registration_pins_adapter_configuration_and_worker(tmp_path, monkeypatc
     args[2]['adapter_config_sha256'] = 'd' * 64
     args[2]['sha256'] = digest({k: v for k, v in args[2].items() if k != 'sha256'})
     monkeypatch.setattr(registration, 'EVALUATION_SHA256', args[2]['sha256'])
+    monkeypatch.setattr(registration, 'ADAPTER_CONFIG_SHA256', 'd' * 64)
     result = build_replication_registration(*args, additional_exclusions={}, official={})
     assert result['adapter_config_sha256'] == 'd' * 64
     monkeypatch.undo()

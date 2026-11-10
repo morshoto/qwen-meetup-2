@@ -15,11 +15,12 @@ EXECUTION_SHA256 = '08e4c2cabaca7f331c43a5bb12ddf5e1924ac68e573e3819e1e685044cf1
 PROPOSAL_SHA256 = '581d0250bf5aa1b9874094e12b16b151fdb9ea5dad8f9ef406279ab2b3f669de'
 EVALUATION_SHA256 = '70fec8e84c0bf03e4bcc524399cd7551405b0708eb4ee9fffa2d2b8a746f3277'
 SNAPSHOT_SHA256 = 'ea309257ef1e10e081a68ec6878b22b90ef408806c09f0279989d6095483d16e'
+ADAPTER_CONFIG_SHA256 = '8c58de57198438da131ccb7ad55db5a4a2dac90c74e32cc30fc763dfdd503ce0'
 REPLICATION_SOURCES = tuple(dict.fromkeys(EVALUATION_SOURCES + (
     'src/arc/qwen38_replication_allocation.py', 'src/arc/qwen38_replication_freeze.py',
     'src/arc/qwen38_replication_registration.py', 'src/arc/qwen38_replication_schedule.py',
     'src/arc/qwen38_replication_statistics.py', 'src/arc/qwen38_replication_report.py',
-    'src/cli/qwen38_weight_worker.py',
+    'src/cli/qwen38_weight_worker.py', 'src/cli/qwen38_replication_worker.py',
 )))
 
 
@@ -42,7 +43,8 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
     model = execution.get('model', {})
     if (model.get('id') != MODEL_ID or model.get('revision') != MODEL_REVISION or
         model.get('quantization') != '4-bit MLX' or not model.get('files_sha256') or
-        evaluation.get('adapter_sha256') != ADAPTER_SHA256 or evaluation.get('candidate_count') != 2 or
+        evaluation.get('adapter_sha256') != ADAPTER_SHA256 or evaluation.get('adapter_config_sha256') != ADAPTER_CONFIG_SHA256 or
+        evaluation.get('candidate_count') != 2 or
         evaluation.get('temperature') != .6 or evaluation.get('max_tokens') != 4096 or
         evaluation.get('max_context') != 18432 or evaluation.get('format_recovery') is not True):
         raise ValueError('replication model or evaluation settings mismatch')
@@ -61,7 +63,8 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
               'exclusions_sha256': digest(exclusions), 'official_challenges_sha256': digest(official),
               'execution_sha256': EXECUTION_SHA256, 'proposal_sha256': PROPOSAL_SHA256,
               'original_evaluation_sha256': EVALUATION_SHA256, 'source_inventory_sha256': SNAPSHOT_SHA256,
-              'model': model, 'adapter_sha256': ADAPTER_SHA256, 'prompt_sha256': evaluation['prompt_sha256'],
+              'model': model, 'adapter_sha256': ADAPTER_SHA256, 'adapter_config_sha256': ADAPTER_CONFIG_SHA256,
+              'prompt_sha256': evaluation['prompt_sha256'],
               'candidate_count': 2, 'temperature': .6, 'max_tokens': 4096, 'max_context': 18432,
               'format_recovery': True, 'seed_rule': '20261111 + candidate_index',
               'reserved_completion_tokens': len(selected) * 4 * 4096, 'wall_seconds_limit': 86400,
