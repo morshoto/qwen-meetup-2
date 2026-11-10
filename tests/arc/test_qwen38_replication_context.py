@@ -82,3 +82,27 @@ def test_rebuild_replays_audit_without_loading_target_answers(tmp_path, monkeypa
     result = controller.rebuild_registration(**paths)
     assert result['status'] == 'evaluation_ready'
     assert ('audit', solutions) in calls and 'runtime' in calls and 'outcome' in calls
+
+
+def test_cli_routes_prepare_run_and_report_without_reading_solutions(tmp_path, monkeypatch, capsys):
+    import src.cli.qwen38_replication as controller
+    names = ('repo', 'model-path', 'old-root', 'execution', 'proposal', 'history', 'snapshot', 'audit',
+             'challenges', 'official', 'solutions', 'run-dir', 'report', 'adapter-path')
+    args = []
+    for name in names:
+        path = tmp_path / name
+        if name == 'challenges': path.write_text('{}')
+        args += ['--' + name, str(path)]
+    calls = []
+    monkeypatch.setattr(controller, 'rebuild_registration', lambda **kwargs: {'ready': True})
+    monkeypatch.setattr(controller, 'freeze_replication', lambda root, rebuild: calls.append(('prepare', rebuild())) or {'status': 'ready'})
+    monkeypatch.setattr(controller, 'run_replication_step', lambda **kwargs: calls.append(('run', kwargs)) or {'status': 'complete'})
+    monkeypatch.setattr(controller, 'report_replication', lambda **kwargs: calls.append(('report', kwargs)) or {'status': 'complete'})
+    assert controller.main(['prepare'] + args) == 0
+    assert controller.main(['run', '--once'] + args) == 0
+    assert controller.main(['report'] + args) == 0
+    assert [c[0] for c in calls] == ['prepare', 'run', 'report']
+    assert calls[1][1]['challenges'] == b'{}'
+    assert 'solutions_path' not in calls[1][1]
+    assert calls[2][1]['solutions_path'] == tmp_path / 'solutions'
+    assert capsys.readouterr().out
