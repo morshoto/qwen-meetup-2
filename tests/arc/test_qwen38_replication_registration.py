@@ -140,3 +140,13 @@ def test_ready_registration_rejects_mismatched_official_source(tmp_path, monkeyp
                       'official_sha256': 'f' * 64})
     monkeypatch.setattr(r, 'AUDIT_SHA256', receipt['sha256'])
     with pytest.raises(ValueError): r.build_ready_registration(pending, receipt)
+
+
+def test_registration_binds_private_run_directory_and_supervision(tmp_path, monkeypatch):
+    args = fixture(tmp_path, monkeypatch)
+    result = build_replication_registration(*args, additional_exclusions={}, official={}, run_dir=tmp_path / 'run')
+    assert result['run_dir'] == str((tmp_path / 'run').resolve())
+    assert result['supervision'] == {'minimum_free_percent': 10, 'maximum_swap_bytes': 16 * 1024**3,
+                                     'max_output_bytes': 2 * 1024**2}
+    with pytest.raises(ValueError):
+        build_replication_registration(*args, additional_exclusions={}, official={}, run_dir=tmp_path)
