@@ -72,6 +72,7 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
               'exclusions_sha256': digest(exclusions), 'official_challenges_sha256': digest(official),
               'official_file_sha256': execution['input_hashes']['official_challenges_file'],
               'execution_sha256': EXECUTION_SHA256, 'proposal_sha256': PROPOSAL_SHA256,
+              'original_code_revision': '15ba1ad007ee907c1a7923c8371af0e696f09b7a',
               'original_evaluation_sha256': EVALUATION_SHA256, 'source_inventory_sha256': SNAPSHOT_SHA256,
               'model': model, 'adapter_sha256': ADAPTER_SHA256, 'adapter_config_sha256': ADAPTER_CONFIG_SHA256,
               'prompt_sha256': evaluation['prompt_sha256'],
@@ -81,7 +82,11 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
                   'maximum_swap_bytes': 16 * 1024**3, 'max_output_bytes': 2 * 1024**2},
               'reserved_completion_tokens': len(selected) * 4 * 4096, 'wall_seconds_limit': 86400,
               'per_attempt_seconds': 600, 'source_files_sha256': sources,
-              'decision_rule': 'paired gains and losses with exact two-sided sign test; no tuning',
+              'hypothesis': {'primary': 'either_candidate_paired_difference',
+                             'null': 'equal probabilities of paired gains and losses',
+                             'test': 'two_sided_exact_sign_test', 'alpha': .05,
+                             'incomplete_policy': 'report completed paired denominator; no missing-as-incorrect',
+                             'interpretation': 'exploratory; no tuning or claim of recursive improvement'},
               'limitations': ['Unknown semantic and pretraining exposure.', 'Previously examined 50 are exploratory.',
                               'Two recorded candidates are not assumed independent.']}
     result['sha256'] = digest(result)
