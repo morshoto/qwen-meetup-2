@@ -95,7 +95,7 @@ def test_cli_routes_prepare_run_and_report_without_reading_solutions(tmp_path, m
         args += ['--' + name, str(path)]
     calls = []
     monkeypatch.setattr(controller, 'rebuild_registration', lambda **kwargs: {'ready': True})
-    monkeypatch.setattr(controller, 'freeze_replication', lambda root, rebuild: calls.append(('prepare', rebuild())) or {'status': 'ready'})
+    monkeypatch.setattr(controller, 'freeze_replication', lambda root, rebuild: calls.append(('prepare', rebuild())) or {'status': 'ready', 'sha256': 'a' * 64})
     monkeypatch.setattr(controller, 'run_replication_step', lambda **kwargs: calls.append(('run', kwargs)) or {'status': 'complete'})
     monkeypatch.setattr(controller, 'report_replication', lambda **kwargs: calls.append(('report', kwargs)) or {'status': 'complete'})
     assert controller.main(['prepare'] + args) == 0

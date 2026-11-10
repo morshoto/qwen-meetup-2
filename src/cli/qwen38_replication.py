@@ -1,6 +1,7 @@
 """Guard a separately registered, supervised replication run."""
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import math
@@ -237,3 +238,35 @@ def report_replication(*, root, rebuild, challenges, model_path, adapter_path, r
                       'audit_sha256': descriptor.get('audit_sha256'), 'errors': assembly['errors'],
                       'wall_seconds': termination['wall_seconds']})
         return freeze_registration(root / ('report-' + digest(value) + '.json'), value)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('action', choices=('prepare', 'run', 'report'))
+    for flag in ('repo', 'model-path', 'old-root', 'execution', 'proposal', 'history', 'snapshot', 'audit',
+                 'challenges', 'official', 'solutions', 'run-dir', 'report', 'adapter-path'):
+        parser.add_argument('--' + flag, required=True)
+    parser.add_argument('--once', action='store_true')
+    args = parser.parse_args(argv)
+    paths = {name: Path(getattr(args, name)) for name in
+             ('repo', 'model_path', 'old_root', 'execution', 'proposal', 'history', 'snapshot', 'audit',
+              'challenges', 'official', 'solutions', 'run_dir', 'report')}
+    rebuild = lambda: rebuild_registration(**paths)
+    if args.action == 'prepare':
+        result = freeze_replication(paths['run_dir'], rebuild)
+        print(json.dumps({'status': result['status'], 'sha256': result['sha256']}), flush=True)
+        return 0
+    inputs = {'root': paths['run_dir'], 'rebuild': rebuild, 'challenges': paths['challenges'].read_bytes(),
+              'model_path': paths['model_path'], 'adapter_path': Path(args.adapter_path), 'repo': paths['repo']}
+    if args.action == 'report':
+        print(json.dumps(report_replication(**inputs, solutions_path=paths['solutions'])), flush=True)
+        return 0
+    while True:
+        result = run_replication_step(**inputs)
+        print(json.dumps(result), flush=True)
+        if args.once or result['status'] != 'attempt_recorded':
+            return 0 if result['status'] in ('complete', 'attempt_recorded') else 2
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
