@@ -1,11 +1,34 @@
 """Guard a separately registered, supervised replication run."""
 from __future__ import annotations
 
+import hashlib
 import json
+from importlib import metadata
 from pathlib import Path
 
 from src.arc.qwen38_rsi_comparison import digest
+from src.arc.qwen38_replication_freeze import verify_pinned_files
 from src.arc.qwen38_weight_allocation import freeze_registration
+
+
+def verify_runtime(repo, model_path, execution):
+    """Recheck pinned code, installed packages and model file contents."""
+    verify_pinned_files(repo, execution['source_files_sha256'])
+    if {name: metadata.version(name) for name in execution['packages']} != execution['packages']:
+        raise ValueError('runtime package versions changed')
+    model = Path(model_path)
+    if not model.is_dir(): raise ValueError('model snapshot missing')
+    files = {}
+    for path in model.iterdir():
+        if not path.is_file(): raise ValueError('unexpected model snapshot entry')
+        value = hashlib.sha256()
+        with path.open('rb') as stream:
+            for block in iter(lambda: stream.read(8 * 1024 * 1024), b''):
+                value.update(block)
+        files[path.name] = value.hexdigest()
+    if files != execution['model']['files_sha256']:
+        raise ValueError('model snapshot contents changed')
+    return {'status': 'runtime_matches'}
 
 
 def _registration(root, rebuild):
