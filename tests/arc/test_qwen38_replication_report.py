@@ -44,3 +44,12 @@ def test_report_rejects_pending_or_altered_registration():
     d, verifier = setup()
     d['status'] = 'answer_audit_pending'
     with pytest.raises(ValueError): score_replication(d, [], [], verifier)
+
+
+def test_report_requires_terminal_receipt_for_complete_status():
+    d, verifier = setup()
+    base = [row(d, task, 'base', [[[1]], [[0]]]) for task in d['task_ids']]
+    adapter = [row(d, task, 'adapter', [[[1]], [[0]]]) for task in d['task_ids']]
+    report = score_replication(d, base, adapter, verifier)
+    assert report['paired']['paired']['complete'] == 3
+    assert report['status'] == 'incomplete'
