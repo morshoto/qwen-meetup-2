@@ -16,6 +16,7 @@ PROPOSAL_SHA256 = '581d0250bf5aa1b9874094e12b16b151fdb9ea5dad8f9ef406279ab2b3f66
 EVALUATION_SHA256 = '70fec8e84c0bf03e4bcc524399cd7551405b0708eb4ee9fffa2d2b8a746f3277'
 SNAPSHOT_SHA256 = 'ea309257ef1e10e081a68ec6878b22b90ef408806c09f0279989d6095483d16e'
 ADAPTER_CONFIG_SHA256 = '8c58de57198438da131ccb7ad55db5a4a2dac90c74e32cc30fc763dfdd503ce0'
+AUDIT_SHA256 = '572ce6a11cf545b8245de098c235ef3a81b38d5ef0b3c97484d0759597246b3a'
 REPLICATION_SOURCES = tuple(dict.fromkeys(EVALUATION_SOURCES + (
     'src/arc/qwen38_replication_allocation.py', 'src/arc/qwen38_replication_audit.py',
     'src/arc/qwen38_replication_freeze.py',
@@ -77,3 +78,22 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
                               'Two recorded candidates are not assumed independent.']}
     result['sha256'] = digest(result)
     return result
+
+
+def build_ready_registration(pending, audit):
+    """Bind the pinned audit; caller must first replay pending and audit sources."""
+    if (not isinstance(pending, dict) or not _valid(pending, pending.get('sha256')) or
+        pending.get('status') != 'answer_audit_pending' or pending.get('inference_authorized') is not False or
+        not _valid(audit, AUDIT_SHA256) or audit.get('status') != 'bounded_disjoint' or
+        audit.get('designation') != 'exploratory' or audit.get('unresolved_exposure') is not True or
+        audit.get('task_ids') != pending.get('task_ids') or
+        audit.get('proposal_sha256') != pending.get('proposal_sha256') or
+        audit.get('snapshot_sha256') != pending.get('source_inventory_sha256') or
+        audit.get('challenge_sha256') != pending.get('challenge_sha256') or
+        audit.get('solutions_sha256') != pending.get('solution_sha256') or
+        audit.get('exclusions_sha256') != pending.get('exclusions_sha256')):
+        raise ValueError('replication audit does not bind registration')
+    ready = {k: v for k, v in pending.items() if k != 'sha256'}
+    ready.update({'status': 'evaluation_ready', 'inference_authorized': True, 'audit_sha256': AUDIT_SHA256})
+    ready['sha256'] = digest(ready)
+    return ready
