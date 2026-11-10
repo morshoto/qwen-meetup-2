@@ -108,3 +108,20 @@ def test_registration_pins_solution_source_and_fingerprint_auditor(tmp_path, mon
 def test_source_inventory_includes_replayable_exposure_audit():
     import src.arc.qwen38_replication_registration as registration
     assert 'src/arc/qwen38_replication_audit.py' in registration.REPLICATION_SOURCES
+
+
+def test_ready_registration_requires_exact_bound_exposure_receipt(tmp_path, monkeypatch):
+    import src.arc.qwen38_replication_registration as r
+    args = fixture(tmp_path, monkeypatch)
+    pending = build_replication_registration(*args, additional_exclusions={}, official={})
+    receipt = signed({'status': 'bounded_disjoint', 'designation': 'exploratory', 'unresolved_exposure': True,
+                      'task_ids': pending['task_ids'], 'proposal_sha256': pending['proposal_sha256'],
+                      'snapshot_sha256': pending['source_inventory_sha256'], 'challenge_sha256': pending['challenge_sha256'],
+                      'solutions_sha256': pending['solution_sha256'], 'exclusions_sha256': pending['exclusions_sha256']})
+    monkeypatch.setattr(r, 'AUDIT_SHA256', receipt['sha256'])
+    ready = r.build_ready_registration(pending, receipt)
+    assert ready['status'] == 'evaluation_ready' and ready['inference_authorized'] is True
+    assert ready['audit_sha256'] == receipt['sha256']
+    assert ready['sha256'] == digest({k: v for k, v in ready.items() if k != 'sha256'})
+    receipt['task_ids'] = ['other']
+    with pytest.raises(ValueError): r.build_ready_registration(pending, receipt)
