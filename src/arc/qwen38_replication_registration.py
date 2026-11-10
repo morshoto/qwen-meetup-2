@@ -56,6 +56,7 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
     result = {'protocol': 'qwen38-frozen-replication-v1', 'status': 'answer_audit_pending',
               'inference_authorized': False, 'designation': 'exploratory', 'task_ids': selected,
               'visible_audit_sha256': digest(visible), 'challenge_sha256': execution['input_hashes']['challenges'],
+              'exclusions_sha256': digest(exclusions), 'official_challenges_sha256': digest(official),
               'execution_sha256': EXECUTION_SHA256, 'proposal_sha256': PROPOSAL_SHA256,
               'original_evaluation_sha256': EVALUATION_SHA256, 'source_inventory_sha256': SNAPSHOT_SHA256,
               'model': model, 'adapter_sha256': ADAPTER_SHA256, 'prompt_sha256': evaluation['prompt_sha256'],
