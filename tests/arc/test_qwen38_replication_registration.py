@@ -155,3 +155,8 @@ def test_registration_binds_private_run_directory_and_supervision(tmp_path, monk
 def test_source_inventory_includes_replication_controller():
     import src.arc.qwen38_replication_registration as registration
     assert 'src/cli/qwen38_replication.py' in registration.REPLICATION_SOURCES
+
+
+def test_source_inventory_includes_receipt_assembly():
+    import src.arc.qwen38_replication_registration as registration
+    assert 'src/arc/qwen38_replication_rows.py' in registration.REPLICATION_SOURCES
