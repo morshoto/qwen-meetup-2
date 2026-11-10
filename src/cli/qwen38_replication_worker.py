@@ -1,6 +1,10 @@
 """Validate answer-free matched worker requests before loading the model."""
+import argparse
 import json
+import os
 import re
+import sys
+from pathlib import Path
 
 from src.arc.qwen38_local_runner import MODEL_ID, MODEL_REVISION
 from src.arc.qwen38_replication_freeze import ADAPTER_SHA256
@@ -38,3 +42,30 @@ def run_replication_request(descriptor, arm, payload, model_path, adapter_path):
     if arm == 'base':
         return run_request(payload, model_path)
     return run_adapter_request(payload, model_path, adapter_path, identity)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser()
+    for flag in ('registration', 'registration-sha256', 'arm', 'model-path', 'adapter-path', 'output'):
+        parser.add_argument('--' + flag, required=True)
+    args = parser.parse_args(argv)
+    registration = json.loads(Path(args.registration).read_bytes())
+    if (registration.get('sha256') != args.registration_sha256 or
+        registration.get('sha256') != digest({k: v for k, v in registration.items() if k != 'sha256'})):
+        raise ValueError('worker registration identity mismatch')
+    if Path(args.output).exists() or Path(args.output).is_symlink():
+        raise FileExistsError(args.output)
+    raw = sys.stdin.buffer.read(2 * 1024 * 1024 + 1)
+    if len(raw) > 2 * 1024 * 1024:
+        raise ValueError('worker input too large')
+    result = run_replication_request(registration, args.arm, json.loads(raw), args.model_path, args.adapter_path)
+    encoded = (json.dumps(result, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode()
+    fd = os.open(args.output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, 'wb') as stream:
+        stream.write(encoded)
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+if __name__ == '__main__':
+    main()

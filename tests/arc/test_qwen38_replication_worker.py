@@ -72,6 +72,7 @@ def test_worker_cli_requires_registered_digest_and_writes_once(tmp_path, monkeyp
     assert json.loads(output.read_text()) == {'raw': 'result'} and len(calls) == 1
     monkeypatch.setattr(worker.sys, 'stdin', SimpleNamespace(buffer=io.BytesIO(json.dumps(payload).encode())))
     with pytest.raises(FileExistsError): worker.main(args)
+    assert len(calls) == 1
     output.unlink()
     args[3] = '0' * 64
     with pytest.raises(ValueError): worker.main(args)
