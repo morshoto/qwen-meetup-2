@@ -56,6 +56,7 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
     sources = {name: hashlib.sha256((repo / name).read_bytes()).hexdigest() for name in REPLICATION_SOURCES}
     result = {'protocol': 'qwen38-frozen-replication-v1', 'status': 'answer_audit_pending',
               'inference_authorized': False, 'designation': 'exploratory', 'task_ids': selected,
+              'task_fingerprints': visible['challenge_fingerprints'],
               'visible_audit_sha256': digest(visible), 'challenge_sha256': execution['input_hashes']['challenges'],
               'exclusions_sha256': digest(exclusions), 'official_challenges_sha256': digest(official),
               'execution_sha256': EXECUTION_SHA256, 'proposal_sha256': PROPOSAL_SHA256,
