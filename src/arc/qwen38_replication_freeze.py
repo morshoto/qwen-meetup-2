@@ -62,7 +62,10 @@ def verify_inventory(root, expected):
 
 def freeze_snapshot(root, output, pinned):
     """Write an exclusive private inventory only after the caller's pins match."""
-    root = Path(root).resolve()
+    root = Path(root)
+    if root.is_symlink():
+        raise ValueError('evidence root cannot be a symlink')
+    root = root.resolve()
     output = Path(output)
     if output.resolve().is_relative_to(root) or not pinned:
         raise ValueError('invalid snapshot destination or pins')
