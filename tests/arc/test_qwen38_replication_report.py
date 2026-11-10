@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 import pytest
@@ -61,8 +62,11 @@ def test_report_verifies_terminal_journal_and_registration():
     d, verifier = setup()
     base = [row(d, task, 'base', [[[1]], [[0]]]) for task in d['task_ids']]
     adapter = [row(d, task, 'adapter', [[[1]], [[0]]]) for task in d['task_ids']]
+    rows = {'base': base, 'adapter': adapter}
     journal = [{'arm': arm, 'task_id': task, 'candidate_index': i, 'status': 'complete',
-                'elapsed_seconds': 1.0} for arm in ('base', 'adapter') for task in d['task_ids'] for i in (0, 1)]
+                'elapsed_seconds': 1.0, 'seconds': .5,
+                'raw_sha256': hashlib.sha256(rows[arm][n]['candidates'][i]['raw'].encode()).hexdigest()}
+               for arm in ('base', 'adapter') for n, task in enumerate(d['task_ids']) for i in (0, 1)]
     termination = {'status': 'complete', 'registration_sha256': d['sha256'], 'journal_sha256': digest(journal)}
     termination['sha256'] = digest(termination)
     assert score_replication(d, base, adapter, verifier, journal=journal, termination=termination)['status'] == 'complete'

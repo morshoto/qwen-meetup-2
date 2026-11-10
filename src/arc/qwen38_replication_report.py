@@ -1,4 +1,6 @@
 """Offline reporting for a separately registered exploratory replication."""
+import hashlib
+
 from src.arc.qwen38_replication_statistics import paired_sign_test
 from src.arc.qwen38_replication_schedule import next_replication_action
 from src.arc.qwen38_rsi_comparison import digest
@@ -25,6 +27,22 @@ def score_replication(descriptor, baseline_rows, adapter_rows, verifier, *, jour
             termination.get('journal_sha256') != digest(journal) or
             termination.get('status') != schedule['status'] or schedule['status'] in ('ready', 'requires_reconciliation')):
             raise ValueError('replication termination evidence mismatch')
+        recorded = {(r['arm'], r['task_id'], r['candidate_index']): r for r in journal}
+        for arm, rows in (('base', baseline_rows), ('adapter', adapter_rows)):
+            for row in rows:
+                if row.get('status') != 'complete':
+                    continue
+                candidates = row.get('candidates', [])
+                if len(candidates) != 2:
+                    continue
+                attempts = [recorded.get((arm, row['task_id'], i)) for i in (0, 1)]
+                if (any(not attempt or attempt.get('status') != 'complete' for attempt in attempts) or
+                    any(attempt.get('raw_sha256') != hashlib.sha256(candidate['raw'].encode()).hexdigest()
+                        for attempt, candidate in zip(attempts, candidates)) or
+                    any(not isinstance(attempt.get('seconds'), (int, float)) or isinstance(attempt.get('seconds'), bool)
+                        for attempt in attempts) or
+                    row.get('runtime_seconds') != sum(attempt['seconds'] for attempt in attempts)):
+                    raise ValueError('replication rows differ from journal')
         terminated = termination['status'] == 'complete'
     complete = terminated and counts['complete'] == len(descriptor['task_ids'])
     result = {'status': 'complete' if complete else 'incomplete', 'paired': pairs,
