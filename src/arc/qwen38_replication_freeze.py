@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+from pathlib import Path
 
 from src.arc.qwen38_rsi_comparison import digest
 
@@ -26,3 +28,33 @@ def verify_frozen_outcome(adapter_bytes: bytes, report_bytes: bytes) -> dict:
         raise ValueError('frozen outcome identity mismatch')
     return {'status': 'frozen_outcome_verified', 'adapter_sha256': ADAPTER_SHA256,
             'report_sha256': REPORT_SHA256}
+
+
+def inventory_tree(root):
+    """Hash all regular files in an evidence tree; reject links and special files."""
+    root = Path(root)
+    if root.is_symlink() or not root.is_dir():
+        raise ValueError('invalid evidence root')
+    files = {}
+    for directory, dirs, names in os.walk(root, followlinks=False):
+        base = Path(directory)
+        for name in dirs:
+            if (base / name).is_symlink():
+                raise ValueError('evidence contains a symlink')
+        for name in names:
+            path = base / name
+            if path.is_symlink() or not path.is_file():
+                raise ValueError('evidence contains a non-regular file')
+            value = hashlib.sha256()
+            with path.open('rb') as stream:
+                for block in iter(lambda: stream.read(1024 * 1024), b''):
+                    value.update(block)
+            files[path.relative_to(root).as_posix()] = value.hexdigest()
+    return files
+
+
+def verify_inventory(root, expected):
+    actual = inventory_tree(root)
+    if not expected or actual != expected:
+        raise ValueError('evidence inventory changed')
+    return actual
