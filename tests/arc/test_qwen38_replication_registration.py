@@ -18,7 +18,8 @@ def fixture(tmp_path, monkeypatch):
                       'test': [{'input': [[i + 100]]}]} for i in range(3)}
     raw = json.dumps(tasks, sort_keys=True).encode()
     selected = ['0', '1']
-    execution = signed({'input_hashes': {'challenges': hashlib.sha256(raw).hexdigest(), 'solutions': 'e' * 64},
+    execution = signed({'input_hashes': {'challenges': hashlib.sha256(raw).hexdigest(), 'solutions': 'e' * 64,
+                                         'official_challenges_file': 'd' * 64, 'official_challenges': digest({})},
                         'model': {'id': r.MODEL_ID, 'revision': r.MODEL_REVISION, 'quantization': '4-bit MLX',
                                   'files_sha256': {'weight': 'b' * 64}}})
     proposal = signed({'allocation': {'validation': selected}, 'known_lineage': {}, 'exclusions': {'prior': ['2']}})
@@ -117,7 +118,8 @@ def test_ready_registration_requires_exact_bound_exposure_receipt(tmp_path, monk
     receipt = signed({'status': 'bounded_disjoint', 'designation': 'exploratory', 'unresolved_exposure': True,
                       'task_ids': pending['task_ids'], 'proposal_sha256': pending['proposal_sha256'],
                       'snapshot_sha256': pending['source_inventory_sha256'], 'challenge_sha256': pending['challenge_sha256'],
-                      'solutions_sha256': pending['solution_sha256'], 'exclusions_sha256': pending['exclusions_sha256']})
+                      'solutions_sha256': pending['solution_sha256'], 'exclusions_sha256': pending['exclusions_sha256'],
+                      'official_sha256': pending['official_file_sha256']})
     monkeypatch.setattr(r, 'AUDIT_SHA256', receipt['sha256'])
     ready = r.build_ready_registration(pending, receipt)
     assert ready['status'] == 'evaluation_ready' and ready['inference_authorized'] is True

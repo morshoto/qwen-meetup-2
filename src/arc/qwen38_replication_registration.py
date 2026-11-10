@@ -41,7 +41,8 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
     if (not _valid(execution, EXECUTION_SHA256) or not _valid(proposal, PROPOSAL_SHA256) or
         not _valid(evaluation, EVALUATION_SHA256) or not _valid(snapshot, SNAPSHOT_SHA256) or
         snapshot.get('status') != 'frozen_inventory' or
-        hashlib.sha256(challenges).hexdigest() != execution.get('input_hashes', {}).get('challenges')):
+        hashlib.sha256(challenges).hexdigest() != execution.get('input_hashes', {}).get('challenges') or
+        digest(official) != execution.get('input_hashes', {}).get('official_challenges')):
         raise ValueError('replication provenance mismatch')
     model = execution.get('model', {})
     if (model.get('id') != MODEL_ID or model.get('revision') != MODEL_REVISION or
@@ -65,6 +66,7 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
               'visible_audit_sha256': digest(visible), 'challenge_sha256': execution['input_hashes']['challenges'],
               'solution_sha256': execution['input_hashes']['solutions'],
               'exclusions_sha256': digest(exclusions), 'official_challenges_sha256': digest(official),
+              'official_file_sha256': execution['input_hashes']['official_challenges_file'],
               'execution_sha256': EXECUTION_SHA256, 'proposal_sha256': PROPOSAL_SHA256,
               'original_evaluation_sha256': EVALUATION_SHA256, 'source_inventory_sha256': SNAPSHOT_SHA256,
               'model': model, 'adapter_sha256': ADAPTER_SHA256, 'adapter_config_sha256': ADAPTER_CONFIG_SHA256,
@@ -90,6 +92,7 @@ def build_ready_registration(pending, audit):
         audit.get('proposal_sha256') != pending.get('proposal_sha256') or
         audit.get('snapshot_sha256') != pending.get('source_inventory_sha256') or
         audit.get('challenge_sha256') != pending.get('challenge_sha256') or
+        audit.get('official_sha256') != pending.get('official_file_sha256') or
         audit.get('solutions_sha256') != pending.get('solution_sha256') or
         audit.get('exclusions_sha256') != pending.get('exclusions_sha256')):
         raise ValueError('replication audit does not bind registration')
