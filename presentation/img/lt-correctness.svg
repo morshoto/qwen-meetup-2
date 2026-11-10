@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="861.5625pt" height="340.96pt" viewBox="0 0 861.5625 340.96" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-10T23:46:26.882890</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.8, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 340.96 
+L 861.5625 340.96 
+L 861.5625 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 57.3225 223.0315 
+L 854.3625 223.0315 
+L 854.3625 13.3675 
+L 57.3225 13.3675 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1"/>
+     <g id="text_1">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="123.280608" y="238.8665" transform="rotate(-0 123.280608 238.8665)">OFF</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2"/>
+     <g id="text_2">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="203.901673" y="238.8665" transform="rotate(-0 203.901673 238.8665)">ON</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_3"/>
+     <g id="text_3">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="324.83327" y="238.8665" transform="rotate(-0 324.83327 238.8665)">OFF</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4"/>
+     <g id="text_4">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="405.454335" y="238.8665" transform="rotate(-0 405.454335 238.8665)">ON</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_5"/>
+     <g id="text_5">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="546.541198" y="238.8665" transform="rotate(-0 546.541198 238.8665)">平均</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_6"/>
+     <g id="text_6">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="627.162262" y="238.8665" transform="rotate(-0 627.162262 238.8665)">銅</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_7"/>
+     <g id="text_7">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="707.783327" y="238.8665" transform="rotate(-0 707.783327 238.8665)">銀</text>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_8"/>
+     <g id="text_8">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="788.404392" y="238.8665" transform="rotate(-0 788.404392 238.8665)">金</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_9">
+      <path d="M 57.3225 223.0315 
+L 854.3625 223.0315 
+" clip-path="url(#pabccc2b9cc)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10"/>
+     <g id="text_9">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="229.199" transform="rotate(-0 53.8225 229.199)">0%</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_11">
+      <path d="M 57.3225 181.0987 
+L 854.3625 181.0987 
+" clip-path="url(#pabccc2b9cc)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12"/>
+     <g id="text_10">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="187.2662" transform="rotate(-0 53.8225 187.2662)">20%</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_13">
+      <path d="M 57.3225 139.1659 
+L 854.3625 139.1659 
+" clip-path="url(#pabccc2b9cc)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14"/>
+     <g id="text_11">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="145.3334" transform="rotate(-0 53.8225 145.3334)">40%</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_15">
+      <path d="M 57.3225 97.2331 
+L 854.3625 97.2331 
+" clip-path="url(#pabccc2b9cc)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_16"/>
+     <g id="text_12">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="103.4006" transform="rotate(-0 53.8225 103.4006)">60%</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_17">
+      <path d="M 57.3225 55.3003 
+L 854.3625 55.3003 
+" clip-path="url(#pabccc2b9cc)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_18"/>
+     <g id="text_13">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="61.4678" transform="rotate(-0 53.8225 61.4678)">80%</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_19">
+      <path d="M 57.3225 13.3675 
+L 854.3625 13.3675 
+" clip-path="url(#pabccc2b9cc)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_20"/>
+     <g id="text_14">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="19.535" transform="rotate(-0 53.8225 19.535)">100%</text>
+     </g>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 93.551591 223.0315 
+L 153.009626 223.0315 
+L 153.009626 214.64494 
+L 93.551591 214.64494 
+z
+" clip-path="url(#pabccc2b9cc)" style="fill: #2b78bd"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 174.172656 223.0315 
+L 233.630691 223.0315 
+L 233.630691 202.0651 
+L 174.172656 202.0651 
+z
+" clip-path="url(#pabccc2b9cc)" style="fill: #128d8e"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 295.104252 223.0315 
+L 354.562288 223.0315 
+L 354.562288 189.48526 
+L 295.104252 189.48526 
+z
+" clip-path="url(#pabccc2b9cc)" style="fill: #2b78bd"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 375.725317 223.0315 
+L 435.183352 223.0315 
+L 435.183352 189.48526 
+L 375.725317 189.48526 
+z
+" clip-path="url(#pabccc2b9cc)" style="fill: #128d8e"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 516.81218 223.0315 
+L 576.270215 223.0315 
+L 576.270215 177.837741 
+L 516.81218 177.837741 
+z
+" clip-path="url(#pabccc2b9cc)" style="fill: #9daab6"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 597.433245 223.0315 
+L 656.89128 223.0315 
+L 656.89128 155.477759 
+L 597.433245 155.477759 
+z
+" clip-path="url(#pabccc2b9cc)" style="fill: #b8784b"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 678.054309 223.0315 
+L 737.512344 223.0315 
+L 737.512344 152.856959 
+L 678.054309 152.856959 
+z
+" clip-path="url(#pabccc2b9cc)" style="fill: #a7b3bd"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 758.675374 223.0315 
+L 818.133409 223.0315 
+L 818.133409 65.48997 
+L 758.675374 65.48997 
+z
+" clip-path="url(#pabccc2b9cc)" style="fill: #d4a32d"/>
+   </g>
+   <g id="text_15">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(101.82553 195.371332)">2 / 50</text>
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(112.631194 208.677035)">4%</text>
+   </g>
+   <g id="text_16">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(182.446595 182.791492)">5 / 50</text>
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(188.6214 196.097195)">10%</text>
+   </g>
+   <g id="text_17">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(303.378192 170.211652)">4 / 25</text>
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(309.552997 183.517355)">16%</text>
+   </g>
+   <g id="text_18">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(383.999256 170.211652)">4 / 25</text>
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(390.174061 183.517355)">16%</text>
+   </g>
+   <g id="text_19">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; text-anchor: middle; fill: #172f4e" x="546.541198" y="171.869836" transform="rotate(-0 546.541198 171.869836)">21.56%</text>
+   </g>
+   <g id="text_20">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; text-anchor: middle; fill: #172f4e" x="627.162262" y="149.509854" transform="rotate(-0 627.162262 149.509854)">32.22%</text>
+   </g>
+   <g id="text_21">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; text-anchor: middle; fill: #172f4e" x="707.783327" y="146.889054" transform="rotate(-0 707.783327 146.889054)">33.47%</text>
+   </g>
+   <g id="text_22">
+    <text style="font-weight: 700; font-size: 12.5px; font-family: 'Hiragino Sans'; text-anchor: middle; fill: #172f4e" x="788.404392" y="59.522065" transform="rotate(-0 788.404392 59.522065)">75.14%</text>
+   </g>
+   <g id="text_23">
+    <text style="font-size: 11px; font-family: 'Hiragino Sans'; text-anchor: middle; fill: #596a80" x="163.591141" y="252.38446" transform="rotate(-0 163.591141 252.38446)">50問（検討済み）</text>
+   </g>
+   <g id="text_24">
+    <text style="font-size: 11px; font-family: 'Hiragino Sans'; text-anchor: middle; fill: #596a80" x="365.143802" y="252.38446" transform="rotate(-0 365.143802 252.38446)">別の25問</text>
+   </g>
+   <g id="text_25">
+    <text style="font-size: 11px; font-family: 'Hiragino Sans'; text-anchor: middle; fill: #596a80" x="667.472795" y="252.38446" transform="rotate(-0 667.472795 252.38446)">Kaggle ARC Prize 2026</text>
+   </g>
+  </g>
+  <g id="text_26">
+   <text style="font-size: 10.5px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #596a80" x="39.6105" y="314.7595" transform="rotate(-0 39.6105 314.7595)">Kaggle：2026年公開順位表の平均・暫定メダル圏（同点あり、最終Private順位は未公開）</text>
+  </g>
+  <g id="text_27">
+   <text style="font-size: 10.5px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #596a80" x="39.6105" y="331.6075" transform="rotate(-0 39.6105 331.6075)">評価問題・システムが異なるため直接比較不可。今回の結果は各タスク2候補・探索的評価。</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pabccc2b9cc">
+   <rect x="57.3225" y="13.3675" width="797.04" height="209.664"/>
+  </clipPath>
+ </defs>
+</svg>

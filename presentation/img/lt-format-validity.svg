@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="826.1385pt" height="326.255pt" viewBox="0 0 826.1385 326.255" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-10T23:46:26.950325</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.8, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 326.255 
+L 826.1385 326.255 
+L 826.1385 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 57.3225 216 
+L 818.9385 216 
+L 818.9385 7.2 
+L 57.3225 7.2 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1"/>
+     <g id="text_1">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="147.086574" y="232.075" transform="rotate(-0 147.086574 232.075)">Adapter OFF</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2"/>
+     <g id="text_2">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="300.267588" y="232.075" transform="rotate(-0 300.267588 232.075)">Adapter ON</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_3"/>
+     <g id="text_3">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="575.993412" y="232.075" transform="rotate(-0 575.993412 232.075)">Adapter OFF</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4"/>
+     <g id="text_4">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: middle" x="729.174426" y="232.075" transform="rotate(-0 729.174426 232.075)">Adapter ON</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_5">
+      <path d="M 57.3225 216 
+L 818.9385 216 
+" clip-path="url(#p3aebbfe2a1)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6"/>
+     <g id="text_5">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="222.1675" transform="rotate(-0 53.8225 222.1675)">0%</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_7">
+      <path d="M 57.3225 174.24 
+L 818.9385 174.24 
+" clip-path="url(#p3aebbfe2a1)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8"/>
+     <g id="text_6">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="180.4075" transform="rotate(-0 53.8225 180.4075)">25%</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_9">
+      <path d="M 57.3225 132.48 
+L 818.9385 132.48 
+" clip-path="url(#p3aebbfe2a1)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10"/>
+     <g id="text_7">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="138.6475" transform="rotate(-0 53.8225 138.6475)">50%</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_11">
+      <path d="M 57.3225 90.72 
+L 818.9385 90.72 
+" clip-path="url(#p3aebbfe2a1)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12"/>
+     <g id="text_8">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="96.8875" transform="rotate(-0 53.8225 96.8875)">75%</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_13">
+      <path d="M 57.3225 48.96 
+L 818.9385 48.96 
+" clip-path="url(#p3aebbfe2a1)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.18; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14"/>
+     <g id="text_9">
+      <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: end" x="53.8225" y="55.1275" transform="rotate(-0 53.8225 55.1275)">100%</text>
+     </g>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 91.941409 216 
+L 202.231739 216 
+L 202.231739 104.0832 
+L 91.941409 104.0832 
+z
+" clip-path="url(#p3aebbfe2a1)" style="fill: #2b78bd"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 245.122423 216 
+L 355.412753 216 
+L 355.412753 57.312 
+L 245.122423 57.312 
+z
+" clip-path="url(#p3aebbfe2a1)" style="fill: #128d8e"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 520.848247 216 
+L 631.138577 216 
+L 631.138577 85.7088 
+L 520.848247 85.7088 
+z
+" clip-path="url(#p3aebbfe2a1)" style="fill: #2b78bd"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 674.029261 216 
+L 784.319591 216 
+L 784.319591 48.96 
+L 674.029261 48.96 
+z
+" clip-path="url(#p3aebbfe2a1)" style="fill: #128d8e"/>
+   </g>
+   <g id="text_10">
+    <text style="font-weight: 700; font-size: 16px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(107.769074 79.479025)">67 / 100</text>
+    <text style="font-weight: 700; font-size: 16px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(127.527824 97.3974)">67%</text>
+   </g>
+   <g id="text_11">
+    <text style="font-weight: 700; font-size: 16px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(260.950088 32.707825)">95 / 100</text>
+    <text style="font-weight: 700; font-size: 16px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(280.708838 50.6262)">95%</text>
+   </g>
+   <g id="text_12">
+    <text style="font-weight: 700; font-size: 16px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(542.603412 61.104625)">39 / 50</text>
+    <text style="font-weight: 700; font-size: 16px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(556.434662 79.023)">78%</text>
+   </g>
+   <g id="text_13">
+    <text style="font-weight: 700; font-size: 16px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(695.784426 24.355825)">50 / 50</text>
+    <text style="font-weight: 700; font-size: 16px; font-family: 'Hiragino Sans'; fill: #172f4e" transform="translate(703.688176 42.2742)">100%</text>
+   </g>
+   <g id="text_14">
+    <text style="font-size: 13px; font-family: 'Hiragino Sans'; text-anchor: middle; fill: #596a80" x="223.677081" y="247.32" transform="rotate(-0 223.677081 247.32)">50問 / 100候補</text>
+   </g>
+   <g id="text_15">
+    <text style="font-size: 13px; font-family: 'Hiragino Sans'; text-anchor: middle; fill: #596a80" x="652.583919" y="247.32" transform="rotate(-0 652.583919 247.32)">別の25問 / 50候補</text>
+   </g>
+  </g>
+  <g id="text_16">
+   <text style="font-size: 12px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #596a80" x="21.8985" y="300.6" transform="rotate(-0 21.8985 300.6)">候補単位の形式有効率。正解率ではなく、出力回復を含む。</text>
+  </g>
+  <g id="text_17">
+   <text style="font-size: 11px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #596a80" x="21.8985" y="316.8" transform="rotate(-0 21.8985 316.8)">2セットは別問題・探索的比較。生成された候補には重複あり。</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p3aebbfe2a1">
+   <rect x="57.3225" y="7.2" width="761.616" height="208.8"/>
+  </clipPath>
+ </defs>
+</svg>

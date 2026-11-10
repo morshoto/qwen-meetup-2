@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="684pt" height="255.564pt" viewBox="0 0 684 255.564" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-10T23:46:26.443057</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.8, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 255.564 
+L 684 255.564 
+L 684 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 17.244 150.2352 
+L 151.164 150.2352 
+Q 157.86 150.2352 157.86 143.5824 
+L 157.86 62.64 
+Q 157.86 55.9872 151.164 55.9872 
+L 17.244 55.9872 
+Q 10.548 55.9872 10.548 62.64 
+L 10.548 143.5824 
+Q 10.548 150.2352 17.244 150.2352 
+z
+" clip-path="url(#pade0da1a59)" style="fill: #f3f7fb; stroke: #cddce9; stroke-width: 1.5; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 162.650544 103.1112 
+Q 169.857478 103.1112 174.828344 103.1112 
+" clip-path="url(#pade0da1a59)" style="fill: none; stroke: #2b78bd; stroke-width: 2; stroke-linecap: round"/>
+    <path d="M 167.628344 99.5112 
+L 174.828344 103.1112 
+L 167.628344 106.7112 
+" clip-path="url(#pade0da1a59)" style="fill: none; stroke: #2b78bd; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 184.644 150.2352 
+L 318.564 150.2352 
+Q 325.26 150.2352 325.26 143.5824 
+L 325.26 62.64 
+Q 325.26 55.9872 318.564 55.9872 
+L 184.644 55.9872 
+Q 177.948 55.9872 177.948 62.64 
+L 177.948 143.5824 
+Q 177.948 150.2352 184.644 150.2352 
+z
+" clip-path="url(#pade0da1a59)" style="fill: #f3f7fb; stroke: #cddce9; stroke-width: 1.5; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 330.050544 103.1112 
+Q 337.257478 103.1112 342.228344 103.1112 
+" clip-path="url(#pade0da1a59)" style="fill: none; stroke: #2b78bd; stroke-width: 2; stroke-linecap: round"/>
+    <path d="M 335.028344 99.5112 
+L 342.228344 103.1112 
+L 335.028344 106.7112 
+" clip-path="url(#pade0da1a59)" style="fill: none; stroke: #2b78bd; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 352.044 150.2352 
+L 485.964 150.2352 
+Q 492.66 150.2352 492.66 143.5824 
+L 492.66 62.64 
+Q 492.66 55.9872 485.964 55.9872 
+L 352.044 55.9872 
+Q 345.348 55.9872 345.348 62.64 
+L 345.348 143.5824 
+Q 345.348 150.2352 352.044 150.2352 
+z
+" clip-path="url(#pade0da1a59)" style="fill: #f3f7fb; stroke: #cddce9; stroke-width: 1.5; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 497.450544 103.1112 
+Q 504.657478 103.1112 509.628344 103.1112 
+" clip-path="url(#pade0da1a59)" style="fill: none; stroke: #2b78bd; stroke-width: 2; stroke-linecap: round"/>
+    <path d="M 502.428344 99.5112 
+L 509.628344 103.1112 
+L 502.428344 106.7112 
+" clip-path="url(#pade0da1a59)" style="fill: none; stroke: #2b78bd; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 519.444 150.2352 
+L 653.364 150.2352 
+Q 660.06 150.2352 660.06 143.5824 
+L 660.06 62.64 
+Q 660.06 55.9872 653.364 55.9872 
+L 519.444 55.9872 
+Q 512.748 55.9872 512.748 62.64 
+L 512.748 143.5824 
+Q 512.748 150.2352 519.444 150.2352 
+z
+" clip-path="url(#pade0da1a59)" style="fill: #f3f7fb; stroke: #cddce9; stroke-width: 1.5; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 19px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #172f4e" x="22.266" y="88.6968" transform="rotate(-0 22.266 88.6968)">1  問題</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 14px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #596a80" x="22.266" y="120.852" transform="rotate(-0 22.266 120.852)">ARC Training</text>
+   </g>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 19px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #172f4e" x="189.666" y="88.6968" transform="rotate(-0 189.666 88.6968)">2  回答・検証</text>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 14px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #596a80" x="189.666" y="120.852" transform="rotate(-0 189.666 120.852)">正解した回答を選ぶ</text>
+   </g>
+   <g id="text_5">
+    <text style="font-weight: 700; font-size: 19px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #172f4e" x="357.066" y="88.6968" transform="rotate(-0 357.066 88.6968)">3  LoRA学習</text>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 14px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #596a80" x="357.066" y="120.852" transform="rotate(-0 357.066 120.852)">14タスクで1回更新</text>
+   </g>
+   <g id="text_7">
+    <text style="font-weight: 700; font-size: 19px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #172f4e" x="524.466" y="88.6968" transform="rotate(-0 524.466 88.6968)">4  比較</text>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 14px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #596a80" x="524.466" y="120.852" transform="rotate(-0 524.466 120.852)">Adapter OFF / ON</text>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 16px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #172f4e" x="18.36" y="190.152" transform="rotate(-0 18.36 190.152)">学習：現行4-bit由来 2タスク ＋ 過去FP8由来 12タスク</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 13px; font-family: 'Hiragino Sans'; text-anchor: start; fill: #596a80" x="18.36" y="221.7528" transform="rotate(-0 18.36 221.7528)">20 steps / 992個のLoRA tensorが変化　（能力向上の証拠ではない）</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pade0da1a59">
+   <rect x="7.2" y="7.2" width="669.6" height="241.164"/>
+  </clipPath>
+ </defs>
+</svg>
