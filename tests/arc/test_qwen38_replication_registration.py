@@ -78,3 +78,15 @@ def test_registration_contains_pinned_visible_task_fingerprints(tmp_path, monkey
     result = build_replication_registration(*args, additional_exclusions={}, official={})
     tasks = json.loads(args[4])
     assert result['task_fingerprints'] == {key: fingerprint(tasks[key]) for key in ('0', '1')}
+
+
+def test_registration_pins_adapter_configuration_and_worker(tmp_path, monkeypatch):
+    import src.arc.qwen38_replication_registration as registration
+    args = fixture(tmp_path, monkeypatch)
+    args[2]['adapter_config_sha256'] = 'd' * 64
+    args[2]['sha256'] = digest({k: v for k, v in args[2].items() if k != 'sha256'})
+    monkeypatch.setattr(registration, 'EVALUATION_SHA256', args[2]['sha256'])
+    result = build_replication_registration(*args, additional_exclusions={}, official={})
+    assert result['adapter_config_sha256'] == 'd' * 64
+    monkeypatch.undo()
+    assert 'src/cli/qwen38_replication_worker.py' in registration.REPLICATION_SOURCES
