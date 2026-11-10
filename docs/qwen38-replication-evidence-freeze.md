@@ -23,5 +23,15 @@ It propagated shared visible inputs and recorded lineage transitively and
 found no selected overlap; 975 Training parents were in the resulting blocked
 set. The proposal, challenge and historical-manifest identities and selected
 challenge fingerprints were checked. The saved lineage register is empty and
-answer-fingerprint replay remains outstanding, so this is a bounded preliminary
-finding, not proof of unseen tasks or authorization to run the model.
+the lineage register cannot prove unseen tasks or authorize a model run.
+
+An additional bounded answer-fingerprint check found zero matches between
+the 25 reserved fingerprints already saved in the #16 proposal and 975
+blocked Training parents, and no duplicate fingerprints within the 25.
+The Training solutions file was hash-checked against the prior registration;
+the selective scanner decoded only blocked-parent answers and skipped the
+reserved values without decoding or retaining them. The scanner necessarily
+reads the file bytes to verify its hash and navigate its structure. This
+checks exact equality only; unrecorded lineage and semantic or pretraining
+exposure remain unknown. Full source replay and the final preregistration are
+still required before inference.
