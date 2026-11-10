@@ -17,7 +17,8 @@ EVALUATION_SHA256 = '70fec8e84c0bf03e4bcc524399cd7551405b0708eb4ee9fffa2d2b8a746
 SNAPSHOT_SHA256 = 'ea309257ef1e10e081a68ec6878b22b90ef408806c09f0279989d6095483d16e'
 ADAPTER_CONFIG_SHA256 = '8c58de57198438da131ccb7ad55db5a4a2dac90c74e32cc30fc763dfdd503ce0'
 REPLICATION_SOURCES = tuple(dict.fromkeys(EVALUATION_SOURCES + (
-    'src/arc/qwen38_replication_allocation.py', 'src/arc/qwen38_replication_freeze.py',
+    'src/arc/qwen38_replication_allocation.py', 'src/arc/qwen38_replication_audit.py',
+    'src/arc/qwen38_replication_freeze.py',
     'src/arc/qwen38_replication_fingerprints.py',
     'src/arc/qwen38_replication_registration.py', 'src/arc/qwen38_replication_schedule.py',
     'src/arc/qwen38_replication_statistics.py', 'src/arc/qwen38_replication_report.py',
