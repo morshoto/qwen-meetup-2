@@ -50,3 +50,33 @@ def test_runtime_replay_rejects_model_or_package_drift(tmp_path, monkeypatch):
     (model / 'weight').write_bytes(b'weight')
     monkeypatch.setattr(controller.metadata, 'version', lambda name: '2')
     with pytest.raises(ValueError): controller.verify_runtime(repo, model, execution)
+
+
+def test_rebuild_replays_audit_without_loading_target_answers(tmp_path, monkeypatch):
+    import src.cli.qwen38_replication as controller
+    repo = tmp_path / 'repo'; repo.mkdir()
+    old = tmp_path / 'old'; (old / 'evaluation/adapter-v2').mkdir(parents=True)
+    (old / 'training/sft-v1').mkdir(parents=True); (old / 'training/adapter-run-v1/adapter').mkdir(parents=True)
+    (old / 'journal').mkdir()
+    for name in ('execution', 'proposal', 'history', 'snapshot', 'audit'):
+        (tmp_path / (name + '.json')).write_text('{}')
+    (old / 'evaluation/evaluation-v2.json').write_text('{}')
+    (old / 'evaluation/adapter-v2/report.json').write_bytes(b'report')
+    (old / 'training/adapter-run-v1/adapter/adapters.safetensors').write_bytes(b'adapter')
+    (old / 'training/sft-v1/manifest.json').write_text(json.dumps({'parents': [{'task_id': 'x'}]}))
+    (old / 'journal/000000.start.json').write_text(json.dumps({'request': {'task_id': 'x'}}))
+    (tmp_path / 'challenge').write_text('{}'); (tmp_path / 'official').write_text('{}')
+    solutions = tmp_path / 'unreadable-solutions'
+    calls = []
+    monkeypatch.setattr(controller, 'verify_runtime', lambda *a: calls.append('runtime'))
+    monkeypatch.setattr(controller, 'verify_frozen_outcome', lambda *a: calls.append('outcome'))
+    monkeypatch.setattr(controller, 'build_audit_receipt', lambda *a: calls.append(('audit', a[-1])) or {})
+    monkeypatch.setattr(controller, 'build_replication_registration', lambda *a, **k: {'pending': True})
+    monkeypatch.setattr(controller, 'build_ready_registration', lambda *a: {'status': 'evaluation_ready'})
+    paths = {name: tmp_path / (name + '.json') for name in ('execution','proposal','history','snapshot','audit')}
+    paths.update({'repo': repo, 'model_path': tmp_path / 'model', 'old_root': old,
+                  'challenges': tmp_path / 'challenge', 'official': tmp_path / 'official',
+                  'solutions': solutions, 'run_dir': repo / 'run', 'report': old / 'evaluation/adapter-v2/report.json'})
+    result = controller.rebuild_registration(**paths)
+    assert result['status'] == 'evaluation_ready'
+    assert ('audit', solutions) in calls and 'runtime' in calls and 'outcome' in calls
