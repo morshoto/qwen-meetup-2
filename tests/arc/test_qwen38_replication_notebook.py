@@ -38,3 +38,11 @@ def test_notebook_displays_only_bound_report_summaries(monkeypatch, tmp_path, ca
     (tmp_path / 'report-fixture.json').write_text(json.dumps(report))
     execute(monkeypatch, tmp_path)
     assert 'not available' in capsys.readouterr().out.lower()
+
+
+def test_notebook_records_verified_completed_results():
+    notebook = json.loads(NOTEBOOK.read_text())
+    markdown = '\n'.join(''.join(cell['source']) for cell in notebook['cells']
+                         if cell['cell_type'] == 'markdown')
+    assert 'bc6a45edb4850feac1f658707b215bb3e66cbd4b5e7b12ebd4bd5636b1690c4d' in markdown
+    assert '4/25' in markdown and '1 gained' in markdown and '1 lost' in markdown
