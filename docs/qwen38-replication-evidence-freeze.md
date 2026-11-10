@@ -14,3 +14,14 @@ hashes against the initial inventory. Installed package versions matched the
 execution descriptor. The model's Hugging Face snapshot files resolve through
 the local cache's blob links; the file contents were hashed. This check did not
 read target solutions or validate whether all historical exposure is known.
+
+An answer-free visible-input audit checked the 25 previously reserved
+validation parents against the proposal's exclusions, all 40 actual fresh
+generation parents, the 203 distinct historical FP8 Phase A/development
+parents, the 14 saved SFT parents, and the 120 official evaluation challenges.
+It propagated shared visible inputs and recorded lineage transitively and
+found no selected overlap; 975 Training parents were in the resulting blocked
+set. The proposal, challenge and historical-manifest identities and selected
+challenge fingerprints were checked. The saved lineage register is empty and
+answer-fingerprint replay remains outstanding, so this is a bounded preliminary
+finding, not proof of unseen tasks or authorization to run the model.
