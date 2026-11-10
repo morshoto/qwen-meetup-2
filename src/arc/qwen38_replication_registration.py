@@ -33,7 +33,7 @@ def _valid(value, expected):
 
 
 def build_replication_registration(execution, proposal, evaluation, snapshot, challenges, repo,
-                                   *, additional_exclusions, official):
+                                   *, additional_exclusions, official, run_dir=None):
     """Describe fixed inputs; caller must replay and verify the sources independently.
 
     The returned pending descriptor never by itself authorizes a model call.
@@ -58,7 +58,10 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
         raise ValueError('additional exclusion name collides')
     exclusions.update(additional_exclusions)
     visible = audit_visible(json.loads(challenges), selected, exclusions, proposal['known_lineage'], official)
-    repo = Path(repo)
+    repo = Path(repo).resolve()
+    destination = Path(run_dir).resolve() if run_dir is not None else repo / 'artifacts/qwen38-replication-v1'
+    if destination == repo or not destination.is_relative_to(repo) or destination == Path('/'):
+        raise ValueError('replication run directory must be isolated within the worktree')
     sources = {name: hashlib.sha256((repo / name).read_bytes()).hexdigest() for name in REPLICATION_SOURCES}
     result = {'protocol': 'qwen38-frozen-replication-v1', 'status': 'answer_audit_pending',
               'inference_authorized': False, 'designation': 'exploratory', 'task_ids': selected,
@@ -73,6 +76,8 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
               'prompt_sha256': evaluation['prompt_sha256'],
               'candidate_count': 2, 'temperature': .6, 'max_tokens': 4096, 'max_context': 18432,
               'format_recovery': True, 'seed_rule': '20261111 + candidate_index',
+              'run_dir': str(destination), 'supervision': {'minimum_free_percent': 10,
+                  'maximum_swap_bytes': 16 * 1024**3, 'max_output_bytes': 2 * 1024**2},
               'reserved_completion_tokens': len(selected) * 4 * 4096, 'wall_seconds_limit': 86400,
               'per_attempt_seconds': 600, 'source_files_sha256': sources,
               'decision_rule': 'paired gains and losses with exact two-sided sign test; no tuning',
