@@ -62,3 +62,20 @@ def test_frozen_inventory_rejects_symlinks(tmp_path):
     target = tmp_path / 'outside'; target.write_text('outside')
     (root / 'alias').symlink_to(target)
     with pytest.raises(ValueError): inventory_tree(root)
+
+
+def test_snapshot_requires_pinned_files_and_is_write_once(tmp_path):
+    from src.arc.qwen38_replication_freeze import freeze_snapshot
+    root = tmp_path / 'source'; root.mkdir()
+    (root / 'pinned').write_bytes(b'original')
+    (root / 'other').write_bytes(b'evidence')
+    output = tmp_path / 'snapshot.json'
+    expected = {'pinned': hashlib.sha256(b'original').hexdigest()}
+    snapshot = freeze_snapshot(root, output, expected)
+    assert snapshot['status'] == 'frozen_inventory' and output.is_file()
+    assert freeze_snapshot(root, output, expected) == snapshot
+    (root / 'other').write_bytes(b'changed')
+    with pytest.raises(ValueError): freeze_snapshot(root, output, expected)
+    (root / 'pinned').write_bytes(b'changed')
+    with pytest.raises(ValueError): freeze_snapshot(root, tmp_path / 'bad.json', expected)
+    assert not (tmp_path / 'bad.json').exists()
