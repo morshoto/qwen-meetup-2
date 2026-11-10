@@ -35,3 +35,13 @@ reads the file bytes to verify its hash and navigate its structure. This
 checks exact equality only; unrecorded lineage and semantic or pretraining
 exposure remain unknown. Full source replay and the final preregistration are
 still required before inference.
+
+The bounded check was subsequently replayed by
+`src/arc/qwen38_replication_audit.py`, including verification of the original
+run inventory, the pinned historical and SFT manifests, each of 294 recorded
+fresh starts, the input identities and both visible and answer-fingerprint
+exclusions. Its private receipt is
+`artifacts/qwen38-replication-v1/bounded-audit.json` with content digest
+`572ce6a11cf545b8245de098c235ef3a81b38d5ef0b3c97484d0759597246b3a`.
+The receipt records a bounded exploratory audit, not proof of semantic
+independence or authorization to dispatch a worker.
