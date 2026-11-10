@@ -18,6 +18,7 @@ SNAPSHOT_SHA256 = 'ea309257ef1e10e081a68ec6878b22b90ef408806c09f0279989d6095483d
 ADAPTER_CONFIG_SHA256 = '8c58de57198438da131ccb7ad55db5a4a2dac90c74e32cc30fc763dfdd503ce0'
 REPLICATION_SOURCES = tuple(dict.fromkeys(EVALUATION_SOURCES + (
     'src/arc/qwen38_replication_allocation.py', 'src/arc/qwen38_replication_freeze.py',
+    'src/arc/qwen38_replication_fingerprints.py',
     'src/arc/qwen38_replication_registration.py', 'src/arc/qwen38_replication_schedule.py',
     'src/arc/qwen38_replication_statistics.py', 'src/arc/qwen38_replication_report.py',
     'src/cli/qwen38_weight_worker.py', 'src/cli/qwen38_replication_worker.py',
@@ -60,6 +61,7 @@ def build_replication_registration(execution, proposal, evaluation, snapshot, ch
               'inference_authorized': False, 'designation': 'exploratory', 'task_ids': selected,
               'task_fingerprints': visible['challenge_fingerprints'],
               'visible_audit_sha256': digest(visible), 'challenge_sha256': execution['input_hashes']['challenges'],
+              'solution_sha256': execution['input_hashes']['solutions'],
               'exclusions_sha256': digest(exclusions), 'official_challenges_sha256': digest(official),
               'execution_sha256': EXECUTION_SHA256, 'proposal_sha256': PROPOSAL_SHA256,
               'original_evaluation_sha256': EVALUATION_SHA256, 'source_inventory_sha256': SNAPSHOT_SHA256,

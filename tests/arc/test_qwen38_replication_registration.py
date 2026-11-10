@@ -18,7 +18,7 @@ def fixture(tmp_path, monkeypatch):
                       'test': [{'input': [[i + 100]]}]} for i in range(3)}
     raw = json.dumps(tasks, sort_keys=True).encode()
     selected = ['0', '1']
-    execution = signed({'input_hashes': {'challenges': hashlib.sha256(raw).hexdigest()},
+    execution = signed({'input_hashes': {'challenges': hashlib.sha256(raw).hexdigest(), 'solutions': 'e' * 64},
                         'model': {'id': r.MODEL_ID, 'revision': r.MODEL_REVISION, 'quantization': '4-bit MLX',
                                   'files_sha256': {'weight': 'b' * 64}}})
     proposal = signed({'allocation': {'validation': selected}, 'known_lineage': {}, 'exclusions': {'prior': ['2']}})
