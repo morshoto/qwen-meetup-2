@@ -38,3 +38,27 @@ def test_freeze_rejects_changed_adapter_or_report(monkeypatch):
     report['paired']['paired']['gained'] = 5
     with pytest.raises(ValueError):
         verify_frozen_outcome(adapter, json.dumps(report).encode())
+
+
+def test_frozen_inventory_rejects_missing_changed_and_extra_files(tmp_path):
+    from src.arc.qwen38_replication_freeze import inventory_tree, verify_inventory
+    root = tmp_path / 'evidence'; root.mkdir()
+    (root / 'journal').mkdir()
+    (root / 'journal/one.json').write_bytes(b'one')
+    recorded = inventory_tree(root)
+    assert verify_inventory(root, recorded) == recorded
+    (root / 'journal/two.json').write_bytes(b'two')
+    with pytest.raises(ValueError): verify_inventory(root, recorded)
+    (root / 'journal/two.json').unlink()
+    (root / 'journal/one.json').write_bytes(b'changed')
+    with pytest.raises(ValueError): verify_inventory(root, recorded)
+    (root / 'journal/one.json').unlink()
+    with pytest.raises(ValueError): verify_inventory(root, recorded)
+
+
+def test_frozen_inventory_rejects_symlinks(tmp_path):
+    from src.arc.qwen38_replication_freeze import inventory_tree
+    root = tmp_path / 'evidence'; root.mkdir()
+    target = tmp_path / 'outside'; target.write_text('outside')
+    (root / 'alias').symlink_to(target)
+    with pytest.raises(ValueError): inventory_tree(root)
