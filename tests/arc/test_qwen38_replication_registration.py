@@ -160,3 +160,13 @@ def test_source_inventory_includes_replication_controller():
 def test_source_inventory_includes_receipt_assembly():
     import src.arc.qwen38_replication_registration as registration
     assert 'src/arc/qwen38_replication_rows.py' in registration.REPLICATION_SOURCES
+
+
+def test_registration_declares_original_revision_and_decision_rule(tmp_path, monkeypatch):
+    args = fixture(tmp_path, monkeypatch)
+    result = build_replication_registration(*args, additional_exclusions={}, official={})
+    assert result['original_code_revision'] == '15ba1ad007ee907c1a7923c8371af0e696f09b7a'
+    assert result['hypothesis']['primary'] == 'either_candidate_paired_difference'
+    assert result['hypothesis']['test'] == 'two_sided_exact_sign_test'
+    assert result['hypothesis']['alpha'] == .05
+    assert result['hypothesis']['incomplete_policy'] == 'report completed paired denominator; no missing-as-incorrect'
