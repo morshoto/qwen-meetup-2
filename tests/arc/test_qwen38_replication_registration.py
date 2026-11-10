@@ -91,3 +91,15 @@ def test_registration_pins_adapter_configuration_and_worker(tmp_path, monkeypatc
     assert result['adapter_config_sha256'] == 'd' * 64
     monkeypatch.undo()
     assert 'src/cli/qwen38_replication_worker.py' in registration.REPLICATION_SOURCES
+
+
+def test_registration_pins_solution_source_and_fingerprint_auditor(tmp_path, monkeypatch):
+    import src.arc.qwen38_replication_registration as registration
+    args = fixture(tmp_path, monkeypatch)
+    args[0]['input_hashes']['solutions'] = 'e' * 64
+    args[0]['sha256'] = digest({k: v for k, v in args[0].items() if k != 'sha256'})
+    monkeypatch.setattr(registration, 'EXECUTION_SHA256', args[0]['sha256'])
+    result = build_replication_registration(*args, additional_exclusions={}, official={})
+    assert result['solution_sha256'] == 'e' * 64
+    monkeypatch.undo()
+    assert 'src/arc/qwen38_replication_fingerprints.py' in registration.REPLICATION_SOURCES
