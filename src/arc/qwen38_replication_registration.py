@@ -18,7 +18,8 @@ SNAPSHOT_SHA256 = 'ea309257ef1e10e081a68ec6878b22b90ef408806c09f0279989d6095483d
 REPLICATION_SOURCES = tuple(dict.fromkeys(EVALUATION_SOURCES + (
     'src/arc/qwen38_replication_allocation.py', 'src/arc/qwen38_replication_freeze.py',
     'src/arc/qwen38_replication_registration.py', 'src/arc/qwen38_replication_schedule.py',
-    'src/arc/qwen38_replication_statistics.py', 'src/cli/qwen38_weight_worker.py',
+    'src/arc/qwen38_replication_statistics.py', 'src/arc/qwen38_replication_report.py',
+    'src/cli/qwen38_weight_worker.py',
 )))
 
 
