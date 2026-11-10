@@ -65,3 +65,8 @@ def test_registration_binds_exclusion_and_official_evidence(tmp_path, monkeypatc
     assert first['exclusions_sha256'] != second['exclusions_sha256']
     assert first['official_challenges_sha256'] == digest({})
     assert first['exclusions_sha256'] == digest({'prior': ['2']})
+
+
+def test_source_inventory_includes_offline_report():
+    import src.arc.qwen38_replication_registration as registration
+    assert 'src/arc/qwen38_replication_report.py' in registration.REPLICATION_SOURCES
