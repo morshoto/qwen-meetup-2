@@ -60,6 +60,8 @@ def test_rebuild_replays_audit_without_loading_target_answers(tmp_path, monkeypa
     (old / 'journal').mkdir()
     for name in ('execution', 'proposal', 'history', 'snapshot', 'audit'):
         (tmp_path / (name + '.json')).write_text('{}')
+    (tmp_path / 'snapshot.json').write_text(json.dumps({'source_root': str(old)}))
+    (tmp_path / 'history.json').write_text(json.dumps({'phase_a_task_ids': [], 'dev_task_ids': []}))
     (old / 'evaluation/evaluation-v2.json').write_text('{}')
     (old / 'evaluation/adapter-v2/report.json').write_bytes(b'report')
     (old / 'training/adapter-run-v1/adapter/adapters.safetensors').write_bytes(b'adapter')

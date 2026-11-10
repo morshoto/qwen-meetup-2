@@ -7,7 +7,9 @@ from importlib import metadata
 from pathlib import Path
 
 from src.arc.qwen38_rsi_comparison import digest
-from src.arc.qwen38_replication_freeze import verify_pinned_files
+from src.arc.qwen38_replication_freeze import verify_pinned_files, verify_frozen_outcome
+from src.arc.qwen38_replication_audit import build_audit_receipt
+from src.arc.qwen38_replication_registration import build_replication_registration, build_ready_registration
 from src.arc.qwen38_weight_allocation import freeze_registration
 
 
@@ -29,6 +31,33 @@ def verify_runtime(repo, model_path, execution):
     if files != execution['model']['files_sha256']:
         raise ValueError('model snapshot contents changed')
     return {'status': 'runtime_matches'}
+
+
+def rebuild_registration(*, repo, model_path, old_root, execution, proposal, history, snapshot, audit,
+                         challenges, official, solutions, run_dir, report):
+    """Replay the complete bounded source chain without decoding target answers."""
+    load = lambda path: json.loads(Path(path).read_bytes())
+    execution, proposal, history, snapshot = map(load, (execution, proposal, history, snapshot))
+    old_root = Path(old_root).resolve()
+    if snapshot.get('source_root') != str(old_root):
+        raise ValueError('original run directory differs from snapshot')
+    challenge_bytes = Path(challenges).read_bytes()
+    official_bytes = Path(official).read_bytes()
+    evaluation = load(old_root / 'evaluation/evaluation-v2.json')
+    verify_runtime(repo, model_path, execution)
+    verify_frozen_outcome((old_root / 'training/adapter-run-v1/adapter/adapters.safetensors').read_bytes(),
+                          Path(report).read_bytes())
+    replayed = build_audit_receipt(proposal, snapshot, history, challenge_bytes, official_bytes, solutions)
+    if replayed != load(audit):
+        raise ValueError('bounded exposure audit changed')
+    sft = load(old_root / 'training/sft-v1/manifest.json')
+    starts = sorted((old_root / 'journal').glob('*.start.json'))
+    extras = {'actual_fresh_generation': sorted({load(path)['request']['task_id'] for path in starts}),
+              'historical_fp8': history['phase_a_task_ids'] + history['dev_task_ids'],
+              'sft_actual': [entry['task_id'] for entry in sft['parents']]}
+    pending = build_replication_registration(execution, proposal, evaluation, snapshot, challenge_bytes, repo,
+                                             additional_exclusions=extras, official=json.loads(official_bytes), run_dir=run_dir)
+    return build_ready_registration(pending, replayed)
 
 
 def _registration(root, rebuild):
