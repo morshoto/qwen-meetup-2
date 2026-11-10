@@ -150,3 +150,8 @@ def test_registration_binds_private_run_directory_and_supervision(tmp_path, monk
                                      'max_output_bytes': 2 * 1024**2}
     with pytest.raises(ValueError):
         build_replication_registration(*args, additional_exclusions={}, official={}, run_dir=tmp_path)
+
+
+def test_source_inventory_includes_replication_controller():
+    import src.arc.qwen38_replication_registration as registration
+    assert 'src/cli/qwen38_replication.py' in registration.REPLICATION_SOURCES
