@@ -85,3 +85,15 @@ def test_report_rejects_rows_not_bound_to_terminal_journal():
     termination['sha256'] = digest(termination)
     with pytest.raises(ValueError):
         score_replication(d, base, adapter, verifier, journal=journal, termination=termination)
+
+
+def test_report_preserves_wall_budget_stop_as_incomplete():
+    d, verifier = setup()
+    journal = []
+    termination = {'status': 'time_budget_exhausted', 'registration_sha256': d['sha256'],
+                   'journal_sha256': digest(journal), 'wall_seconds': d['wall_seconds_limit']}
+    termination['sha256'] = digest(termination)
+    report = score_replication(d, [], [], verifier, journal=journal, termination=termination)
+    assert report['status'] == 'incomplete'
+    assert report['paired']['baseline']['incomplete_tasks'] == 3
+    assert report['paired']['baseline']['first_correct'] is None
