@@ -46,3 +46,22 @@ def test_transitively_blocked_parent_requires_valid_answer_fingerprint():
     answers['4'] = ''
     with pytest.raises(ValueError):
         audit_reserved(tasks, selected, excluded, lineage, answers, {})
+
+
+def test_visible_audit_does_not_need_answers_and_remains_pending():
+    from src.arc.qwen38_replication_allocation import audit_visible
+    tasks, selected, excluded, lineage, _ = fixture()
+    result = audit_visible(tasks, selected, excluded, lineage, {})
+    assert result['status'] == 'visible_disjoint_pending_answers'
+    assert result['selected_ids'] == selected
+    assert set(result['blocked_ids']) == {'2', '3'}
+    assert result['unresolved_exposure'] is True
+    assert '[[100]]' not in repr(result)
+
+
+def test_visible_audit_rejects_transitive_exposure_without_answers():
+    from src.arc.qwen38_replication_allocation import audit_visible
+    tasks, selected, excluded, lineage, _ = fixture()
+    tasks['4']['test'][0]['input'] = tasks['0']['test'][0]['input']
+    tasks['5']['test'][0]['input'] = tasks['2']['test'][0]['input']
+    with pytest.raises(ValueError): audit_visible(tasks, selected, excluded, lineage, {})
