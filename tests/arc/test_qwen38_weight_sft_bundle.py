@@ -1,0 +1,75 @@
+import hashlib
+import json
+
+import pytest
+
+from src.arc.qwen38_rsi_comparison import digest
+from src.arc.qwen38_weight_preflight import PACKAGES
+from src.arc.qwen38_weight_sft import select_training_examples
+from src.arc.qwen38_weight_sft_bundle import write_bundle, verify_bundle
+
+
+def fixture(count):
+    tasks = {}; answers = {}; records = []
+    for i in range(count):
+        task = str(i); tasks[task] = {'train': [{'input': [[0]], 'output': [[1]]}], 'test': [{'input': [[2, i]]}]}
+        answers[task] = [[[3, i, 4]]]; raw = json.dumps(answers[task], separators=(',', ':'))
+        records.append({'task_id': task, 'raw': raw, 'raw_sha256': hashlib.sha256(raw.encode()).hexdigest(),
+                        'source': 'current_gen0_self_generated', 'candidate_index': 0,
+                        'checkpoint_sha256': 'a' * 64, 'manifest_sha256': 'b' * 64})
+    selection = select_training_examples(tasks, answers, records, [], blocked_ids=set(),
+                                         forbidden_answer_fingerprints=set(), token_counter=lambda _: 10)
+    registration = {'execution_sha256': 'b' * 64, 'fresh_journal_sha256': 'c' * 64,
+                    'fresh_verification_sha256': 'd' * 64, 'challenge_sha256': 'e' * 64,
+                    'solution_sha256': 'f' * 64, 'source_files_sha256': {'training.py': '1' * 64},
+                    'historical_aggregate_sha256': None, 'historical_checkpoint_inventory_sha256': None,
+                    'packages': PACKAGES.copy(), 'model_files_sha256': {'model.safetensors': '2' * 64},
+                    'training_settings': {'rank': 8, 'batch_size': 1, 'learning_rate': 2e-5, 'max_steps': 20,
+                                          'seed': 20261111, 'max_sequence_length': 2048,
+                                          'gradient_checkpointing': True, 'completion_only_loss': True}}
+    registration['training_code_sha256'] = digest(registration['source_files_sha256'])
+    return selection, registration
+
+
+def test_bundle_is_private_immutable_and_requires_source_replay(tmp_path):
+    selection, registration = fixture(5)
+    root = tmp_path / 'sft'
+    result = write_bundle(root, selection, registration)
+    assert result['status'] == 'prepared_pending_source_replay'
+    assert (root / 'train.jsonl').stat().st_mode & 0o077 == 0
+    lines = [json.loads(line) for line in (root / 'train.jsonl').read_text().splitlines()]
+    assert len(lines) == 5 and all(set(row) == {'messages'} for row in lines)
+    assert verify_bundle(root, selection, registration)['status'] == 'matches_supplied_replay'
+    with pytest.raises(FileExistsError): write_bundle(root, selection, registration)
+    (root / 'train.jsonl').write_text('{}\n')
+    with pytest.raises(ValueError): verify_bundle(root, selection, registration)
+
+
+def test_insufficient_data_never_writes_sft_dataset(tmp_path):
+    selection, registration = fixture(3)
+    root = tmp_path / 'insufficient'
+    result = write_bundle(root, selection, registration)
+    assert result['status'] == 'insufficient_verified_data'
+    assert not (root / 'train.jsonl').exists()
+    assert 'score' not in result
+
+
+@pytest.mark.parametrize('change', ['status', 'mode', 'prompt'])
+def test_bundle_rejects_forged_gate_or_prompt(tmp_path, change):
+    selection, registration = fixture(5)
+    if change == 'status': selection['status'] = 'invented'
+    elif change == 'mode': selection['mode'] = 'mixed_source'
+    else:
+        prompt = json.loads(selection['examples'][0]['messages'][0]['content'])
+        prompt['task']['test'][0]['output'] = [[9]]
+        selection['examples'][0]['messages'][0]['content'] = json.dumps(prompt)
+    with pytest.raises(ValueError): write_bundle(tmp_path / 'forged', selection, registration)
+
+
+@pytest.mark.parametrize('change', ['source', 'settings', 'model'])
+def test_bundle_rejects_changed_training_registration(tmp_path, change):
+    selection, registration = fixture(5)
+    if change == 'source': registration['source_files_sha256']['training.py'] = '3' * 64
+    elif change == 'settings': registration['training_settings']['max_steps'] = 21
+    else: registration['model_files_sha256'] = {}
+    with pytest.raises(ValueError): write_bundle(tmp_path / 'wrong', selection, registration)
