@@ -172,3 +172,7 @@ style: |
 ## 出力形式：読み取り可能な候補の割合
 
 <img class="lt-figure" src="./img/lt-format-validity.svg" alt="50問と25問のAdapter OFF・ONにおける形式有効候補の比較" />
+
+---
+
+## EOP
